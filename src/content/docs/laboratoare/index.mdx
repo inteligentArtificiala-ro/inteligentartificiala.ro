@@ -9,7 +9,7 @@ Paginile teoretice explică ideile. În laboratoare, aceleași idei devin cod ca
 
 Toate laboratoarele folosesc Python 3.10 sau mai nou, cu pachetele instalate într-un mediu virtual creat cu `venv`. Rulează pe o placă grafică NVIDIA (CUDA), pe un cip Apple Silicon (MPS) sau, mai lent, pe procesor (CPU). Pagina despre [utilitatea plăcilor grafice](/concepte-de-baza/utilitatea-placilor-grafice/) explică de ce diferența de viteză este atât de mare.
 
-Toate laboratoarele pot rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser. Notebookurile laboratoarelor sunt păstrate în [repozitoriul site-ului](https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/tree/main/public/laboratoare) și se deschid în Colab direct din paginile laboratoarelor, cu butonul **Deschidere în Google Colab**.
+Toate laboratoarele pot rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser. Fiecare laborator are un singur notebook, cu tot codul lui, păstrat în [repozitoriul site-ului](https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/tree/main/public/laboratoare), care se deschide în Colab din pagina de introducere a laboratorului, cu butonul **Deschidere în Google Colab**.
 
 În laboratoarele de antrenare, exemplele scurte rulează direct în pagină, cu Python în browser (WebAssembly), fără nicio instalare. Antrenarea propriu-zisă rulează local, iar paginile arată rezultatele de referință, ca să le putem compara cu ce obținem pe propriul calculator. Codul acestor laboratoare este public, în [organizația proiectului de pe GitHub](https://github.com/inteligentArtificiala-ro), și poate fi clonat cu Git sau descărcat fișier cu fișier.
 
@@ -22,7 +22,7 @@ Descărcăm de pe [Hugging Face Hub](https://huggingface.co/models) un model de 
 - **Nivel**: începător.
 - **Cerințe**: un calculator cu cel puțin 8 GB de memorie RAM și între 700 MB și 4 GB de spațiu pe disc pentru modele.
 - **Înainte de laborator**: pagina despre [modelele de limbaj mari](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/).
-- **Google Colab**: câte un notebook pentru fiecare pagină.
+- **Google Colab**: un notebook pentru tot laboratorul.
 
 Laboratorul începe cu [instalarea și primul model](/laboratoare/model-local-transformers/prezentare/).
 
@@ -33,7 +33,7 @@ Generăm imagini și sunete cu modele de difuzie cu ponderi deschise, în Python
 - **Nivel**: începător.
 - **Cerințe**: o placă grafică NVIDIA cu cel puțin 8 GB de memorie sau un cip Apple Silicon și aproximativ 8 GB de spațiu pe disc pentru modele.
 - **Înainte de laborator**: pagina despre [modelele de difuzie](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/).
-- **Google Colab**: câte un notebook pentru fiecare pagină.
+- **Google Colab**: un notebook pentru tot laboratorul.
 
 Laboratorul începe cu [instalarea și prima imagine](/laboratoare/difuzie-imagini-si-sunete/prezentare/).
 
@@ -45,7 +45,7 @@ Construim și antrenăm de la zero **mvGPT** (_Minimum Viable GPT_), un model de
 - **Cerințe**: circa 1 GB de spațiu pe disc. Preantrenarea și ajustarea fină durează câte 10 minute pe un laptop modern.
 - **Înainte de laborator**: paginile despre [rețelele neuronale](/retele-neuronale/ce-sunt-retelele-neuronale/) și despre [mecanismul de atenție](/modele-lingvistice/avem-nevoie-doar-de-atentie/).
 - **Cod sursă**: repozitoriul [inteligentArtificiala-ro/laborator-lm-de-la-zero](https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero).
-- **Google Colab**: un notebook care rulează tot laboratorul.
+- **Google Colab**: un notebook pentru tot laboratorul.
 
 Laboratorul începe cu [prezentarea modelului și pregătirea mediului de lucru](/laboratoare/model-lingvistic-de-la-zero/prezentare/).
 
@@ -57,6 +57,6 @@ Robotul **HalfCheetah**, un robot bidimensional inspirat de ghepard, cu 6 articu
 - **Cerințe**: un procesor cu 4–8 nuclee, un cip Apple Silicon sau o placă grafică NVIDIA. O antrenare completă, de 1 milion de pași, durează cam 15–25 de minute.
 - **Înainte de laborator**: paginile despre [învățarea prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/) și despre [gradientul strategiei și REINFORCE](/invatare-prin-consolidare/gradientul-politicii-reinforce/).
 - **Cod sursă**: repozitoriul [inteligentArtificiala-ro/control-continuu-ppo](https://github.com/inteligentArtificiala-ro/control-continuu-ppo).
-- **Google Colab**: un notebook care rulează tot laboratorul.
+- **Google Colab**: un notebook pentru tot laboratorul.
 
 Laboratorul începe cu [prezentarea robotului și a simulatorului](/laboratoare/control-continuu-ppo-halfcheetah/prezentare/).

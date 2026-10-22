@@ -8,11 +8,7 @@ tags:
   - Modele de difuzie
 ---
 
-import Colab from '@components/Colab.astro';
-
 Pagina despre [generarea vocii](/modele-de-difuzie/generarea-vocii/) arată că un sunet poate fi descris printr-o [spectrogramă mel](/modele-de-difuzie/generarea-vocii/#sunetul-ca-semnal), care seamănă cu o imagine: pe orizontală este timpul, pe verticală frecvența. Un model de difuzie poate genera deci spectrograme la fel cum generează imagini, iar un **vocoder** (_vocoder_) le transformă apoi în sunet. Pe această pagină folosim [AudioLDM 2](https://huggingface.co/cvssp/audioldm2), un model de [difuzie latentă](/modele-de-difuzie/generarea-imaginilor/#difuzia-în-spațiul-latent) pentru sunete și muzică, publicat în 2023 de cercetători de la Universitatea din Surrey și de la ByteDance. Generăm câte un sunet pornind de la o descriere, apoi refacem de mână ultimii pași ai pipeline-ului, ca să vedem spectrograma.
-
-<Colab notebook='laboratoare/difuzie-imagini-si-sunete/notebooks/04-sunete-din-text.ipynb' />
 
 ## Primul sunet
 

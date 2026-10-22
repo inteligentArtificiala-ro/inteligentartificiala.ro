@@ -8,11 +8,7 @@ tags:
   - Modele de difuzie
 ---
 
-import Colab from '@components/Colab.astro';
-
 Pagina despre [modelele de difuzie](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/) descrie procesul invers prin formule: rețeaua estimează zgomotul din imagine, din el obținem o estimare a imaginii curate, apoi facem un pas spre o imagine cu mai puțin zgomot. Pe această pagină scriem procesul invers în Python, pe un model real. Folosim [google/ddpm-cat-256](https://huggingface.co/google/ddpm-cat-256), unul dintre modelele publicate de autorii articolului DDPM, convertit pentru Diffusers. Este un U-Net cu aproximativ 114 milioane de parametri, antrenat pe fotografiile cu pisici din setul de date LSUN, care generează imagini de 256 × 256 pixeli. Modelul nu primește niciun text: pornește doar de la zgomot.
-
-<Colab notebook='laboratoare/difuzie-imagini-si-sunete/notebooks/02-procesul-de-difuzie.ipynb' />
 
 ## Programul de zgomot
 
