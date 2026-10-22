@@ -12,6 +12,8 @@ tags:
 import Colab from '@components/Colab.astro';
 import { Steps } from '@astrojs/starlight/components';
 
+<Colab notebook='laboratoare/model-local-transformers/model-local-transformers.ipynb' />
+
 Pe pagina despre [modelele de limbaj mari](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) putem vorbi cu un model mic care rulează direct în browser. În acest laborator facem același lucru în Python, pe propriul calculator, cu oricare dintre modelele cu [ponderi deschise](/concepte-de-baza/chatgpt-gemini-claude-grok-deepseek/#ponderi-deschise-și-modele-închise) publicate pe [Hugging Face Hub](https://huggingface.co/models).
 
 Instrumentul folosit este **Transformers**, biblioteca open-source a companiei Hugging Face. Ea descarcă modelul, îi încarcă ponderile în PyTorch și oferă aceeași interfață pentru mii de arhitecturi diferite. Biblioteca are o [documentație oficială](https://huggingface.co/docs/transformers/index) foarte bună, pe care nu o traducem aici. Laboratorul arată codul minim care pune un model în funcțiune, explică ce se întâmplă în fiecare pas și trimite la secțiunea potrivită din documentație pentru detalii.
@@ -49,9 +51,7 @@ Pe Linux și Windows, varianta de PyTorch potrivită pentru placa grafică se al
 
 ## Rularea în Google Colab
 
-Laboratorul poate rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser, fără nicio instalare pe calculatorul propriu. Laboratorul are un singur **notebook**, cu codul tuturor paginilor, în ordine, care se deschide în Colab cu butonul de mai jos. Prima celulă instalează pachetele, iar celulele următoare se rulează de sus în jos. Modelele se descarcă în mașina virtuală a Colab și se șterg odată cu ea, la sfârșitul sesiunii.
-
-<Colab notebook='laboratoare/model-local-transformers/model-local-transformers.ipynb' />
+Laboratorul poate rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser, fără nicio instalare pe calculatorul propriu. Laboratorul are un singur **notebook**, cu codul tuturor paginilor, în ordine, care se deschide în Colab cu butonul de la începutul paginii. Prima celulă instalează pachetele, iar celulele următoare se rulează de sus în jos. Modelele se descarcă în mașina virtuală a Colab și se șterg odată cu ea, la sfârșitul sesiunii.
 
 ## Primul model
 

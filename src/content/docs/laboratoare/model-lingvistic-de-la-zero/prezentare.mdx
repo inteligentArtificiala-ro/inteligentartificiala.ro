@@ -12,6 +12,8 @@ tags:
 
 import Colab from '@components/Colab.astro';
 
+<Colab notebook='laboratoare/model-lingvistic-de-la-zero/model-lingvistic-de-la-zero.ipynb' />
+
 Paginile despre [modelele de limbaj mari](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) și despre [arhitectura Transformer](/modele-lingvistice/arhitectura-transformer/) explică, în teorie, cum funcționează un astfel de model. În acest laborator construim unul de la zero, pornind de la un director gol și ajungând până la primele povești coerente.
 
 import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
@@ -98,9 +100,7 @@ tensorboard --logdir runs      # graficele antrenărilor, la http://localhost:60
 
 ## Rularea în Google Colab
 
-Laboratorul poate rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser, fără nicio instalare pe calculatorul propriu. Notebookul laboratorului descarcă fișierele de mai sus și rulează, în ordine, aceleași comenzi, cu graficele din TensorBoard afișate direct în notebook. Preantrenarea și ajustarea fină durează tot câte 10 minute, iar fișierele create se șterg la sfârșitul sesiunii Colab.
-
-<Colab notebook='laboratoare/model-lingvistic-de-la-zero/model-lingvistic-de-la-zero.ipynb' />
+Laboratorul poate rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser, fără nicio instalare pe calculatorul propriu. Notebookul laboratorului, care se deschide în Colab cu butonul de la începutul paginii, descarcă fișierele de mai sus și rulează, în ordine, aceleași comenzi, cu graficele din TensorBoard afișate direct în notebook. Preantrenarea și ajustarea fină durează tot câte 10 minute, iar fișierele create se șterg la sfârșitul sesiunii Colab.
 
 ## Seria video
 

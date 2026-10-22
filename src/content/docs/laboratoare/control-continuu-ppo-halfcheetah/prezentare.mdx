@@ -13,6 +13,8 @@ tags:
 import Colab from '@components/Colab.astro';
 import SourceFile from '@components/SourceFile.astro';
 
+<Colab notebook='laboratoare/control-continuu-ppo-halfcheetah/control-continuu-ppo-halfcheetah.ipynb' />
+
 Paginile introductive despre [învățarea prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/) și despre [gradientul strategiei și REINFORCE](/invatare-prin-consolidare/gradientul-politicii-reinforce/) explică ideile de bază: stări, acțiuni, recompense și optimizarea directă a unei strategii de decizie. În sarcinile discrete clasice, de exemplu alegerea unei mutări într-un joc sau a următorului token dintr-un vocabular, agentul alege dintr-un număr finit de acțiuni.
 
 În robotică și în automatizări, deciziile sunt continue. Motoarele nu primesc comenzi de tipul „stânga” sau „dreapta”, ci valori fizice continue, cum ar fi un **cuplu mecanic** (_torque_) sau o tensiune electrică aplicată fiecărei articulații. Acest tip de probleme se numește **control continuu** (_continuous control_).
@@ -90,9 +92,7 @@ python evaluate.py --video      # evaluează strategia și generează videoclipu
 
 ## Rularea în Google Colab
 
-Laboratorul poate rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser, fără nicio instalare pe calculatorul propriu. Notebookul laboratorului descarcă fișierele de mai sus, rulează antrenarea cu graficele din TensorBoard afișate direct în notebook, apoi evaluarea, și arată la final videoclipul robotului. Simularea rulează pe procesor, iar mașinile virtuale Colab au puține nuclee, așa că antrenarea durează mai mult decât pe un calculator cu 4–8 nuclee. Placa grafică din Colab este folosită pentru desenarea cadrelor videoclipului.
-
-<Colab notebook='laboratoare/control-continuu-ppo-halfcheetah/control-continuu-ppo-halfcheetah.ipynb' />
+Laboratorul poate rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser, fără nicio instalare pe calculatorul propriu. Notebookul laboratorului, care se deschide în Colab cu butonul de la începutul paginii, descarcă fișierele de mai sus, rulează antrenarea cu graficele din TensorBoard afișate direct în notebook, apoi evaluarea, și arată la final videoclipul robotului. Simularea rulează pe procesor, iar mașinile virtuale Colab au puține nuclee, așa că antrenarea durează mai mult decât pe un calculator cu 4–8 nuclee. Placa grafică din Colab este folosită pentru desenarea cadrelor videoclipului.
 
 ## Bibliografie
 

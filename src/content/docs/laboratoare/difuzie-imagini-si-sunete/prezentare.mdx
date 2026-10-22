@@ -12,6 +12,8 @@ tags:
 import Colab from '@components/Colab.astro';
 import { Steps } from '@astrojs/starlight/components';
 
+<Colab notebook='laboratoare/difuzie-imagini-si-sunete/difuzie-imagini-si-sunete.ipynb' />
+
 Paginile despre [modelele de difuzie](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/) explică ideea: o rețea neuronală învață să estimeze zgomotul dintr-o imagine, iar generarea pornește de la zgomot pur, pe care îl curăță pas cu pas. În acest laborator rulăm modele reale, cu [ponderi deschise](/concepte-de-baza/chatgpt-gemini-claude-grok-deepseek/#ponderi-deschise-și-modele-închise), publicate pe [Hugging Face Hub](https://huggingface.co/models). Generăm pisici pornind de la zgomot, imagini pornind de la o descriere și sunete pornind de la un text.
 
 Instrumentul principal este **Diffusers**, biblioteca open-source a companiei Hugging Face pentru modele de difuzie. Este biblioteca soră a bibliotecii Transformers, folosită în laboratorul despre [un model de limbaj local](/laboratoare/model-local-transformers/prezentare/). Diffusers încarcă ponderile în PyTorch și oferă două niveluri de lucru: **pipeline-uri** gata făcute, care generează o imagine în câteva linii de cod, și componentele din care sunt construite, adică rețelele neuronale și **metodele de eșantionare** (_schedulers_), care pot fi folosite separat. Codificatoarele de text și vocoderul vin din Transformers. Biblioteca are o [documentație oficială](https://huggingface.co/docs/diffusers/index) foarte bună, pe care nu o traducem aici. Laboratorul arată codul minim, explică ce se întâmplă în fiecare pas și trimite la documentație pentru detalii.
@@ -51,9 +53,7 @@ Pe Linux și Windows, varianta de PyTorch potrivită pentru placa grafică se al
 
 Laboratorul poate rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser, fără nicio instalare pe calculatorul propriu.
 
-Laboratorul are un singur **notebook** Jupyter, cu codul tuturor paginilor, în ordine, care se deschide în Colab cu butonul de mai jos. Prima celulă instalează pachetele, iar celulele următoare se rulează de sus în jos. Imaginile și sunetele generate apar direct în notebook. Modelele se descarcă în mașina virtuală a Colab, nu pe calculatorul propriu, și se șterg odată cu ea, la sfârșitul sesiunii.
-
-<Colab notebook='laboratoare/difuzie-imagini-si-sunete/difuzie-imagini-si-sunete.ipynb' />
+Laboratorul are un singur **notebook** Jupyter, cu codul tuturor paginilor, în ordine, care se deschide în Colab cu butonul de la începutul paginii. Prima celulă instalează pachetele, iar celulele următoare se rulează de sus în jos. Imaginile și sunetele generate apar direct în notebook. Modelele se descarcă în mașina virtuală a Colab, nu pe calculatorul propriu, și se șterg odată cu ea, la sfârșitul sesiunii.
 
 ## Prima imagine
 
