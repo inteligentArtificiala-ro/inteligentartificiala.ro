@@ -48,7 +48,6 @@ export default defineConfig({
       ],
       // O singură temă de culori: blocurile de cod rămân întunecate și în modul luminos (fundalul, în custom.css).
       expressiveCode: { themes: ['vitesse-dark'], styleOverrides: { borderRadius: '4px' } },
-      routeMiddleware: './src/route-data.ts',
       components: {
         Head: './src/components/starlight/Head.astro',
         Header: './src/components/starlight/Header.astro',

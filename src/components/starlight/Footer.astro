@@ -1,14 +1,10 @@
 ---
 import Default from '@astrojs/starlight/components/Footer.astro';
-import Citare from '@components/Citare.astro';
 import ConsentBanner from '@components/layout/ConsentBanner.astro';
 import { SITE } from '../../consts';
 
-const { entry } = Astro.locals.starlightRoute;
 const year = new Date().getFullYear();
 ---
-
-{entry.data.level && <Citare />}
 
 <Default><slot /></Default>
 
