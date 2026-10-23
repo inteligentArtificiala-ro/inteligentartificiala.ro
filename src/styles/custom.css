@@ -119,17 +119,84 @@ site-search dialog {
   color: var(--sl-color-text-accent);
 }
 
-/* Lista „Bibliografie” de la sfârșitul paginilor: literă mai mică, fără buline, cu rândurile de continuare
-   retrase (indentare suspendată), ca într-o bibliografie tipărită. */
-.sl-heading-wrapper:has(> h2#bibliografie) + ul {
+/* Bibliografia de la sfârșitul paginilor (structura vine din src/plugins/rehype-bibliography.mjs). E despărțită de
+   text printr-o linie, are literă mai mică și intrări cu indentare suspendată, ca într-o bibliografie tipărită. Autorii,
+   după care e ordonată lista, ies puțin în evidență, iar publicația trece în plan secund. */
+.sl-markdown-content .sl-heading-wrapper:has(> h2#bibliografie) {
+  margin-top: 3rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--sl-color-gray-5);
+}
+
+.sl-markdown-content h2#bibliografie {
+  font-size: var(--sl-text-h4);
+}
+
+.sl-markdown-content .bibliografie {
   padding-inline-start: 0;
   font-size: var(--sl-text-sm);
+  line-height: 1.55;
   list-style: none;
 }
 
-.sl-heading-wrapper:has(> h2#bibliografie) + ul > li {
-  padding-inline-start: 1.5em;
-  text-indent: -1.5em;
+.bibliografie > li {
+  padding-inline-start: 1.75em;
+  text-indent: -1.75em;
+}
+
+.sl-markdown-content .bibliografie > li + li {
+  margin-top: 0.55em;
+}
+
+.bib-autori {
+  color: var(--sl-color-white);
+}
+
+.bib-an {
+  font-variant-numeric: tabular-nums;
+}
+
+.bibliografie > li > em {
+  color: var(--sl-color-gray-3);
+}
+
+.sl-markdown-content .bibliografie .bib-titlu {
+  text-decoration-color: color-mix(in oklch, currentColor 35%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.sl-markdown-content .bibliografie .bib-titlu:hover {
+  text-decoration-color: currentColor;
+}
+
+.sl-markdown-content .bib-inapoi {
+  margin-inline-start: 0.2em;
+  text-decoration: none;
+}
+
+.bib-inapoi sup {
+  font-size: 0.7em;
+}
+
+/* Intrarea sau citarea din text la care s-a ajuns printr-o legătură (#bib-…, #cit-…). */
+.bibliografie > li:target,
+.sl-markdown-content a[id^='cit-']:target {
+  background-color: var(--sl-color-accent-low);
+  box-shadow: 0 0 0 0.25em var(--sl-color-accent-low);
+  border-radius: 2px;
+  box-decoration-break: clone;
+}
+
+/* Pe hârtie, adresa fiecărei lucrări apare după titlu, iar legăturile înapoi la text dispar. */
+@media print {
+  .bibliografie .bib-titlu::after {
+    content: ' <' attr(href) '>';
+    word-break: break-all;
+  }
+
+  .bib-citari {
+    display: none;
+  }
 }
 
 /* Formulele lungi se derulează orizontal în loc să iasă din coloana de text. */

@@ -9,6 +9,7 @@ import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
 import starlightThemeExquisitus from 'starlight-theme-exquisitus';
 import vendor from './src/integrations/vendor.mjs';
+import rehypeBibliography from './src/plugins/rehype-bibliography.mjs';
 
 // https://astro.build/config
 export default defineConfig({
@@ -123,7 +124,8 @@ export default defineConfig({
     // Formulele ($...$ și $$...$$) sunt randate cu KaTeX la build, fără JavaScript în browser.
     processor: unified({
       remarkPlugins: [remarkMath],
-      rehypePlugins: [rehypeKatex],
+      // Bibliografia de la sfârșitul paginilor: structură, id-uri și legături înapoi la citări (src/plugins/).
+      rehypePlugins: [rehypeKatex, rehypeBibliography],
       // Ghilimelele drepte din proză devin ghilimele românești: „…” și «…».
       smartypants: {
         openingQuotes: { double: '„', single: '«' },
