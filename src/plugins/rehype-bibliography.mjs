@@ -26,7 +26,7 @@ export default function rehypeBibliography() {
     const page = (file.path ?? '').replace(/^.*\/src\/content\/docs\//, '');
     list.properties.className = ['bibliografie'];
     list.properties.role = 'list';
-    list.properties.ariaLabelledBy = 'bibliografie';
+    list.properties.ariaLabelledBy = ['bibliografie'];
 
     /** @type {{ item: Element, content: Element, authors: string, year: string, key: string }[]} */
     const entries = [];
