@@ -78,6 +78,9 @@ const downloadSize = `${Math.round((modelBytes + runtimeBytes) / 1e7) * 10} MB`;
   import type { WorkerRequest, WorkerResponse } from '../scripts/llm-chat.worker';
 
   const CACHE_NAME = 'transformers-cache';
+  // Primul mesaj, trimis singur imediat ce modelul este gata, ca răspunsul să arate de la început cum generează
+  // modelul textul. Este în engleză, limba în care răspunde modelul.
+  const GREETING = 'Hello!';
 
   // Textul generat este afișat ca text simplu. Doar **îngroșarea** din Markdown este păstrată.
   function renderText(element: HTMLElement, text: string) {
@@ -153,7 +156,8 @@ const downloadSize = `${Math.round((modelBytes + runtimeBytes) / 1e7) * 10} MB`;
           show('chat');
           $('[data-device]').textContent =
             response.device === 'webgpu' ? 'Rulare pe placa grafică (WebGPU)' : 'Rulare pe procesor (WebAssembly)';
-          input.focus();
+          if (messages.length === 0) sendMessage(GREETING);
+          else input.focus();
           break;
         case 'token':
           if (!reply) break;
@@ -205,18 +209,23 @@ const downloadSize = `${Math.round((modelBytes + runtimeBytes) / 1e7) * 10} MB`;
       send({ type: 'load', bytes });
     });
 
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const text = input.value.trim();
+    function sendMessage(text: string) {
       if (!text || reply) return;
       showError();
-      input.value = '';
       addMessage('user', text);
       messages.push({ role: 'user', content: text });
       reply = { element: addMessage('assistant', ''), text: '' };
       setBusy(true);
       // Fără instrucțiune de sistem: modelul răspunde, de regulă, în limba întrebării.
       send({ type: 'generate', messages });
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const text = input.value.trim();
+      if (!text || reply) return;
+      input.value = '';
+      sendMessage(text);
     });
 
     // Enter trimite mesajul, Shift + Enter adaugă un rând nou.

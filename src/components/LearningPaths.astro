@@ -4,14 +4,16 @@
 // după nivel, iar laboratoarele sunt stații pătrate. Traseul ales se schimbă fără JavaScript (butoane radio și :has);
 // scriptul doar marchează paginile deja vizitate (salvate de src/components/starlight/Head.astro) și ține minte
 // traseul ales. Pe ecranele înguste harta este înlocuită de lista paginilor traseului ales.
+// Harta este desenată de două ori, cu coloanele la distanțe diferite, și se afișează cea care umple mai bine lățimea
+// disponibilă: o hartă mărită doar proporțional ar crește prea mult și în înălțime pe ecranele late.
 import { getCollection } from 'astro:content';
 import { LEVELS, type Level } from '../consts';
 import { LEARNING_PATHS, SHORT_LABELS } from '../learning-paths';
 import { pluralize } from '../utils/format';
 
 const PITCH = 184; // distanța dintre coloane
-// Distanța dintre stații, pe verticală. Cu ea, pe un ecran lat harta are cam înălțimea listei traseelor din stânga.
-const ROW = 83;
+const PITCH_WIDE = 250; // distanța dintre coloane pe ecranele late
+const ROW = 83; // distanța dintre stații, pe verticală
 const GAP = 7; // distanța dintre liniile care merg în paralel
 const R = 7; // raza unei stații
 const TOP = 24;
@@ -130,32 +132,38 @@ roots.forEach(collect);
 
 const columnOf = (n: number) => column.get(n) ?? 0;
 const stationColumn = (s: Station) => Math.min(...s.paths.map(columnOf));
-const x = (s: Station) => LEFT + stationColumn(s) * PITCH;
 const y = (s: Station) => TOP + s.depth * ROW;
 // Liniile unei stații stau una lângă alta, spre dreapta, în ordinea coloanelor lor.
 const offset = (n: number, s: Station) => (columnOf(n) - stationColumn(s)) * GAP;
 const stationWidth = (s: Station) => (s.paths.length - 1) * GAP;
 
-const route = (n: number, pages: string[]): string => {
-  const path = pages.map((id) => stations.get(id) as Station);
-  let d = `M${x(path[0]) + offset(n, path[0])} ${y(path[0])}`;
-  for (let i = 1; i < path.length; i++) {
-    const [a, b] = [path[i - 1], path[i]];
-    const [x1, x2, y2] = [x(a) + offset(n, a), x(b) + offset(n, b), y(b)];
-    if (x1 === x2) {
-      d += ` V${y2}`;
-      continue;
+// Desenul hărții pentru o distanță dată între coloane. Pe verticală, cele două desene sunt la fel.
+const draw = (pitch: number) => {
+  const x = (s: Station) => LEFT + stationColumn(s) * pitch;
+  const route = (n: number, pages: string[]): string => {
+    const path = pages.map((id) => stations.get(id) as Station);
+    let d = `M${x(path[0]) + offset(n, path[0])} ${y(path[0])}`;
+    for (let i = 1; i < path.length; i++) {
+      const [a, b] = [path[i - 1], path[i]];
+      const [x1, x2, y2] = [x(a) + offset(n, a), x(b) + offset(n, b), y(b)];
+      if (x1 === x2) {
+        d += ` V${y2}`;
+        continue;
+      }
+      // Cotul spre coloana nouă trece prin spațiul dintre rânduri. Liniile care pleacă împreună cotesc în arce cu
+      // același centru, ca să rămână paralele.
+      const rank = offset(n, b) / GAP;
+      const last = b.paths.length - 1;
+      const yRun = y(a) + RUN - rank * GAP;
+      const r1 = TURN + (last - rank) * GAP;
+      const r2 = TURN + rank * GAP;
+      d += ` V${yRun - r1} A${r1} ${r1} 0 0 0 ${x1 + r1} ${yRun} H${x2 - r2} A${r2} ${r2} 0 0 1 ${x2} ${yRun + r2} V${y2}`;
     }
-    // Cotul spre coloana nouă trece prin spațiul dintre rânduri. Liniile care pleacă împreună cotesc în arce cu
-    // același centru, ca să rămână paralele.
-    const rank = offset(n, b) / GAP;
-    const last = b.paths.length - 1;
-    const yRun = y(a) + RUN - rank * GAP;
-    const r1 = TURN + (last - rank) * GAP;
-    const r2 = TURN + rank * GAP;
-    d += ` V${yRun - r1} A${r1} ${r1} 0 0 0 ${x1 + r1} ${yRun} H${x2 - r2} A${r2} ${r2} 0 0 1 ${x2} ${yRun + r2} V${y2}`;
-  }
-  return d;
+    return d;
+  };
+  const labelX = (s: Station) => x(s) + stationWidth(s) + R + 9;
+  const width = Math.max(...ordered.map((s) => labelX(s) + LABEL_WIDTH));
+  return { x, route, labelX, width };
 };
 
 const paths = LEARNING_PATHS.map((path, index) => {
@@ -174,13 +182,17 @@ const paths = LEARNING_PATHS.map((path, index) => {
     end: list[list.length - 1],
     counts,
     levels: low === high ? low : `${low} → ${high}`,
-    d: route(number, path.pages),
   };
 });
 
-const labelX = (s: Station) => x(s) + stationWidth(s) + R + 9;
-const width = Math.max(...ordered.map((s) => labelX(s) + LABEL_WIDTH));
 const height = Math.max(...paths.map((p) => y(p.end) + 30 + 12));
+
+// Harta obișnuită crește până la mărimea ei naturală, cea lată puțin peste, ca să umple ecranele foarte late. Lățimea
+// maximă este în rem, ca să crească odată cu textul paginii.
+const maps = [
+  { name: 'harta-obisnuita', ...draw(PITCH), maxScale: 1 },
+  { name: 'harta-lata', ...draw(PITCH_WIDE), maxScale: 1.1 },
+];
 
 // Traseul ales este cel bifat. Liniile și stațiile celorlalte trasee se estompează.
 const selectionCss = paths
@@ -233,65 +245,75 @@ const selectionCss = paths
     </fieldset>
 
     <figure class='harta'>
-      <svg viewBox={`0 0 ${width} ${height}`}>
-        <title>Harta traseelor</title>
+      <svg class='definitii' aria-hidden='true'>
         <defs>
           <linearGradient id='harta-trasee-intermediar' x1='0' y1='0' x2='0' y2='1'>
             <stop offset='0.5' class='gol'></stop>
             <stop offset='0.5' class='plin'></stop>
           </linearGradient>
         </defs>
-        <g aria-hidden='true'>
-          {
-            paths.map((p) => (
-              <path class='ruta' d={p.d} data-trasee={p.number} style={`--linie: var(--sl-color-${p.color})`} />
-            ))
-          }
-          {
-            paths.map((p) => (
-              <g class='insigna-harta' data-trasee={p.number} style={`--linie: var(--sl-color-${p.color})`}>
-                <circle cx={x(p.end)} cy={y(p.end) + 30} r='9' />
-                <text x={x(p.end)} y={y(p.end) + 34.5} text-anchor='middle'>
-                  {p.number}
-                </text>
-              </g>
-            ))
-          }
-        </g>
-        {
-          ordered.map((s) => (
-            <a
-              class='statie'
-              href={s.href}
-              data-trasee={s.paths.join(' ')}
-              data-pagina={s.href}
-              data-prefix={s.lab}
-              data-nivel={s.level}
-              aria-label={[s.title, s.level && LEVELS[s.level], s.lab && 'laborator'].filter(Boolean).join(', ')}
-            >
-              <title>{s.description}</title>
-              <rect
-                class='semn'
-                x={x(s) - R}
-                y={y(s) - R}
-                width={stationWidth(s) + 2 * R}
-                height={2 * R}
-                rx={s.lab ? 3 : R}
-              />
-              <text class='eticheta' y={y(s) + 5 - ((s.label.length - 1) * LINE_HEIGHT) / 2}>
-                {s.label.map((line, i) => (
-                  <tspan x={labelX(s)} dy={i === 0 ? 0 : LINE_HEIGHT}>
-                    {line}
-                  </tspan>
-                ))}
-                <tspan class='bifa' dx='5'>
-                  ✓
-                </tspan>
-              </text>
-            </a>
-          ))
-        }
       </svg>
+      {
+        maps.map(({ name, x, route, labelX, width, maxScale }) => (
+          <svg
+            class={name}
+            viewBox={`0 0 ${width} ${height}`}
+            style={`--latime-maxima: ${+((width * maxScale) / 16).toFixed(2)}rem`}
+          >
+            <title>Harta traseelor</title>
+            {/* biome-ignore lint/a11y/noAriaHiddenOnFocusable: grupul are doar liniile și numerele traseelor, nimic focalizabil. */}
+            <g aria-hidden='true'>
+              {paths.map((p) => (
+                <path
+                  class='ruta'
+                  d={route(p.number, p.pages)}
+                  data-trasee={p.number}
+                  style={`--linie: var(--sl-color-${p.color})`}
+                />
+              ))}
+              {paths.map((p) => (
+                <g class='insigna-harta' data-trasee={p.number} style={`--linie: var(--sl-color-${p.color})`}>
+                  <circle cx={x(p.end)} cy={y(p.end) + 30} r='9' />
+                  <text x={x(p.end)} y={y(p.end) + 34.5} text-anchor='middle'>
+                    {p.number}
+                  </text>
+                </g>
+              ))}
+            </g>
+            {ordered.map((s) => (
+              <a
+                class='statie'
+                href={s.href}
+                data-trasee={s.paths.join(' ')}
+                data-pagina={s.href}
+                data-prefix={s.lab}
+                data-nivel={s.level}
+                aria-label={[s.title, s.level && LEVELS[s.level], s.lab && 'laborator'].filter(Boolean).join(', ')}
+              >
+                <title>{s.description}</title>
+                <rect
+                  class='semn'
+                  x={x(s) - R}
+                  y={y(s) - R}
+                  width={stationWidth(s) + 2 * R}
+                  height={2 * R}
+                  rx={s.lab ? 3 : R}
+                />
+                <text class='eticheta' y={y(s) + 5 - ((s.label.length - 1) * LINE_HEIGHT) / 2}>
+                  {s.label.map((line, i) => (
+                    <tspan x={labelX(s)} dy={i === 0 ? 0 : LINE_HEIGHT}>
+                      {line}
+                    </tspan>
+                  ))}
+                  <tspan class='bifa' dx='5'>
+                    ✓
+                  </tspan>
+                </text>
+              </a>
+            ))}
+          </svg>
+        ))
+      }
     </figure>
   </div>
 
@@ -528,10 +550,22 @@ const selectionCss = paths
   .harta svg {
     display: block;
     width: 100%;
-    max-width: 48rem;
+    max-width: var(--latime-maxima);
     height: auto;
     margin-inline: auto;
     overflow: visible;
+  }
+
+  /* Gradientul stațiilor intermediare, comun celor două hărți. Nu poate sta într-o hartă ascunsă (display: none),
+     pentru că atunci nu s-ar mai desena nici în cealaltă. */
+  .harta .definitii {
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+
+  .harta .harta-lata {
+    display: none;
   }
 
   .ruta {
@@ -664,6 +698,17 @@ const selectionCss = paths
 
     .legenda {
       justify-content: flex-end;
+    }
+  }
+
+  /* Coloana hărții are cel puțin 60rem: harta lată încape fără ca textul ei să devină prea mic. */
+  @container (min-width: 80rem) {
+    .harta .harta-obisnuita {
+      display: none;
+    }
+
+    .harta .harta-lata {
+      display: block;
     }
   }
 

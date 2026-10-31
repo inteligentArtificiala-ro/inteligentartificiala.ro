@@ -179,10 +179,11 @@ const pagini = (n: number) => pluralize(n, 'pagină', 'pagini');
     }
   }
 
-  /* De aici tema dă coloanei din dreapta lățimea conținutului, așa că o fixăm. */
+  /* De aici tema dă coloanei din dreapta lățimea conținutului, așa că o fixăm. Este aceeași coloană ca în secțiunile
+     de sub hero (HomeSection.astro). */
   @media (min-width: 72rem) {
     .hero > .sectiuni {
-      width: 22rem;
+      width: var(--acasa-coloana-dreapta);
     }
   }
 </style>
