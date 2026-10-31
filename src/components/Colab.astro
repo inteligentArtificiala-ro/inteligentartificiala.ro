@@ -68,6 +68,11 @@ const colab = `${SITE.repo.replace('https://github.com/', 'https://colab.researc
     font-family: var(--sl-font);
   }
 
+  /* La începutul paginii, butonul stă imediat sub titlu, fără spațiul de deasupra. */
+  .colab:first-child {
+    margin-top: 0;
+  }
+
   .deschidere {
     display: inline-flex;
     align-items: center;

@@ -6,6 +6,41 @@
   --sl-exquisitus-measure: 46rem;
 }
 
+/* Tot sistemul (text, bare, spații) este cu o treaptă mai mic decât în temă, care pornește de la 106,25% și crește
+   pe ecranele late. Pragurile sunt aceleași, ca textul să crească tot odată cu ecranul. */
+:root {
+  font-size: 100%;
+}
+
+@media (min-width: 100em) {
+  :root {
+    font-size: 106.25%;
+  }
+}
+
+@media (min-width: 125em) {
+  :root {
+    font-size: 112.5%;
+  }
+}
+
+@media (min-width: 135em) {
+  :root {
+    font-size: 125%;
+  }
+}
+
+/* Titlul paginii (cu reperele de sub el) și textul stau în două panouri, fiecare cu propriul spațiu interior, iar
+   spațiile se adunau. Între ele rămâne acum un singur spațiu, cât între două paragrafe. Se aplică doar paginilor cu
+   titlu, nu primei pagini, unde hero-ul și textul sunt în același panou. */
+.content-panel:has(> .sl-container > h1#_top) {
+  padding-bottom: 0;
+}
+
+.content-panel:has(> .sl-container > h1#_top) + .content-panel {
+  padding-top: 1.5rem;
+}
+
 /* Un registru sobru, de publicație academică: Source Sans 3 pentru titluri și interfață, Source Serif 4 pentru
    text, ambele găzduite pe domeniul site-ului (pachetele @fontsource-variable din astro.config.mjs). */
 :root {
