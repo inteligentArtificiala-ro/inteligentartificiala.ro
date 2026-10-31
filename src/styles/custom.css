@@ -241,21 +241,29 @@ site-search dialog {
   padding-block: 0.5rem;
 }
 
-/* Paginile de documentație (cu bara laterală) folosesc toată lățimea ecranului:
-   bara laterală stă lipită de marginea stângă, cuprinsul de cea dreaptă, iar textul
-   umple spațiul dintre ele. Pagina principală își păstrează compoziția centrată. */
+/* Toate paginile folosesc toată lățimea ecranului, iar bara de sus este aceeași peste tot, cu logo-ul și meniul
+   la margini. Pe paginile de documentație, bara laterală stă lipită de marginea stângă, cuprinsul de cea dreaptă,
+   iar textul umple spațiul dintre ele. Pe prima pagină, conținutul are aceleași margini ca bara de sus și se
+   centrează doar pe ecranele foarte late. */
 [data-has-sidebar] .page {
   --sl-content-width: 100%;
 }
 
+html:not([data-has-sidebar]) .page {
+  --sl-content-width: 110rem;
+}
+
 @media (min-width: 72rem) {
-  html[data-has-sidebar] {
+  :root {
     --sl-exquisitus-shell-inset: 0px;
-    /* Cuprinsul din dreapta („Pe această pagină”) primește mai mult loc decât cei 15rem ai temei. */
+  }
+
+  /* Cuprinsul din dreapta („Pe această pagină”) primește mai mult loc decât cei 15rem ai temei. */
+  html[data-has-sidebar] {
     --sl-exquisitus-toc-width: 20rem;
   }
 
-  html[data-has-sidebar] header.header {
+  header.header {
     padding-inline: var(--sl-nav-pad-x);
   }
 }

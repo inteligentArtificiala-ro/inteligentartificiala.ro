@@ -1,0 +1,197 @@
+---
+// Laboratoarele de pe prima pagină, fiecare cu notebookul Jupyter care conține tot codul lui: deschiderea în Google
+// Colab, fișierul pe GitHub și descărcarea. Laboratoarele vin din grupul „Laboratoare” al barei laterale
+// (astro.config.mjs), ca în meniul din Header.astro, deci un laborator nou apare aici automat. Nivelul vine din pagina
+// de introducere a laboratorului.
+import { getCollection } from 'astro:content';
+import type { StarlightRouteData } from '@astrojs/starlight/route-data';
+import { LEVELS } from '../consts';
+import { pluralize } from '../utils/format';
+import { colabUrl, githubUrl, notebookLaborator, verificaNotebook } from '../utils/notebooks';
+import ColabLogo from './ColabLogo.astro';
+
+type SidebarEntry = StarlightRouteData['sidebar'][number];
+type Link = Extract<SidebarEntry, { type: 'link' }>;
+
+const links = (entries: SidebarEntry[]): Link[] =>
+  entries.flatMap((e) => (e.type === 'link' ? [e] : links(e.entries)));
+
+const docs = new Map((await getCollection('docs')).map((d) => [d.id, d]));
+const grup = Astro.locals.starlightRoute.sidebar.find((e) => e.type === 'group' && e.label === 'Laboratoare');
+
+// În grupul „Laboratoare”, fiecare subgrup este un laborator, iar prima lui pagină este introducerea.
+const laboratoare = (grup?.type === 'group' ? grup.entries : []).flatMap((e) => {
+  if (e.type !== 'group') return [];
+  const pagini = links(e.entries);
+  if (pagini.length === 0) return [];
+  const id = pagini[0].href.replace(/^\/|\/$/g, '');
+  const notebook = notebookLaborator(id.split('/')[1]);
+  verificaNotebook(notebook);
+  return [
+    {
+      nume: e.label,
+      href: pagini[0].href,
+      nivel: docs.get(id)?.data.level,
+      pagini: pluralize(pagini.length, 'pagină', 'pagini'),
+      notebook,
+      fisier: notebook.split('/').at(-1),
+    },
+  ];
+});
+---
+
+<ul class='laboratoare not-content' data-pagefind-ignore>
+  {
+    laboratoare.map(({ nume, href, nivel, pagini, notebook, fisier }) => (
+      <li>
+        <div class='antet'>
+          <a class='nume' {href}>
+            {nume}
+          </a>
+          <span class='meta'>
+            {nivel && (
+              <span class='nivel' data-nivel={nivel}>
+                <span class='semn' aria-hidden='true' />
+                {LEVELS[nivel]}
+              </span>
+            )}
+            <span>{pagini}</span>
+          </span>
+        </div>
+        <div class='notebook'>
+          <code>{fisier}</code>
+          <span class='actiuni'>
+            <a class='colab' href={colabUrl(notebook)}>
+              <ColabLogo />
+              Colab<span class='sr-only'>: {nume}</span>
+            </a>
+            <a href={githubUrl(notebook)}>
+              GitHub<span class='sr-only'>: {nume}</span>
+            </a>
+            <a href={`/${notebook}`} download>
+              Descărcare<span class='sr-only'>: {nume}</span>
+            </a>
+          </span>
+        </div>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .laboratoare {
+    --cerneala: var(--sl-color-white);
+    --hartie: var(--sl-color-bg);
+    margin: 0;
+    padding: 0;
+    font-family: var(--sl-font);
+    list-style: none;
+    border-block: 1px solid var(--sl-color-hairline);
+  }
+
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.85rem 0;
+  }
+
+  li + li {
+    border-top: 1px solid var(--sl-color-hairline);
+  }
+
+  .antet,
+  .notebook {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+  }
+
+  .nume {
+    font-size: var(--sl-text-lg);
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--sl-color-white);
+    text-decoration: none;
+  }
+
+  .nume:hover,
+  .nume:focus-visible {
+    color: var(--sl-color-accent-high);
+  }
+
+  .meta {
+    display: inline-flex;
+    gap: 1rem;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+
+  .nivel {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  /* Semnele de nivel de pe hartă și de sub titlurile paginilor: gol, pe jumătate plin, plin. */
+  .semn {
+    box-sizing: border-box;
+    width: 0.7rem;
+    height: 0.7rem;
+    border: 2px solid var(--cerneala);
+    border-radius: 50%;
+    background: var(--hartie);
+  }
+
+  [data-nivel='intermediar'] > .semn {
+    background: linear-gradient(var(--hartie) 50%, var(--cerneala) 50%);
+  }
+
+  [data-nivel='avansat'] > .semn {
+    background: var(--cerneala);
+  }
+
+  .notebook code {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+  }
+
+  .actiuni {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 1.1rem;
+    font-size: var(--sl-text-sm);
+  }
+
+  .actiuni a {
+    color: var(--sl-color-gray-2);
+  }
+
+  .actiuni a:hover,
+  .actiuni a:focus-visible {
+    color: var(--sl-color-white);
+  }
+
+  .actiuni .colab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.15rem 0.7rem 0.15rem 0.35rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 999px;
+    color: var(--sl-color-white);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .actiuni .colab:hover,
+  .actiuni .colab:focus-visible {
+    border-color: var(--sl-color-accent);
+    background: var(--sl-color-accent-low);
+  }
+</style>

@@ -1,0 +1,55 @@
+---
+// O secțiune a primei pagini, după hero: textul, cu titlul, în stânga și un element în dreapta (slotul „alaturi”),
+// de exemplu lista laboratoarelor sau conversația cu modelul. Când nu au loc unul lângă altul, stau unul sub altul.
+interface Props {
+  id: string;
+  titlu: string;
+}
+
+const { id, titlu } = Astro.props;
+---
+
+<section class='sectiune-acasa' aria-labelledby={id}>
+  <div class='text'>
+    <h2 {id}>{titlu}</h2>
+    <slot />
+  </div>
+  <div class='alaturi'>
+    <slot name='alaturi' />
+  </div>
+</section>
+
+<style>
+  .sectiune-acasa {
+    display: grid;
+    gap: var(--sl-exquisitus-space-xl) var(--sl-exquisitus-space-4xl);
+    align-items: start;
+    margin-top: var(--sl-exquisitus-space-4xl);
+    padding-top: var(--sl-exquisitus-space-2xl);
+    border-top: 1px solid var(--sl-color-hairline);
+  }
+
+  .text {
+    max-width: var(--sl-exquisitus-measure);
+  }
+
+  .text > :global(:first-child) {
+    margin-top: 0;
+  }
+
+  h2 {
+    font-size: var(--sl-text-h3);
+  }
+
+  /* Butoanele au fontul interfeței, ca cele din hero, nu pe cel al textului. */
+  .text :global(.sl-link-button) {
+    font-family: var(--sl-font);
+  }
+
+  /* Elementul din dreapta are nevoie de mai mult loc decât textul. */
+  @media (min-width: 60rem) {
+    .sectiune-acasa {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+    }
+  }
+</style>

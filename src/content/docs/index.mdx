@@ -17,15 +17,27 @@ hero:
       variant: minimal
 ---
 
-import { Card } from '@astrojs/starlight/components';
-import FeatureGrid from 'starlight-theme-exquisitus/components/FeatureGrid.astro';
+import { LinkButton } from '@astrojs/starlight/components';
+import HomeSection from '@components/HomeSection.astro';
+import LabNotebooks from '@components/LabNotebooks.astro';
+import LlmChat from '@components/LlmChat.astro';
 
-<FeatureGrid layout="lead">
-  <Card title="De la concepte de bază la modele de limbaj mari" icon="open-book">
-    Pornim de la ce înseamnă **învățarea automată** (_machine learning_) și ajungem la arhitectura și funcționarea
-    sistemelor de tipul ChatGPT, Gemini, Grok sau Claude.
-  </Card>
-  <Card title="Laboratoare cu sursă deschisă pe GitHub" icon="github">
-    Codul complet al laboratoarelor este public, în organizația proiectului de pe [GitHub](https://github.com/inteligentArtificiala-ro), și poate fi clonat și rulat pe propriul calculator.
-  </Card>
-</FeatureGrid>
+<HomeSection id="laboratoare" titlu="Laboratoare cu sursă deschisă pe GitHub">
+  Codul complet al laboratoarelor este public, în organizația proiectului de pe [GitHub](https://github.com/inteligentArtificiala-ro), și poate fi clonat și rulat pe propriul calculator.
+
+  Fiecare laborator are și un notebook Jupyter, cu tot codul lui, care se deschide în [Google Colab](https://colab.research.google.com) și rulează pe serverele Google, fără nicio instalare pe propriul calculator.
+
+  <LinkButton href="/laboratoare/" icon="right-arrow">Toate laboratoarele</LinkButton>
+
+  <LabNotebooks slot="alaturi" />
+</HomeSection>
+
+<HomeSection id="model-in-browser" titlu="Un model de limbaj, direct în browser">
+  Modelul din această conversație rulează pe propriul calculator, nu pe un server. **SmolLM2 135M** are de peste 1.000 de ori mai puțini parametri decât GPT-3, iar biblioteca [Transformers.js](https://huggingface.co/docs/transformers.js) îl rulează pe placa grafică (WebGPU) sau pe procesor (WebAssembly). Răspunsul apare token cu token, pe măsură ce este generat.
+
+  În laboratorul despre modelele de limbaj locale facem același lucru în Python, pe propriul calculator: descărcăm de pe Hugging Face Hub un model cu ponderi deschise, apoi refacem pas cu pas tokenizarea, șablonul de chat și generarea.
+
+  <LinkButton href="/laboratoare/model-local-transformers/prezentare/" icon="right-arrow">Un model de limbaj local cu Transformers</LinkButton>
+
+  <LlmChat slot="alaturi" />
+</HomeSection>
