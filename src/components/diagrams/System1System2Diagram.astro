@@ -1,0 +1,71 @@
+---
+// Colaborarea dintre un model rapid de tip Sistem 1 și un LLM folosit ca Sistem 2: deciziile frecvente merg la modelul
+// rapid, iar cele în care acesta are încredere mică ajung la LLM.
+import '../../styles/diagrams.css';
+import Box from './Box.astro';
+---
+
+<figure class='diagram system1-system2-diagram'>
+  <div class='diagram-scroll'>
+    <svg viewBox='0 25 750 230' role='img' aria-labelledby='system1-system2-title system1-system2-desc'>
+      <title id='system1-system2-title'>Sistemul 1 decide repede, Sistemul 2 preia cazurile incerte</title>
+      <desc id='system1-system2-desc'>
+        Starea programului ajunge la un model de tip Sistem 1, care întoarce în zeci sau sute de milisecunde o decizie
+        tipizată și probabilitatea ei. Dacă încrederea este mare, decizia se aplică direct. Dacă este mică, decizia
+        ajunge la un LLM folosit ca Sistem 2, care raționează pas cu pas, în secunde sau minute.
+      </desc>
+      <defs>
+        <marker
+          id='system1-system2-arrow'
+          viewBox='0 0 10 10'
+          refX='9'
+          refY='5'
+          markerWidth='6'
+          markerHeight='6'
+          orient='auto-start-reverse'
+        >
+          <path d='M 0 0 L 10 5 L 0 10 z'></path>
+        </marker>
+      </defs>
+
+      <Box x={20} y={100} width={130} height={50} kind='neutral' lines={['Starea', 'programului']} />
+      <Box
+        x={190}
+        y={90}
+        width={160}
+        height={70}
+        kind='feed-forward'
+        lines={['Model de tip Sistem 1:', 'decizie tipizată', 'și probabilitate']}
+      />
+      <text class='label' x='270' y='180' text-anchor='middle'>zeci sau sute de milisecunde</text>
+
+      <polygon class='box highlight' points='430,93 482,125 430,157 378,125'></polygon>
+      <text x='430' y='122' text-anchor='middle'>încredere</text>
+      <text x='430' y='138' text-anchor='middle'>mare?</text>
+
+      <Box x={540} y={40} width={190} height={44} kind='norm' lines={['Decizia se aplică direct']} />
+      <Box x={540} y={170} width={190} height={54} kind='attention' lines={['LLM (Sistem 2):', 'raționează pas cu pas']} />
+      <text class='label' x='635' y='242' text-anchor='middle'>secunde sau minute</text>
+
+      <g class='arrow' marker-end='url(#system1-system2-arrow)'>
+        <path d='M150 125 H188'></path>
+        <path d='M350 125 H376'></path>
+        <path d='M430 93 V62 H538'></path>
+        <path d='M430 157 V197 H538'></path>
+      </g>
+      <text class='label' x='438' y='80'>da</text>
+      <text class='label' x='438' y='182'>nu</text>
+    </svg>
+  </div>
+  <figcaption>
+    Deciziile mărunte și frecvente merg la un model rapid de tip Sistem 1, apelat ca orice alt instrument. Când
+    încrederea lui este mică, decizia ajunge la LLM, care raționează pas cu pas, ca un Sistem 2.
+  </figcaption>
+</figure>
+
+<style>
+  .system1-system2-diagram svg {
+    min-width: 38rem;
+    max-width: 47rem;
+  }
+</style>

@@ -1,0 +1,84 @@
+---
+// Limitele unui sistem agentic: acțiunile propuse de model trec prin verificările harnașamentului și rulează doar
+// într-un container izolat (sandbox).
+import '../../styles/diagrams.css';
+import Box from './Box.astro';
+---
+
+<figure class='diagram agent-safeguards-diagram'>
+  <div class='diagram-scroll'>
+    <svg viewBox='0 20 760 250' role='img' aria-labelledby='agent-safeguards-title agent-safeguards-desc'>
+      <title id='agent-safeguards-title'>Limitele care protejează un sistem agentic</title>
+      <desc id='agent-safeguards-desc'>
+        Modelul propune o acțiune. Harnașamentul verifică bugetul de pași și de costuri, permite doar un set mic de
+        instrumente cu scheme stricte și cere confirmarea unui om, programatorul, pentru operațiile ireversibile. Abia
+        apoi acțiunea rulează, într-un container izolat (sandbox) care conține terminalul, fișierele proiectului și
+        comenzile de test și compilare, cu acces limitat la rețea și la datele sensibile.
+      </desc>
+      <defs>
+        <marker
+          id='agent-safeguards-arrow'
+          viewBox='0 0 10 10'
+          refX='9'
+          refY='5'
+          markerWidth='6'
+          markerHeight='6'
+          orient='auto-start-reverse'
+        >
+          <path d='M 0 0 L 10 5 L 0 10 z'></path>
+        </marker>
+      </defs>
+
+      <Box x={15} y={105} width={105} height={60} kind='attention' lines={['Modelul', 'propune o', 'acțiune']} />
+      <Box x={15} y={200} width={105} height={44} kind='neutral' lines={['Programatorul']} />
+
+      <rect class='group' x='165' y='30' width='245' height='230' rx='8'></rect>
+      <text class='title' x='287' y='52' text-anchor='middle'>Harnașament</text>
+      <Box x={180} y={66} width={215} height={46} kind='norm' lines={['Buget de pași', 'și de costuri']} />
+      <Box x={180} y={124} width={215} height={46} kind='feed-forward' lines={['Instrumente puține,', 'cu scheme stricte']} />
+      <Box
+        x={180}
+        y={182}
+        width={215}
+        height={60}
+        kind='output'
+        lines={['Confirmare umană pentru', 'operațiile ireversibile']}
+      />
+
+      <rect class='group' x='470' y='30' width='275' height='230' rx='8'></rect>
+      <text class='title' x='607' y='52' text-anchor='middle'>Container izolat (sandbox)</text>
+      <Box x={485} y={66} width={115} height={46} kind='neutral' lines={['Terminal']} />
+      <Box x={615} y={66} width={115} height={46} kind='neutral' lines={['Fișierele', 'proiectului']} />
+      <Box x={485} y={124} width={245} height={46} kind='neutral' lines={['Comenzi, teste, compilare']} />
+      <Box
+        x={485}
+        y={182}
+        width={245}
+        height={60}
+        kind='neutral'
+        dashed
+        lines={['Acces limitat la rețea', 'și la datele sensibile']}
+      />
+
+      <g class='arrow' marker-end='url(#agent-safeguards-arrow)'>
+        <path d='M120 135 H163'></path>
+        <path d='M120 222 H178' marker-start='url(#agent-safeguards-arrow)'></path>
+        <path d='M410 145 H468'></path>
+      </g>
+      <text class='label' x='149' y='214' text-anchor='middle'>aprobă</text>
+      <text class='label' x='439' y='137' text-anchor='middle'>permisă</text>
+    </svg>
+  </div>
+  <figcaption>
+    Fiecare acțiune propusă de model trece prin limitele harnașamentului: bugetul de pași și de costuri, un set mic de
+    instrumente și confirmarea unui om pentru operațiile ireversibile. Comenzile rulează apoi doar într-un container
+    izolat.
+  </figcaption>
+</figure>
+
+<style>
+  .agent-safeguards-diagram svg {
+    min-width: 40rem;
+    max-width: 48rem;
+  }
+</style>

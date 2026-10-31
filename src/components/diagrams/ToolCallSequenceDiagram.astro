@@ -1,0 +1,79 @@
+---
+// Apelul de instrumente ca diagramă de secvență: modelul, harnașamentul și instrumentul, cu mesajele dintre ei.
+import '../../styles/diagrams.css';
+import Box from './Box.astro';
+
+const MODEL = 115;
+const HARNESS = 350;
+const TOOL = 585;
+const messages = [
+  { from: HARNESS, to: MODEL, y: 95, label: 'promptul + schemele JSON' },
+  { from: MODEL, to: HARNESS, y: 145, label: 'apel: nume + argumente (JSON)' },
+  { from: HARNESS, to: TOOL, y: 190, label: 'execuție, după validare' },
+  { from: TOOL, to: HARNESS, y: 235, label: 'rezultat sau mesaj de eroare' },
+  { from: HARNESS, to: MODEL, y: 280, label: 'observație nouă în context' },
+];
+---
+
+<figure class='diagram tool-call-sequence-diagram'>
+  <div class='diagram-scroll'>
+    <svg viewBox='0 10 700 310' role='img' aria-labelledby='tool-call-sequence-title tool-call-sequence-desc'>
+      <title id='tool-call-sequence-title'>Mesajele unui apel de instrument</title>
+      <desc id='tool-call-sequence-desc'>
+        Harnașamentul îi trimite modelului promptul împreună cu schemele JSON ale instrumentelor. Apoi se repetă: modelul
+        întoarce un apel cu numele instrumentului și argumentele, harnașamentul îl validează și rulează instrumentul,
+        instrumentul întoarce un rezultat sau un mesaj de eroare, iar harnașamentul îl pune în context, ca observație
+        nouă pentru model.
+      </desc>
+      <defs>
+        <marker
+          id='tool-call-sequence-arrow'
+          viewBox='0 0 10 10'
+          refX='9'
+          refY='5'
+          markerWidth='6'
+          markerHeight='6'
+          orient='auto-start-reverse'
+        >
+          <path d='M 0 0 L 10 5 L 0 10 z'></path>
+        </marker>
+      </defs>
+
+      <Box x={MODEL - 75} y={20} width={150} height={40} kind='attention' lines={['Model']} />
+      <Box x={HARNESS - 75} y={20} width={150} height={40} kind='embedding' lines={['Harnașament']} />
+      <Box x={TOOL - 75} y={20} width={150} height={40} kind='feed-forward' lines={['Instrument (mediu)']} />
+
+      {[MODEL, HARNESS, TOOL].map((x) => <line class='viata' x1={x} y1='60' x2={x} y2='310' />)}
+
+      <rect class='group' x='25' y='110' width='650' height='190' rx='8'></rect>
+      <text class='title' x='37' y='128'>Se repetă</text>
+
+      <g class='arrow' marker-end='url(#tool-call-sequence-arrow)'>
+        {messages.map((m) => <path d={`M${m.from} ${m.y} H${m.to + (m.to > m.from ? -2 : 2)}`} />)}
+      </g>
+      {
+        messages.map((m) => (
+          <text class='label' x={(m.from + m.to) / 2} y={m.y - 7} text-anchor='middle'>
+            {m.label}
+          </text>
+        ))
+      }
+    </svg>
+  </div>
+  <figcaption>
+    Modelul doar descrie apelul. Harnașamentul îl validează, rulează instrumentul și pune rezultatul, inclusiv o
+    eventuală eroare, înapoi în context, iar modelul decide pe baza lui pasul următor.
+  </figcaption>
+</figure>
+
+<style>
+  .tool-call-sequence-diagram svg {
+    min-width: 36rem;
+    max-width: 44rem;
+  }
+
+  .viata {
+    stroke: var(--sl-color-gray-4);
+    stroke-dasharray: 4 4;
+  }
+</style>

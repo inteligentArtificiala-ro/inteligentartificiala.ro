@@ -1,0 +1,94 @@
+---
+// Orchestrarea unei sarcini: coordonatorul împarte planul în sarcini, două sarcini independente rulează în paralel la
+// subagenți, iar a treia pornește abia după ce coordonatorul are rezultatele lor.
+import '../../styles/diagrams.css';
+import Box from './Box.astro';
+---
+
+<figure class='diagram orchestration-diagram'>
+  <div class='diagram-scroll'>
+    <svg viewBox='0 4 760 304' role='img' aria-labelledby='orchestration-title orchestration-desc'>
+      <title id='orchestration-title'>Un coordonator și subagenții lui</title>
+      <desc id='orchestration-desc'>
+        Agentul coordonator scrie planul și îl împarte în sarcini. Sarcina 1, citirea documentației, și sarcina 2,
+        căutarea utilizărilor în cod, nu depind una de alta și pornesc deodată, la doi subagenți care lucrează în
+        paralel. Rezumatele lor se întorc la coordonator, care le combină și pornește abia apoi sarcina 3: modificarea
+        codului și rularea testelor. Rezultatul ei ajunge tot la coordonator, care scrie răspunsul final.
+      </desc>
+      <defs>
+        <marker
+          id='orchestration-arrow'
+          viewBox='0 0 10 10'
+          refX='9'
+          refY='5'
+          markerWidth='6'
+          markerHeight='6'
+          orient='auto-start-reverse'
+        >
+          <path d='M 0 0 L 10 5 L 0 10 z'></path>
+        </marker>
+      </defs>
+
+      <!-- Coordonatorul -->
+      <rect class='group' x='10' y='14' width='740' height='84' rx='8'></rect>
+      <text class='title' x='380' y='32' text-anchor='middle'>Agentul coordonator</text>
+      <Box x={25} y={42} width={130} height={44} kind='attention' lines={['Planul, împărțit', 'în sarcini']} />
+      <Box x={330} y={42} width={150} height={44} kind='attention' lines={['Combină', 'rezultatele']} />
+      <Box x={605} y={42} width={130} height={44} kind='attention' lines={['Răspunsul final']} />
+
+      <!-- Subagenții -->
+      <rect class='group' x='20' y='150' width='320' height='110' rx='8'></rect>
+      <text class='title' x='180' y='168' text-anchor='middle'>În paralel</text>
+      <Box
+        x={35}
+        y={180}
+        width={140}
+        height={54}
+        kind='feed-forward'
+        lines={['Sarcina 1: citește', 'documentația']}
+      />
+      <Box
+        x={185}
+        y={180}
+        width={140}
+        height={54}
+        kind='feed-forward'
+        lines={['Sarcina 2: caută', 'utilizările în cod']}
+      />
+      <Box
+        x={425}
+        y={180}
+        width={170}
+        height={54}
+        kind='norm'
+        lines={['Sarcina 3: modifică', 'codul și rulează testele']}
+      />
+
+      <g class='arrow' marker-end='url(#orchestration-arrow)'>
+        <path d='M60 86 V178'></path>
+        <path d='M140 86 V120 H255 V178'></path>
+        <path d='M105 234 V282 H400 V88'></path>
+        <path d='M325 207 H370 V88'></path>
+        <path d='M455 86 V178'></path>
+        <path d='M595 207 H660 V88'></path>
+      </g>
+
+      <text class='label' x='197' y='113' text-anchor='middle'>pornesc deodată</text>
+      <text class='label' x='250' y='298' text-anchor='middle'>doar rezumatele se întorc</text>
+      <text class='label' x='464' y='125'>pornește după ce</text>
+      <text class='label' x='464' y='139'>are rezultatele</text>
+      <text class='label' x='628' y='200' text-anchor='middle'>rezultat</text>
+    </svg>
+  </div>
+  <figcaption>
+    Sarcinile independente rulează în paralel, la subagenți care lucrează fiecare în propriul context. Sarcina care are
+    nevoie de rezultatele lor așteaptă până când coordonatorul le primește.
+  </figcaption>
+</figure>
+
+<style>
+  .orchestration-diagram svg {
+    min-width: 40rem;
+    max-width: 48rem;
+  }
+</style>

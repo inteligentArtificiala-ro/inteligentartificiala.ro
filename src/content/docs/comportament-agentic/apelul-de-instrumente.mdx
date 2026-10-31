@@ -10,6 +10,7 @@ tags:
   - Modele de limbaj mari (LLM)
 ---
 
+import ToolCallSequenceDiagram from '@components/diagrams/ToolCallSequenceDiagram.astro';
 import { Steps } from '@astrojs/starlight/components';
 
 Ca să poată acționa asupra lumii fizice sau digitale, un model de limbaj trebuie să știe ce instrumente are la dispoziție și cum le poate apela. Această capacitate se numește **apel de instrumente** (_tool calling_ sau _function calling_) și este pasul de acțiune din procesul [harnașamentului](/comportament-agentic/harnasamentul/).
@@ -52,6 +53,8 @@ Când decide că trebuie să facă ceva, modelul nu mai scrie text obișnuit, ci
 ```
 
 Modelul nu execută singur acțiunea. Harnașamentul citește blocul, rulează instrumentul și îi trimite modelului rezultatul, care devine observația de la pasul următor.
+
+<ToolCallSequenceDiagram />
 
 ## Categorii de instrumente
 

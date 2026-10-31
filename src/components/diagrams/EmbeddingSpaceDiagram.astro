@@ -1,0 +1,128 @@
+---
+// Un spațiu de reprezentări vectoriale proiectat în două dimensiuni (ilustrativ): cuvintele cu sens asemănător stau
+// aproape, iar relația dintre „bărbat” și „femeie” este aceeași direcție ca relația dintre „rege” și „regină”.
+import '../../styles/diagrams.css';
+
+interface Point {
+  word: string;
+  x: number;
+  y: number;
+  /** Eticheta stă la stânga punctului, nu la dreapta. */
+  left?: boolean;
+}
+
+const points: Point[] = [
+  { word: 'câine', x: 95, y: 82 },
+  { word: 'cățel', x: 128, y: 108 },
+  { word: 'pisică', x: 160, y: 70 },
+  { word: 'tastatură', x: 80, y: 222 },
+  { word: 'ecran', x: 128, y: 252 },
+  { word: 'rege', x: 380, y: 120, left: true },
+  { word: 'regină', x: 520, y: 120 },
+  { word: 'bărbat', x: 380, y: 232, left: true },
+  { word: 'femeie', x: 520, y: 232 },
+];
+---
+
+<figure class='diagram embedding-space-diagram'>
+  <div class='diagram-scroll'>
+    <svg viewBox='0 0 640 290' role='img' aria-labelledby='embedding-space-title embedding-space-desc'>
+      <title id='embedding-space-title'>Reprezentări vectoriale proiectate în două dimensiuni</title>
+      <desc id='embedding-space-desc'>
+        Cuvintele „câine”, „cățel” și „pisică” stau aproape unele de altele, departe de „tastatură” și „ecran”. În
+        dreapta, „rege”, „regină”, „bărbat” și „femeie” formează un paralelogram: săgeata de la „bărbat” la „femeie”
+        are aceeași direcție ca săgeata de la „rege” la „regină”, de unde relația rege − bărbat + femeie ≈ regină.
+      </desc>
+      <defs>
+        <marker
+          id='embedding-space-arrow'
+          viewBox='0 0 10 10'
+          refX='9'
+          refY='5'
+          markerWidth='6'
+          markerHeight='6'
+          orient='auto-start-reverse'
+        >
+          <path d='M 0 0 L 10 5 L 0 10 z'></path>
+        </marker>
+        <marker
+          id='embedding-space-arrow-accent'
+          viewBox='0 0 10 10'
+          refX='9'
+          refY='5'
+          markerWidth='6'
+          markerHeight='6'
+          orient='auto-start-reverse'
+        >
+          <path class='varf-accent' d='M 0 0 L 10 5 L 0 10 z'></path>
+        </marker>
+      </defs>
+
+      <rect class='cadru' x='10' y='10' width='620' height='270' rx='8'></rect>
+
+      <ellipse class='grup-sens' cx='130' cy='90' rx='85' ry='44'></ellipse>
+      <text class='label' x='130' y='154' text-anchor='middle'>sens asemănător, vectori apropiați</text>
+
+      <!-- Paralelogramul: aceeași direcție de la masculin la feminin, la două niveluri. -->
+      <g class='arrow' marker-end='url(#embedding-space-arrow)' stroke-dasharray='4 3'>
+        <path d='M380 226 V128'></path>
+        <path d='M520 226 V128'></path>
+      </g>
+      <g class='arrow analogie' marker-end='url(#embedding-space-arrow-accent)'>
+        <path d='M386 120 H511'></path>
+        <path d='M386 232 H511'></path>
+      </g>
+      <text class='label' x='450' y='172' text-anchor='middle'>aceeași direcție</text>
+      <text class='label' x='450' y='187' text-anchor='middle'>(masculin → feminin)</text>
+
+      <text class='math' x='450' y='50' text-anchor='middle'>rege − bărbat + femeie ≈ regină</text>
+
+      {
+        points.map((p) => (
+          <>
+            <circle class='punct' cx={p.x} cy={p.y} r='5' />
+            <text x={p.left ? p.x - 10 : p.x + 10} y={p.y + 4.5} text-anchor={p.left ? 'end' : 'start'}>
+              {p.word}
+            </text>
+          </>
+        ))
+      }
+    </svg>
+  </div>
+  <figcaption>
+    O proiecție ilustrativă în două dimensiuni. Cuvintele cu sens asemănător au vectori apropiați. În unele spații, de
+    exemplu în cel al modelului word2vec, drumul de la „bărbat” la „femeie” este aproape același cu drumul de la „rege”
+    la „regină”.
+  </figcaption>
+</figure>
+
+<style>
+  .embedding-space-diagram svg {
+    min-width: 34rem;
+    max-width: 40rem;
+  }
+
+  .cadru {
+    fill: none;
+    stroke: var(--sl-color-gray-5);
+  }
+
+  .grup-sens {
+    fill: color-mix(in oklab, var(--sl-color-purple) 10%, transparent);
+    stroke: var(--sl-color-purple);
+    stroke-dasharray: 5 4;
+  }
+
+  .punct {
+    fill: var(--sl-color-purple);
+  }
+
+  .analogie {
+    stroke: var(--sl-color-accent);
+    stroke-width: 2;
+  }
+
+  .varf-accent {
+    fill: var(--sl-color-accent);
+  }
+</style>

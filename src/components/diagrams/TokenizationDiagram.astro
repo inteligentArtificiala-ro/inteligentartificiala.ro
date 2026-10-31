@@ -1,0 +1,134 @@
+---
+// De la text la vectori: o expresie împărțită în tokenuri, ID-urile lor și căutarea fiecărui ID în matricea de
+// reprezentări vectoriale. Împărțirea și ID-urile sunt ilustrative; ID-ul 3847 și dimensiunile matricei (10.000 × 256)
+// sunt cele din exemplul paginii despre tokenizare.
+import '../../styles/diagrams.css';
+import Box from './Box.astro';
+
+const MATRIX = { x: 400, y: 60, width: 190, height: 180 };
+const VOCAB = 10000;
+const tokens = [
+  { text: 'învățare', id: 3847, y: 90 },
+  { text: 'autom', id: 5120, y: 150 },
+  { text: 'ată', id: 8634, y: 210 },
+];
+// Rândul unui ID în matrice, la înălțimea proporțională cu poziția lui în vocabular.
+const rowY = (id: number) => MATRIX.y + (id / VOCAB) * MATRIX.height;
+// Valorile vectorilor, desenate ca intensități. Sunt alese doar ca vectorii să arate diferit unul de altul.
+const values = [
+  [0.9, 0.3, 0.6, 0.15, 0.75, 0.4, 0.55, 0.2],
+  [0.35, 0.8, 0.2, 0.65, 0.3, 0.9, 0.45, 0.6],
+  [0.6, 0.45, 0.85, 0.3, 0.15, 0.7, 0.25, 0.8],
+];
+const CELL = 13;
+const VECTOR_X = 630;
+const gridRows = Array.from({ length: 14 }, (_, i) => MATRIX.y + (i + 1) * 12);
+---
+
+<figure class='diagram tokenization-diagram'>
+  <div class='diagram-scroll'>
+    <svg viewBox='0 20 770 250' role='img' aria-labelledby='tokenization-title tokenization-desc'>
+      <title id='tokenization-title'>De la text la vectori: tokenizarea și matricea de reprezentări vectoriale</title>
+      <desc id='tokenization-desc'>
+        Expresia „învățare automată” este împărțită în trei tokenuri: „învățare”, „autom” și „ată”. Fiecare token
+        primește ID-ul lui din vocabular (3847, 5120 și 8634). Fiecare ID alege un rând din matricea de reprezentări
+        vectoriale, care are 10.000 de rânduri și 256 de coloane, iar rândul ales este vectorul tokenului, cu 256 de
+        valori.
+      </desc>
+      <defs>
+        <marker
+          id='tokenization-arrow'
+          viewBox='0 0 10 10'
+          refX='9'
+          refY='5'
+          markerWidth='6'
+          markerHeight='6'
+          orient='auto-start-reverse'
+        >
+          <path d='M 0 0 L 10 5 L 0 10 z'></path>
+        </marker>
+      </defs>
+
+      <text class='title' x='77' y='42' text-anchor='middle'>Text</text>
+      <text class='title' x='220' y='42' text-anchor='middle'>Tokenuri</text>
+      <text class='title' x='327' y='42' text-anchor='middle'>ID-uri</text>
+      <text class='title' x={MATRIX.x + MATRIX.width / 2} y='42' text-anchor='middle'>Matricea de reprezentări</text>
+      <text class='title' x='690' y='42' text-anchor='middle'>Vectori</text>
+
+      <Box x={15} y={70} width={125} height={160} kind='neutral' lines={['„învățare', 'automată”']} />
+
+      <!-- Matricea: un rând pentru fiecare token din vocabular. -->
+      <rect class='box embedding' x={MATRIX.x} y={MATRIX.y} width={MATRIX.width} height={MATRIX.height} rx='6'></rect>
+      {
+        gridRows.map((y) => (
+          <line class='grila' x1={MATRIX.x} y1={y} x2={MATRIX.x + MATRIX.width} y2={y} />
+        ))
+      }
+      {
+        tokens.map((t) => (
+          <rect class='rand' x={MATRIX.x} y={rowY(t.id) - 4} width={MATRIX.width} height='8' />
+        ))
+      }
+
+      <g class='arrow' marker-end='url(#tokenization-arrow)'>
+        {
+          tokens.map((t) => (
+            <>
+              <path d={`M140 ${t.y} H173`} />
+              <path d={`M265 ${t.y} H288`} />
+              <path d={`M364 ${t.y} L${MATRIX.x - 2} ${rowY(t.id)}`} />
+              <path d={`M${MATRIX.x + MATRIX.width} ${rowY(t.id)} L${VECTOR_X - 4} ${t.y}`} />
+            </>
+          ))
+        }
+      </g>
+
+      {
+        tokens.map((t, i) => (
+          <>
+            <Box x={175} y={t.y - 17} width={90} height={34} kind='feed-forward' lines={[t.text]} />
+            <Box x={290} y={t.y - 17} width={74} height={34} kind='neutral' lines={[String(t.id)]} />
+            {values[i].map((v, j) => (
+              <rect class='celula' x={VECTOR_X + j * CELL} y={t.y - 8} width={CELL - 1} height='16' fill-opacity={v} />
+            ))}
+            <text x={VECTOR_X + values[i].length * CELL + 3} y={t.y + 5}>
+              …
+            </text>
+          </>
+        ))
+      }
+
+      <text class='label' x={MATRIX.x + MATRIX.width / 2} y='262' text-anchor='middle'>
+        10.000 de rânduri × 256 de coloane
+      </text>
+      <text class='label' x='690' y='262' text-anchor='middle'>câte 256 de valori</text>
+    </svg>
+  </div>
+  <figcaption>
+    Tokenizatorul împarte textul în tokenuri și înlocuiește fiecare token cu ID-ul lui din vocabular. ID-ul alege un
+    rând din matricea de reprezentări vectoriale, iar rândul ales este vectorul pe care îl primesc straturile modelului.
+    Împărțirea și ID-urile sunt ilustrative.
+  </figcaption>
+</figure>
+
+<style>
+  .tokenization-diagram svg {
+    min-width: 40rem;
+    max-width: 48rem;
+  }
+
+  .grila {
+    stroke: var(--sl-color-purple);
+    stroke-opacity: 0.25;
+    stroke-width: 1;
+  }
+
+  .rand {
+    fill: var(--sl-color-accent);
+    fill-opacity: 0.85;
+  }
+
+  .celula {
+    fill: var(--sl-color-purple);
+  }
+</style>

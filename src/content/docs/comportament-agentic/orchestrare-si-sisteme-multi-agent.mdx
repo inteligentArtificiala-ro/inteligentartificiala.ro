@@ -9,6 +9,8 @@ tags:
   - Modele de limbaj mari (LLM)
 ---
 
+import OrchestrationDiagram from '@components/diagrams/OrchestrationDiagram.astro';
+
 Cu cât o sarcină este mai mare, cu atât este mai greu să ținem toată activitatea într-o singură conversație, iar de la un moment dat nu se mai poate deloc. Motivele sunt două.
 
 - **Fereastra de context se umple repede.** Jurnalele lungi de compilare, fișierele mari și rezultatele intermediare ocupă mii de tokenuri. Costul crește, la fel și riscul ca modelul să piardă din vedere instrucțiunile de la început.
@@ -27,6 +29,8 @@ O variantă mai sigură este ca modelul să fie antrenat să producă **ieșire 
 Când o sarcină are nevoie de rezultatul alteia, cele două rulează în ordine, iar a doua așteaptă până se termină prima. De exemplu, agentul nu poate repara un test înainte să vadă mesajul de eroare. Sarcinile care nu depind una de alta pot rula în paralel. Sistemul poate porni pentru ele mai multe instanțe ale modelului, care lucrează în același timp, fiecare la partea ei. Una poate citi documentația unei biblioteci, în timp ce alta caută în cod locurile în care este folosită.
 
 Rezultatele se întorc apoi la coordonator, adică la agentul care a împărțit sarcina. Coordonatorul citește ce a primit, combină rezultatele și decide ce urmează: pornește sarcinile care așteptau aceste rezultate, cere o corectură sau scrie răspunsul final.
+
+<OrchestrationDiagram />
 
 ## Subagenți specializați (subagents)
 

@@ -1,0 +1,67 @@
+---
+// Pașii unui agent autonom de mentenanță, de la tichet la pull request, cu ciclul în care modifică codul până trece
+// testul care reproduce problema.
+import '../../styles/diagrams.css';
+import Box from './Box.astro';
+
+const WIDTH = 96;
+const STEP = 114;
+const steps = [
+  { lines: ['Tichet nou', 'pe GitHub'], kind: 'neutral' },
+  { lines: ['Ramură', 'separată'], kind: 'neutral' },
+  { lines: ['Caută', 'fișierele', 'relevante'], kind: 'feed-forward' },
+  { lines: ['Scrie un test', 'care eșuează'], kind: 'output' },
+  { lines: ['Modifică', 'codul'], kind: 'attention' },
+  { lines: ['Teste, tipuri', 'și linter'], kind: 'norm' },
+  { lines: ['Deschide un', 'pull request'], kind: 'highlight' },
+].map((s, i) => ({ ...s, x: 15 + i * STEP }));
+---
+
+<figure class='diagram ticket-to-pr-diagram'>
+  <div class='diagram-scroll'>
+    <svg viewBox='0 46 810 178' role='img' aria-labelledby='ticket-to-pr-title ticket-to-pr-desc'>
+      <title id='ticket-to-pr-title'>De la tichet la pull request</title>
+      <desc id='ticket-to-pr-desc'>
+        Agentul preia un tichet nou de pe GitHub și își creează o ramură separată. Pe această ramură caută fișierele
+        relevante, scrie un test care eșuează și reproduce problema, apoi modifică codul și rulează din nou testul, până
+        când acesta trece. La sfârșit rulează testele de regresie, verificatorul de tipuri și linterul, apoi deschide un
+        pull request.
+      </desc>
+      <defs>
+        <marker
+          id='ticket-to-pr-arrow'
+          viewBox='0 0 10 10'
+          refX='9'
+          refY='5'
+          markerWidth='6'
+          markerHeight='6'
+          orient='auto-start-reverse'
+        >
+          <path d='M 0 0 L 10 5 L 0 10 z'></path>
+        </marker>
+      </defs>
+
+      <rect class='group' x='233' y='56' width='458' height='158' rx='8'></rect>
+      <text class='title' x='462' y='75' text-anchor='middle'>Pe ramura de lucru</text>
+
+      {steps.map((s) => <Box x={s.x} y={92} width={WIDTH} height={56} kind={s.kind} lines={s.lines} />)}
+
+      <g class='arrow' marker-end='url(#ticket-to-pr-arrow)'>
+        {steps.slice(1).map((s) => <path d={`M${s.x - STEP + WIDTH} 120 H${s.x - 2}`} />)}
+        <path d={`M${steps[4].x + WIDTH / 2} 148 V178 H${steps[3].x + WIDTH / 2} V150`}></path>
+      </g>
+      <text class='label' x='462' y='196' text-anchor='middle'>rulează testul până trece</text>
+    </svg>
+  </div>
+  <figcaption>
+    Toată munca se face pe o ramură separată. Agentul modifică codul și rulează din nou testul care reproduce problema,
+    până când acesta trece, apoi verifică restul proiectului și deschide pull requestul.
+  </figcaption>
+</figure>
+
+<style>
+  .ticket-to-pr-diagram svg {
+    min-width: 44rem;
+    max-width: 50rem;
+  }
+</style>

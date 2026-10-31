@@ -9,7 +9,12 @@ tags:
   - Procesare limbaj natural
 ---
 
+import TokenizationDiagram from '@components/diagrams/TokenizationDiagram.astro';
+import EmbeddingSpaceDiagram from '@components/diagrams/EmbeddingSpaceDiagram.astro';
+
 Modelele de inteligență artificială nu înțeleg textul așa cum îl înțelegem noi. Ele lucrează doar cu numere. Pentru ca un model să poată procesa cuvinte, propoziții sau documente întregi, trebuie să transformăm textul în reprezentări numerice. Acest proces are două părți principale: **tokenizarea** (_tokenization_) și **reprezentările vectoriale** (_embeddings_).
+
+<TokenizationDiagram />
 
 ## Tokenizarea: de la text la ID-uri
 
@@ -76,6 +81,8 @@ Reprezentările vectoriale moderne au proprietăți surprinzătoare. Vectorii cu
 - **Cuvinte similare:** „câine” și „cățel” au vectori apropiați.
 - **Relații matematice:** în unele spații, de exemplu în cel al modelului word2vec, `vector("rege") - vector("bărbat") + vector("femeie")` ≈ `vector("regină")`.
 - **Context:** modelele moderne (BERT, GPT) produc reprezentări vectoriale contextuale, în care același cuvânt are vectori diferiți în contexte diferite.
+
+<EmbeddingSpaceDiagram />
 
 ## De la tokenizare la reprezentarea vectorială
 

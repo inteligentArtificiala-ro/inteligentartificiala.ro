@@ -9,6 +9,8 @@ tags:
   - Modele de limbaj mari (LLM)
 ---
 
+import AgentSafeguardsDiagram from '@components/diagrams/AgentSafeguardsDiagram.astro';
+
 Construirea unor agenți stabili și utili ridică probleme serioase de inginerie. Cele mai importante țin de securitatea mediului în care lucrează agentul și de controlul asupra pașilor pe care îi face.
 
 :::caution[Securitatea și izolarea mediului (sandboxing)]
@@ -20,6 +22,8 @@ Un agent care are acces la o consolă sau poate rula comenzi de sistem poate șt
 - **Bugete de pași și de costuri**: fără o limită de pași sau de apeluri API, un agent blocat poate consuma multe resurse degeaba. Orice execuție are nevoie de praguri maxime, stabilite dinainte.
 - **Instrumente puține și precise**: câteva [instrumente](/comportament-agentic/apelul-de-instrumente/) bine documentate, cu scheme stricte, dau rezultate mult mai stabile decât zeci de funcții complicate, cu roluri neclare.
 :::
+
+<AgentSafeguardsDiagram />
 
 Comportamentul agentic nu înlocuiește judecata programatorului, ci îl ajută să facă mai mult. Omul stabilește specificațiile și criteriile de calitate și urmărește direcția generală, iar agentul preia munca repetitivă de căutare, editare, compilare și depanare.
 

@@ -1,0 +1,89 @@
+---
+// Un asistent conversațional clasic (o întrebare, un răspuns) alături de un sistem agentic, care urmărește un obiectiv
+// printr-un ciclu de decizie, acțiune și observație.
+import '../../styles/diagrams.css';
+import Box from './Box.astro';
+---
+
+<figure class='diagram chat-vs-agent-diagram'>
+  <div class='diagram-scroll'>
+    <svg viewBox='0 10 760 275' role='img' aria-labelledby='chat-vs-agent-title chat-vs-agent-desc'>
+      <title id='chat-vs-agent-title'>Asistent conversațional și sistem agentic</title>
+      <desc id='chat-vs-agent-desc'>
+        În stânga, asistentul conversațional: utilizatorul trimite o întrebare, modelul răspunde cu text, într-un singur
+        pas, iar verificarea rămâne la utilizator. În dreapta, sistemul agentic: utilizatorul dă un obiectiv, modelul
+        decide pasul următor, apelează instrumente care acționează asupra mediului, citește rezultatele și erorile și
+        repetă ciclul până termină sarcina, apoi îi întoarce utilizatorului rezultatul final.
+      </desc>
+      <defs>
+        <marker
+          id='chat-vs-agent-arrow'
+          viewBox='0 0 10 10'
+          refX='9'
+          refY='5'
+          markerWidth='6'
+          markerHeight='6'
+          orient='auto-start-reverse'
+        >
+          <path d='M 0 0 L 10 5 L 0 10 z'></path>
+        </marker>
+      </defs>
+
+      <!-- Asistentul conversațional -->
+      <rect class='group' x='15' y='20' width='260' height='255' rx='8'></rect>
+      <text class='title' x='145' y='44' text-anchor='middle'>Asistent conversațional</text>
+      <Box x={30} y={70} width={85} height={44} kind='neutral' lines={['Utilizator']} />
+      <Box x={175} y={70} width={85} height={44} kind='attention' lines={['Model']} />
+      <Box
+        x={30}
+        y={150}
+        width={230}
+        height={64}
+        kind='neutral'
+        dashed
+        lines={['Un singur pas, doar text.', 'Utilizatorul verifică singur', 'și cere corecturi.']}
+      />
+
+      <!-- Sistemul agentic -->
+      <rect class='group' x='300' y='20' width='445' height='255' rx='8'></rect>
+      <text class='title' x='522' y='44' text-anchor='middle'>Sistem agentic</text>
+      <Box x={320} y={120} width={80} height={50} kind='neutral' lines={['Utilizator']} />
+      <Box x={480} y={62} width={150} height={44} kind='attention' lines={['Modelul decide', 'pasul următor']} />
+      <Box x={610} y={180} width={125} height={44} kind='feed-forward' lines={['Instrumente:', 'acțiuni în mediu']} />
+      <Box x={430} y={180} width={120} height={44} kind='norm' lines={['Observație:', 'rezultate, erori']} />
+
+      <g class='arrow' marker-end='url(#chat-vs-agent-arrow)'>
+        <path d='M115 84 H173'></path>
+        <path d='M175 100 H117'></path>
+
+        <path d='M400 150 H450 V96 H478'></path>
+        <path d='M480 72 H360 V118'></path>
+        <path d='M630 84 H672 V178'></path>
+        <path d='M610 202 H552'></path>
+        <path d='M500 180 V108'></path>
+      </g>
+
+      <text class='label' x='145' y='78' text-anchor='middle'>întrebare</text>
+      <text class='label' x='145' y='114' text-anchor='middle'>răspuns</text>
+
+      <text class='label' x='425' y='143' text-anchor='middle'>obiectiv</text>
+      <text class='label' x='420' y='64' text-anchor='middle'>rezultat final</text>
+      <text class='label' x='678' y='130'>apel de</text>
+      <text class='label' x='678' y='144'>instrument</text>
+      <text class='label' x='581' y='196' text-anchor='middle'>rezultat</text>
+      <text class='label' x='507' y='150'>înapoi în context</text>
+      <text class='label' x='582' y='252' text-anchor='middle'>se repetă până la terminarea sarcinii</text>
+    </svg>
+  </div>
+  <figcaption>
+    Asistentul conversațional răspunde o dată, cu text. Sistemul agentic primește un obiectiv și repetă ciclul de
+    decizie, acțiune și observație, corectându-se pe baza rezultatelor, până termină sarcina.
+  </figcaption>
+</figure>
+
+<style>
+  .chat-vs-agent-diagram svg {
+    min-width: 40rem;
+    max-width: 48rem;
+  }
+</style>

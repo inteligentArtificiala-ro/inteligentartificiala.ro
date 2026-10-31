@@ -9,9 +9,13 @@ tags:
   - Modele de limbaj mari (LLM)
 ---
 
+import ChatVsAgentDiagram from '@components/diagrams/ChatVsAgentDiagram.astro';
+
 Paginile anterioare au arătat cum [învățarea automată](/concepte-de-baza/ce-este-invatarea-automata/) descoperă tipare în date și cum [modelele de limbaj mari](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) (LLM) stau la baza unor [asistenți conversaționali](/concepte-de-baza/chatgpt-gemini-claude-grok-deepseek/) de tipul ChatGPT sau Claude. Într-o conversație obișnuită, modelul are un rol pasiv. Utilizatorul trimite o întrebare, iar modelul scrie un răspuns, într-un singur pas (_single-turn_). Dacă răspunsul conține o greșeală de calcul, un link inventat sau cod care nu compilează, utilizatorul trebuie să testeze singur, să găsească problema și să ceară o corectură.
 
 Cu **comportamentul agentic** (_agentic behavior_), lucrurile stau altfel. Un sistem agentic primește un obiectiv, nu doar o întrebare, și lucrează singur până îl atinge: explorează mediul de lucru, rulează comenzi, se uită la rezultate și își corectează pașii. Pentru asta, modelul singur nu ajunge. Este nevoie de un sistem construit în jurul lui, care lasă pașii să ruleze unul după altul sau în paralel și face ca un pas să aștepte rezultatul altuia atunci când depinde de el. Același sistem poate porni mai multe instanțe ale modelului deodată și îi dă acces la alte instrumente (_tools_), de la terminal la căutarea în fișiere. Ce întorc instrumentele ajunge înapoi la model, care înțelege rezultatul și decide pe baza lui pasul următor.
+
+<ChatVsAgentDiagram />
 
 De obicei, totul pornește de la un plan. Modelul scrie mai întâi planul, iar sistemul îl împarte în sarcini separate. Împărțirea poate fi foarte simplă, de exemplu tăierea textului planului la fiecare punct din listă. Sau poate fi mai sigură: modelul este antrenat să răspundă prin **ieșire structurată** (_structured output_), de exemplu JSON, pe care codul o citește fără ambiguități.
 
