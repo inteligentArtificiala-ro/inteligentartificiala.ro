@@ -8,6 +8,7 @@ tags:
   - Modele de difuzie
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import DiffusionProcessDiagram from '@components/diagrams/DiffusionProcessDiagram.astro';
 import Python from '@components/Python.astro';
 import { Steps } from '@astrojs/starlight/components';
@@ -29,15 +30,19 @@ Ideea a fost propusă în 2015 de Jascha Sohl-Dickstein și colegii săi și vin
 
 ## Procesul direct: cum se adaugă zgomotul
 
-Pentru calculator, o imagine este un șir de numere: intensitatea fiecărui pixel, pe fiecare canal de culoare. Notăm acest șir cu $x_0$ și îl scalăm în intervalul $[-1, 1]$. Imaginea cu zgomot de la pasul $t$, notată $x_t$, este o combinație între imaginea inițială și zgomot.
+Pentru calculator, o imagine este un șir de numere: intensitatea fiecărui pixel, pe fiecare canal de culoare. Notăm acest șir cu $x_0$ și îl scalăm în intervalul $[-1, 1]$. Imaginea cu zgomot de la pasul $t$, notată $x_t$, este o combinație între imaginea inițială și zgomot. Cu cât pasul este mai mare, cu atât din imagine rămâne mai puțin, iar la ultimul pas rămâne doar zgomot. Felul în care scade, de la un pas la altul, partea rămasă din imagine se numește **programul de zgomot** (_noise schedule_). DDPM folosea un program liniar, iar programul în formă de cosinus, propus în 2021 de Alex Nichol și Prafulla Dhariwal, păstrează mai multă informație în pașii de la mijloc.
+
+<DeepDive title="Procesul direct de adăugare a zgomotului">
 
 $$
 x_t = \sqrt{\bar\alpha_t}\, x_0 + \sqrt{1 - \bar\alpha_t}\, \varepsilon, \qquad \varepsilon \sim \mathcal{N}(0, I)
 $$
 
-Aici $\varepsilon$ este un vector de zgomot gaussian, de aceeași dimensiune cu imaginea, iar $\bar\alpha_t$ (citit „alfa barat”) este un număr între 0 și 1 care spune cât din imagine mai rămâne la pasul $t$. La $t = 0$, $\bar\alpha_0 \approx 1$ și avem imaginea originală. La $t = T$, $\bar\alpha_T \approx 0$ și avem doar zgomot. Felul în care scade $\bar\alpha_t$ de la un pas la altul se numește **programul de zgomot** (_noise schedule_). DDPM folosea un program liniar, iar programul în formă de cosinus, propus în 2021 de Alex Nichol și Prafulla Dhariwal, păstrează mai multă informație în pașii de la mijloc.
+Aici $\varepsilon$ este un vector de zgomot gaussian, de aceeași dimensiune cu imaginea, iar $\bar\alpha_t$ (citit „alfa barat”) este un număr între 0 și 1 care spune cât din imagine mai rămâne la pasul $t$. La $t = 0$, $\bar\alpha_0 \approx 1$ și avem imaginea originală. La $t = T$, $\bar\alpha_T \approx 0$ și avem doar zgomot. Programul de zgomot este felul în care scade $\bar\alpha_t$ de la un pas la altul.
 
-Formula are o proprietate importantă: putem sări direct la orice pas $t$, fără să calculăm pașii de dinainte. Asta face antrenarea eficientă, pentru că fiecare exemplu de antrenare poate folosi alt pas, ales la întâmplare.
+</DeepDive>
+
+Procesul direct are o proprietate importantă: putem sări dintr-odată la orice pas $t$, fără să calculăm pașii de dinainte. Asta face antrenarea eficientă, pentru că fiecare exemplu de antrenare poate folosi alt pas, ales la întâmplare.
 
 ## Antrenarea: rețeaua învață să recunoască zgomotul
 
@@ -49,16 +54,29 @@ Rețeaua, notată $\varepsilon_\theta$ (unde $\theta$ sunt parametrii ei), înva
 3. Calculăm imaginea cu zgomot $x_t$, cu formula procesului direct.
 4. Rețeaua primește $x_t$ și $t$ și estimează zgomotul, $\varepsilon_\theta(x_t, t)$.
 5. Comparăm estimarea cu zgomotul adevărat și ajustăm parametrii prin [retropropagare](/retele-neuronale/retropropagare/) și coborâre pe gradient, ca să micșorăm eroarea pătratică.
-   $$L = \left\lVert \varepsilon - \varepsilon_\theta(x_t, t) \right\rVert^2$$
+
+   <DeepDive title="Funcția de pierdere">
+
+   $$
+   L = \left\lVert \varepsilon - \varepsilon_\theta(x_t, t) \right\rVert^2
+   $$
+
+   </DeepDive>
 </Steps>
 
 Este o problemă obișnuită de regresie: rețeaua primește o intrare și învață să prezică un număr pentru fiecare pixel. Antrenarea este stabilă, spre deosebire de cea a rețelelor GAN, unde cele două rețele concurente se pot dezechilibra ușor.
 
-A estima zgomotul este echivalent cu a estima imaginea curată. Dacă știm $x_t$ și zgomotul estimat $\hat\varepsilon$, putem inversa formula procesului direct.
+A estima zgomotul este echivalent cu a estima imaginea curată.
+
+<DeepDive title="Imaginea curată, calculată din zgomotul estimat">
+
+Dacă știm $x_t$ și zgomotul estimat $\hat\varepsilon$, putem inversa formula procesului direct.
 
 $$
 \hat{x}_0 = \frac{x_t - \sqrt{1 - \bar\alpha_t}\, \hat\varepsilon}{\sqrt{\bar\alpha_t}}
 $$
+
+</DeepDive>
 
 DDPM și primele versiuni Stable Diffusion folosesc o rețea de tip **U-Net**, creată în 2015 pentru segmentarea imaginilor medicale. Ea micșorează imaginea în mai multe etape, apoi o mărește la loc, cu legături directe între nivelurile care au aceeași rezoluție. Modelele mai noi folosesc un [Transformer](/modele-lingvistice/arhitectura-transformer/), așa cum arată pagina despre [generarea imaginilor](/modele-de-difuzie/generarea-imaginilor/).
 
@@ -66,9 +84,13 @@ DDPM și primele versiuni Stable Diffusion folosesc o rețea de tip **U-Net**, c
 
 La generare pornim de la zgomot pur, $x_T \sim \mathcal{N}(0, I)$, și coborâm pas cu pas până la $t = 0$. La fiecare pas, rețeaua estimează zgomotul $\hat\varepsilon$, iar din el obținem o estimare a imaginii curate, $\hat x_0$. Apoi calculăm $x_{t-1}$, o imagine cu ceva mai puțin zgomot decât $x_t$, combinând cele două estimări în proporțiile potrivite pentru pasul $t - 1$.
 
+<DeepDive title="Un pas al procesului invers">
+
 $$
 x_{t-1} = \sqrt{\bar\alpha_{t-1}}\, \hat{x}_0 + \sqrt{1 - \bar\alpha_{t-1}}\, \hat\varepsilon
 $$
+
+</DeepDive>
 
 Aceasta este regula metodei **DDIM** (_denoising diffusion implicit models_, 2020), folosită și în exemplul de mai jos. Cu ea, generarea este deterministă: același zgomot inițial duce mereu la aceeași imagine. DDPM adaugă în plus, la fiecare pas, puțin zgomot nou, ales la întâmplare.
 
@@ -80,11 +102,15 @@ Ordinea în care apar detaliile are o explicație simplă. Când zgomotul este m
 
 Exemplul de mai jos rulează procesul direct și procesul invers pe un set de antrenare minuscul: patru desene de 7 × 7 pixeli, cu literele A, I, O și X. Pentru un set atât de mic nu avem nevoie de o rețea antrenată, pentru că putem calcula exact cea mai bună estimare a imaginii curate. Pentru o imagine cu zgomot $x_t$, calculăm cât de probabil este ca ea să provină din fiecare desen $x^{(i)}$, apoi facem media desenelor, ponderată cu aceste probabilități.
 
+<DeepDive title="Estimarea exactă pentru cele patru desene">
+
 $$
 p_i \propto \exp\left(-\frac{\lVert x_t - \sqrt{\bar\alpha_t}\, x^{(i)} \rVert^2}{2(1 - \bar\alpha_t)}\right), \qquad \hat{x}_0 = \sum_i p_i\, x^{(i)}
 $$
 
-Este răspunsul pe care l-ar da o rețea antrenată perfect pe aceste patru desene. Programul de zgomot este o variantă simplificată a celui în formă de cosinus, cu $T = 50$ de pași.
+</DeepDive>
+
+Media ponderată este răspunsul pe care l-ar da o rețea antrenată perfect pe aceste patru desene. Programul de zgomot este o variantă simplificată a celui în formă de cosinus, cu $T = 50$ de pași.
 
 <Python
   packages={['numpy']}
@@ -157,9 +183,13 @@ Exemplul arată și o limită. O estimare perfectă pentru un set de antrenare f
 
 Multe modele recente, precum Stable Diffusion 3 și FLUX.1, folosesc o metodă înrudită, numită **potrivirea fluxului** (_flow matching_), în varianta ei cea mai simplă, **fluxul rectificat** (_rectified flow_). Aici imaginea și zgomotul sunt legate printr-o linie dreaptă.
 
+<DeepDive title="Linia dreaptă dintre imagine și zgomot">
+
 $$
 x_t = (1 - t)\, x_0 + t\, \varepsilon, \qquad t \in [0, 1]
 $$
+
+</DeepDive>
 
 Rețeaua învață **viteza** (_velocity_) $v = \varepsilon - x_0$, adică direcția în care se schimbă $x_t$ atunci când $t$ crește. Generarea pornește de la zgomot, la $t = 1$, și se deplasează în pași mici în sens opus vitezei, până la $t = 0$. Pentru că drumurile dintre zgomot și imagini sunt aproape drepte, pot fi parcurse cu mai puțini pași. Principiul rămâne același: un proces fix care transformă datele în zgomot și o rețea care învață să-l inverseze.
 

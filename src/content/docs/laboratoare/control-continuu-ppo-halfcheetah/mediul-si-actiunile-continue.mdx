@@ -10,6 +10,7 @@ tags:
   - Control continuu
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import Python from '@components/Python.astro';
 
 În problemele clasice de [învățare prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/), agentul alege de obicei dintr-un set finit de acțiuni discrete: apasă o tastă într-un joc, trage una dintre cele trei manete ale unui automat sau, în cazul unui [model de limbaj](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/), alege un token din vocabular. În astfel de cazuri, rețeaua neuronală produce scoruri nenormalizate (_logits_), iar funcția softmax le transformă în probabilitatea fiecărei opțiuni.
@@ -49,11 +50,15 @@ Poziția absolută pe orizontală, $x$, lipsește intenționat din observația p
 
 ### Funcția de recompensă
 
-Agentul trebuie să înainteze cât mai repede pe axa $X$ și, în același timp, să consume cât mai puțină energie.
+Agentul trebuie să înainteze cât mai repede pe axa $X$ și, în același timp, să consume cât mai puțină energie. De aceea, recompensa de la fiecare pas are doi termeni: viteza de înaintare, din care se scade o penalizare pentru pătratul acțiunilor.
+
+<DeepDive title="Formula recompensei">
 
 $$
 r_t = v_{x, t} - 0{,}1 \cdot \sum_{i=1}^{6} a_{t, i}^2
 $$
+
+</DeepDive>
 
 :::tip[De ce penalizăm pătratul acțiunilor]
 Primul termen răsplătește viteza de înaintare, măsurată în metri pe secundă. Al doilea termen penalizează pătratul forței aplicate. Fără el, rețeaua ar putea trimite la fiecare pas impulsuri maxime, de $\pm 1$. Pe un robot real, asta ar distruge actuatoarele, iar în simulator ar produce mișcări necontrolate. Costul pătratic $\sum a_i^2$ încurajează mișcări fluide, eficiente din punct de vedere energetic.
@@ -65,23 +70,33 @@ Cum putem construi o [strategie stocastică](/invatare-prin-consolidare/ce-este-
 
 Soluția obișnuită este o **distribuție gaussiană multivariată diagonală** (_diagonal Gaussian distribution_). Rețeaua neuronală primește observația $s_t$ și prezice media acțiunilor, $\mu_\theta(s_t) \in \mathbb{R}^6$. Pe lângă medie, fiecare articulație $i$ are propria deviație standard, $\sigma_i = \exp(\log \sigma_i)$.
 
-Tratăm articulațiile ca independente, așa că densitatea de probabilitate a unei acțiuni continue $a \in \mathbb{R}^d$ este produsul densităților gaussiene unidimensionale, câte una pentru fiecare articulație:
+Tratăm articulațiile ca independente, așa că densitatea de probabilitate a unei acțiuni continue $a \in \mathbb{R}^d$ este produsul densităților gaussiene unidimensionale, câte una pentru fiecare articulație. Pentru optimizarea pe gradient avem nevoie de logaritmul natural al densității de probabilitate, numit de obicei **log-probabilitate** (_log-probability_).
+
+<DeepDive title="Densitatea și log-probabilitatea unei acțiuni">
 
 $$
 p(a \mid s) = \prod_{i=1}^{d} \frac{1}{\sqrt{2\pi \sigma_i^2}} \exp\left( -\frac{(a_i - \mu_i)^2}{2\sigma_i^2} \right)
 $$
 
-Pentru optimizarea pe gradient avem nevoie de logaritmul natural al densității de probabilitate, numit de obicei **log-probabilitate** (_log-probability_):
+Log-probabilitatea este logaritmul natural al acestei densități.
 
 $$
 \log \pi(a \mid s) = -\frac{1}{2} \sum_{i=1}^{d} \left( \frac{(a_i - \mu_i)^2}{\sigma_i^2} + 2\log \sigma_i + \log(2\pi) \right)
 $$
 
-**Entropia** distribuției ne spune cât de mare este incertitudinea strategiei și, implicit, cât de mult explorează agentul. Pentru o gaussiană multivariată diagonală, ea se calculează astfel:
+</DeepDive>
+
+**Entropia** distribuției ne spune cât de mare este incertitudinea strategiei și, implicit, cât de mult explorează agentul.
+
+<DeepDive title="Entropia gaussienei diagonale">
+
+Pentru o gaussiană multivariată diagonală, entropia se calculează astfel.
 
 $$
 H(\pi(\cdot \mid s)) = \frac{1}{2} \sum_{i=1}^{d} \left( 1 + \log(2\pi) + 2\log \sigma_i \right)
 $$
+
+</DeepDive>
 
 La începutul antrenării, $\sigma_i$ este mare (de regulă în jurul valorii $1{,}0$), așa că agentul încearcă comenzi foarte variate. Pe măsură ce antrenarea avansează, $\sigma_i$ scade, iar strategia devine tot mai concentrată și mai precisă în jurul mediei învățate $\mu(s)$.
 

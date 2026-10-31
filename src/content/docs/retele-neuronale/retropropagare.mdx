@@ -8,6 +8,7 @@ tags:
   - Rețele neuronale
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import BackpropDiagram from '@components/diagrams/BackpropDiagram.astro';
 import Python from '@components/Python.astro';
 import { Steps } from '@astrojs/starlight/components';
@@ -24,11 +25,15 @@ Fără un calcul eficient, am trebui să modificăm fiecare pondere pe rând, s�
 
 ## Regula lanțului
 
-Retropropagarea se bazează pe regula lanțului din calculul diferențial. Dacă o variabilă $y$ depinde de $u$, iar $u$ depinde de $x$, atunci derivata lui $y$ în raport cu $x$ este:
+Retropropagarea se bazează pe regula lanțului din calculul diferențial. Dacă o variabilă $y$ depinde de $u$, iar $u$ depinde de $x$, atunci derivata lui $y$ în raport cu $x$ este produsul derivatelor de pe cele două verigi ale lanțului.
+
+<DeepDive title="Formula regulii lanțului">
 
 $$
 \frac{dy}{dx} = \frac{dy}{du} \cdot \frac{du}{dx}
 $$
+
+</DeepDive>
 
 Într-o rețea neuronală, eroarea este capătul unui lanț de funcții: intrarea trece prin straturi și funcții de activare, iar ieșirea ultimului strat este comparată cu valoarea corectă. Regula lanțului ne permite să parcurgem acest lanț invers, câte o verigă pe rând.
 
@@ -49,6 +54,10 @@ Acum calculăm gradienții, pornind de la ieșire.
 
 #### Gradienții stratului de ieșire
 
+Pornim de la eroare, care depinde direct de predicție. Un singur pas al regulii lanțului ne dă apoi gradienții ponderilor $v_j$ și ai *bias*-ului $c$ din stratul de ieșire, dar și gradientul în raport cu ieșirea fiecărui neuron ascuns, de la care continuăm spre stratul ascuns.
+
+<DeepDive title="Calculul gradienților la ieșire">
+
 Eroarea depinde direct de predicție:
 
 $$
@@ -67,9 +76,15 @@ $$
 \frac{\partial L}{\partial a_j} = \frac{\partial L}{\partial \hat{y}} \cdot \frac{\partial \hat{y}}{\partial a_j} = (\hat{y} - y) \cdot v_j
 $$
 
+</DeepDive>
+
 #### Gradienții stratului ascuns
 
-Pentru ponderea $w_j$, care leagă intrarea de neuronul $j$, lanțul are încă două verigi:
+Pentru ponderea $w_j$, care leagă intrarea de neuronul $j$, lanțul continuă cu încă două verigi: funcția de activare și suma ponderată. La fel se calculează și gradientul pentru *bias*-ul $b_j$.
+
+<DeepDive title="Calculul gradienților în stratul ascuns">
+
+Pentru ponderea $w_j$, lanțul are încă două verigi:
 
 $$
 \frac{\partial L}{\partial w_j} = \frac{\partial L}{\partial a_j} \cdot \frac{\partial a_j}{\partial z_j} \cdot \frac{\partial z_j}{\partial w_j}
@@ -77,7 +92,9 @@ $$
 
 unde $\frac{\partial a_j}{\partial z_j} = f'(z_j)$ este derivata funcției de activare, iar $\frac{\partial z_j}{\partial w_j} = x$. Pentru *bias*, ultima verigă este $\frac{\partial z_j}{\partial b_j} = 1$, deci $\frac{\partial L}{\partial b_j} = \frac{\partial L}{\partial a_j} \cdot f'(z_j)$.
 
-Observăm că $\frac{\partial L}{\partial a_j}$ se calculează o singură dată și se refolosește pentru ambii parametri ai neuronului. La scară mică, aceasta este ideea care face retropropagarea eficientă.
+</DeepDive>
+
+Observăm că gradientul în raport cu ieșirea neuronului, $\frac{\partial L}{\partial a_j}$, se calculează o singură dată și se refolosește pentru ambii parametri ai neuronului. La scară mică, aceasta este ideea care face retropropagarea eficientă.
 
 ### Derivatele funcțiilor de activare
 
@@ -107,7 +124,9 @@ Valorile memorate la propagarea directă sunt folosite aici: $f'(z)$ are nevoie 
 
 ## Actualizarea parametrilor
 
-După ce au fost calculați toți gradienții, actualizăm parametrii cu coborârea pe gradient:
+După ce au fost calculați toți gradienții, actualizăm parametrii cu coborârea pe gradient. Fiecare parametru se mută puțin în sensul opus gradientului său, adică în sensul în care eroarea scade, iar mărimea pasului depinde de rata de învățare.
+
+<DeepDive title="Regula de actualizare a parametrilor">
 
 $$
 w \leftarrow w - \eta \frac{\partial L}{\partial w}
@@ -118,6 +137,8 @@ b \leftarrow b - \eta \frac{\partial L}{\partial b}
 $$
 
 unde $\eta$ este rata de învățare.
+
+</DeepDive>
 
 ## De ce este eficient
 
@@ -295,13 +316,19 @@ Valorile inițiale ale ponderilor influențează direct mărimea gradienților c
 
 ### Verificarea gradienților
 
-Când scriem retropropagarea de mână, o greșeală într-o derivată nu produce nicio eroare la rulare: rețeaua doar învață prost. De aceea, gradienții calculați se compară cu o aproximare numerică, obținută prin **diferențe finite** (_finite differences_):
+Când scriem retropropagarea de mână, o greșeală într-o derivată nu produce nicio eroare la rulare: rețeaua doar învață prost. De aceea, gradienții calculați se compară cu o aproximare numerică, obținută prin **diferențe finite** (_finite differences_). Ponderea este mărită și apoi micșorată cu o cantitate foarte mică, iar din cât se schimbă eroarea între cele două variante se obține o estimare a derivatei.
+
+<DeepDive title="Formula diferențelor finite">
 
 $$
 \frac{\partial L}{\partial w} \approx \frac{L(w + \varepsilon) - L(w - \varepsilon)}{2\varepsilon}
 $$
 
-unde $\varepsilon$ este un număr mic, de exemplu $10^{-5}$. Metoda se numește **verificarea gradienților** (_gradient checking_). Este lentă, pentru că are nevoie de două propagări directe pentru fiecare parametru, așa că o folosim doar ca test, pe rețele mici.
+unde $\varepsilon$ este un număr mic, de exemplu $10^{-5}$.
+
+</DeepDive>
+
+Metoda se numește **verificarea gradienților** (_gradient checking_). Este lentă, pentru că are nevoie de două propagări directe pentru fiecare parametru, așa că o folosim doar ca test, pe rețele mici.
 
 <Python
   code={`

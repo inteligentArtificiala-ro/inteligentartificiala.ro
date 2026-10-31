@@ -9,6 +9,7 @@ tags:
   - Învățare prin consolidare
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import PpoGrpoDiagram from '@components/diagrams/PpoGrpoDiagram.astro';
 import Python from '@components/Python.astro';
 
@@ -30,41 +31,59 @@ Recompensa poate veni de la un **model de recompensă** (_reward model_), antren
 
 ## Modelul de recompensă și RLHF
 
-În metoda **RLHF** (_reinforcement learning from human feedback_), descrisă de [Christiano și colaboratorii](https://arxiv.org/abs/1706.03741) în 2017 și folosită de OpenAI în 2022 pentru [InstructGPT](https://arxiv.org/abs/2203.02155), evaluatori umani compară câte două răspunsuri la același prompt și îl aleg pe cel mai bun. Pe aceste comparații se antrenează un model de recompensă $r_\phi$, de obicei tot un model de limbaj, cu un strat final care dă un singur număr.
+În metoda **RLHF** (_reinforcement learning from human feedback_), descrisă de [Christiano și colaboratorii](https://arxiv.org/abs/1706.03741) în 2017 și folosită de OpenAI în 2022 pentru [InstructGPT](https://arxiv.org/abs/2203.02155), evaluatori umani compară câte două răspunsuri la același prompt și îl aleg pe cel mai bun. Pe aceste comparații se antrenează un model de recompensă $r_\phi$, de obicei tot un model de limbaj, cu un strat final care dă un singur număr. Modelul învață să dea răspunsului preferat un scor mai mare decât celui respins.
+
+<DeepDive title="Pierderea modelului de recompensă">
 
 $$
 L(\phi) = -\log \sigma\big( r_\phi(x, y_w) - r_\phi(x, y_l) \big)
 $$
 
-unde $y_w$ este răspunsul preferat, $y_l$ cel respins, iar $\sigma$ este funcția sigmoidă. Pierderea este mică atunci când răspunsul preferat primește un scor clar mai mare. Apoi, modelul de recompensă ține locul evaluatorilor și poate nota milioane de răspunsuri, mult mai multe decât ar putea evalua oamenii de mână.
+unde $y_w$ este răspunsul preferat, $y_l$ cel respins, iar $\sigma$ este funcția sigmoidă. Pierderea este mică atunci când răspunsul preferat primește un scor clar mai mare.
+
+</DeepDive>
+
+Apoi, modelul de recompensă ține locul evaluatorilor și poate nota milioane de răspunsuri, mult mai multe decât ar putea evalua oamenii de mână.
 
 :::caution[Exploatarea recompensei]
 Modelul de limbaj poate învăța să obțină scoruri mari pe căi nedorite, de exemplu prin răspunsuri lungi sau exagerat de politicoase, dacă modelul de recompensă le favorizează. Fenomenul se numește **exploatarea recompensei** (_reward hacking_). Ca să-l limităm, obiectivul penalizează îndepărtarea de **modelul de referință** (_reference model_) $\pi_{\text{ref}}$, adică modelul de dinaintea acestei etape, printr-un termen proporțional cu divergența Kullback-Leibler (KL) dintre cele două distribuții.
+
+<DeepDive title="Obiectivul cu penalizarea KL">
 
 $$
 \max_\theta\ \mathbb{E}_{x,\ y \sim \pi_\theta}\Big[ r_\phi(x, y) - \beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)} \Big]
 $$
 
 Coeficientul $\beta$ stabilește cât de departe are voie să ajungă modelul nou față de cel inițial.
+
+</DeepDive>
 :::
 
 ## PPO
 
 **PPO** (_proximal policy optimization_) a fost propus în 2017 de [Schulman și colaboratorii](https://arxiv.org/abs/1707.06347), la OpenAI, și a fost metoda folosită pentru InstructGPT. Pornește de la gradientul strategiei (_policy gradient_), dar limitează cât se poate schimba strategia la o actualizare.
 
-Pentru fiecare token $t$ al unui răspuns se calculează raportul dintre probabilitatea tokenului sub noua strategie și sub cea care a generat răspunsul.
+Pentru fiecare token $t$ al unui răspuns se calculează raportul dintre probabilitatea tokenului sub noua strategie și sub cea care a generat răspunsul. Obiectivul PPO face mai probabile tokenurile cu avantaj pozitiv și mai puțin probabile pe cele cu avantaj negativ, dar, printr-o **decupare** (_clipping_), nu mai răsplătește schimbarea după ce raportul s-a îndepărtat de 1 cu mai mult de o marjă mică, de obicei 0,2.
+
+<DeepDive title="Funcția obiectiv PPO">
+
+Raportul se scrie astfel.
 
 $$
 \rho_t(\theta) = \frac{\pi_\theta(y_t \mid x, y_{<t})}{\pi_{\theta_{\text{old}}}(y_t \mid x, y_{<t})}
 $$
 
-Obiectivul cu **decupare** (_clipping_) are forma următoare.
+Obiectivul cu decupare are forma următoare.
 
 $$
 L^{\text{CLIP}}(\theta) = \mathbb{E}_t\Big[ \min\big( \rho_t(\theta)\, \hat{A}_t,\ \operatorname{clip}(\rho_t(\theta), 1 - \varepsilon, 1 + \varepsilon)\, \hat{A}_t \big) \Big]
 $$
 
-unde $\hat{A}_t$ este avantajul estimat, iar $\varepsilon$ este de obicei 0,2. Dacă un token are avantaj pozitiv, obiectivul crește cu probabilitatea lui, dar numai până când raportul ajunge la $1 + \varepsilon$. Peste această limită, gradientul devine zero, deci nu se mai câștigă nimic dacă strategia este împinsă mai departe. Pentru avantaje negative, limita este $1 - \varepsilon$. Datorită decupării, fiecare lot de răspunsuri poate fi folosit pentru mai mulți pași de actualizare fără ca strategia să se degradeze.
+unde $\hat{A}_t$ este avantajul estimat, iar $\varepsilon$ este de obicei 0,2. Dacă un token are avantaj pozitiv, obiectivul crește cu probabilitatea lui, dar numai până când raportul ajunge la $1 + \varepsilon$. Peste această limită, gradientul devine zero, deci nu se mai câștigă nimic dacă strategia este împinsă mai departe. Pentru avantaje negative, limita este $1 - \varepsilon$.
+
+</DeepDive>
+
+Datorită decupării, fiecare lot de răspunsuri poate fi folosit pentru mai mulți pași de actualizare fără ca strategia să se degradeze.
 
 Avantajele vin de la un **model de valoare** (_value model_), numit și critic, care estimează pentru fiecare token recompensa așteptată de acolo până la final. PPO le calculează de obicei cu metoda **GAE** (_generalized advantage estimation_), propusă tot de [Schulman și colaboratorii](https://arxiv.org/abs/1506.02438). Criticul este un model separat, de obicei de aceeași mărime cu modelul principal (strategia), care trebuie și el antrenat.
 
@@ -80,17 +99,27 @@ Avantajele vin de la un **model de valoare** (_value model_), numit și critic, 
 
 Pentru fiecare prompt $x$, strategia generează un grup de $G$ răspunsuri $y_1, \ldots, y_G$, care primesc recompensele $r_1, \ldots, r_G$. Avantajul fiecărui răspuns este recompensa lui normalizată în interiorul grupului.
 
+<DeepDive title="Avantajul în GRPO">
+
 $$
 \hat{A}_i = \frac{r_i - \operatorname{mean}(r_1, \ldots, r_G)}{\operatorname{std}(r_1, \ldots, r_G)}
 $$
 
-Același avantaj se folosește pentru toate tokenurile răspunsului $i$. Un răspuns mai bun decât media grupului devine mai probabil, iar unul mai slab devine mai puțin probabil. Media grupului joacă rolul liniei de bază din REINFORCE, fără să fie nevoie de un critic învățat.
+Același avantaj se folosește pentru toate tokenurile răspunsului $i$.
+
+</DeepDive>
+
+Un răspuns mai bun decât media grupului devine mai probabil, iar unul mai slab devine mai puțin probabil. Media grupului joacă rolul liniei de bază din REINFORCE, fără să fie nevoie de un critic învățat.
 
 Obiectivul păstrează decuparea din PPO. Penalizarea KL față de modelul de referință nu mai este scăzută din recompensă, ci adăugată direct în funcția de pierdere, cu o estimare a divergenței calculată pentru fiecare token.
+
+<DeepDive title="Estimarea divergenței KL">
 
 $$
 \mathbb{D}_{\text{KL}} = \frac{\pi_{\text{ref}}(y_t \mid \cdot)}{\pi_\theta(y_t \mid \cdot)} - \log \frac{\pi_{\text{ref}}(y_t \mid \cdot)}{\pi_\theta(y_t \mid \cdot)} - 1
 $$
+
+</DeepDive>
 
 Codul de mai jos calculează avantajele pentru un grup de șase răspunsuri, dintre care două corecte, și arată efectul decupării asupra obiectivului pentru un token.
 

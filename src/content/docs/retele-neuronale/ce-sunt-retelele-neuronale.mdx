@@ -8,6 +8,7 @@ tags:
   - Rețele neuronale
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import NeuralNetworkDiagram from '../../../components/NeuralNetworkDiagram.astro';
 import NeuronDemo from '../../../components/NeuronDemo.astro';
 import ReluGraph from '../../../components/ReluGraph.astro';
@@ -18,23 +19,31 @@ Când folosim rețele cu mai multe straturi ascunse, vorbim despre **învățare
 
 ## Definiție
 
-Un **neuron artificial** (_artificial neuron_) primește un vector de intrare $x_1, x_2, \ldots, x_n$. Fiecare intrare are o **pondere** (_weight_) $w_i$, care arată cât contează acea valoare. Primul pas este calculul sumei ponderate $z$.
+Un **neuron artificial** (_artificial neuron_) primește un vector de intrare $x_1, x_2, \ldots, x_n$. Fiecare intrare are o **pondere** (_weight_) $w_i$, care arată cât contează acea valoare. Primul pas este calculul sumei ponderate $z$. Neuronul înmulțește fiecare intrare cu ponderea ei, adună rezultatele și adaugă *bias*-ul, un număr care mută pragul de la care neuronul se activează.
+
+Rezultatul trece apoi printr-o **funcție de activare** (_activation function_), care adaugă calculului o transformare neliniară. Una dintre cele mai folosite este **funcția liniară rectificată** (_rectified linear unit_, ReLU).
+
+<DeepDive title="Calculul unui neuron">
+
+Suma ponderată se scrie astfel.
 
 $$
 z = \sum_{i=1}^{n} w_i x_i + b
 $$
 
-În formulă, $n$ este numărul de intrări, iar $b$ este *bias*-ul, un număr care mută pragul de la care neuronul se activează. Rezultatul trece apoi printr-o **funcție de activare** (_activation function_), care adaugă calculului o transformare neliniară.
+În formulă, $n$ este numărul de intrări, iar $b$ este *bias*-ul. Funcția de activare se aplică apoi sumei ponderate.
 
 $$
 a = f(z)
 $$
 
-unde $a$ este ieșirea neuronului, iar $f$ este funcția de activare aleasă. Una dintre cele mai folosite este **funcția liniară rectificată** (_rectified linear unit_, ReLU).
+unde $a$ este ieșirea neuronului, iar $f$ este funcția de activare aleasă. Pentru ReLU, funcția de activare este următoarea.
 
 $$
 \operatorname{ReLU}(z) = \max(0, z)
 $$
+
+</DeepDive>
 
 <ReluGraph />
 
@@ -62,13 +71,19 @@ Cât timp suma ponderată este negativă, ieșirea ReLU rămâne zero (neuronul 
 
 ## Cum învață o rețea neuronală
 
-La început, ponderile primesc valori mici, alese aleatoriu. Pentru fiecare exemplu din setul de antrenare, comparăm predicția rețelei cu valoarea corectă, cu ajutorul unei **funcții de pierdere** (_loss function_) $L$. Apoi ajustăm ponderile pas cu pas, astfel încât eroarea să scadă, prin **coborâre pe gradient** (_gradient descent_).
+La început, ponderile primesc valori mici, alese aleatoriu. Pentru fiecare exemplu din setul de antrenare, comparăm predicția rețelei cu valoarea corectă, cu ajutorul unei **funcții de pierdere** (_loss function_) $L$. Apoi ajustăm ponderile pas cu pas, astfel încât eroarea să scadă, prin **coborâre pe gradient** (_gradient descent_). Gradientul arată, pentru fiecare pondere, cum se schimbă eroarea când o modificăm, iar ponderea se mută puțin în sensul în care eroarea scade. Mărimea pasului este dată de **rata de învățare** (_learning rate_).
+
+<DeepDive title="Regula de actualizare a ponderilor">
 
 $$
 w \leftarrow w - \eta \frac{\partial L}{\partial w}
 $$
 
-În această regulă de actualizare, $w$ este ponderea pe care o ajustăm, $\eta$ este **rata de învățare** (_learning rate_), iar $\frac{\partial L}{\partial w}$ este gradientul, care arată în ce sens și cât de repede se schimbă eroarea când modificăm ponderea respectivă. În rețelele adânci, aceste derivate se calculează eficient pornind de la ieșire, înapoi spre primele straturi, cu algoritmul de [**retropropagare**](/retele-neuronale/retropropagare/) (_backpropagation_).
+În această regulă de actualizare, $w$ este ponderea pe care o ajustăm, $\eta$ este rata de învățare, iar $\frac{\partial L}{\partial w}$ este gradientul, care arată în ce sens și cât de repede se schimbă eroarea când modificăm ponderea respectivă.
+
+</DeepDive>
+
+În rețelele adânci, gradienții se calculează eficient pornind de la ieșire, înapoi spre primele straturi, cu algoritmul de [**retropropagare**](/retele-neuronale/retropropagare/) (_backpropagation_).
 
 :::note[Generalizare și evaluare corectă]
 O eroare mică la antrenare nu garantează că modelul generalizează, adică funcționează bine și pe date pe care nu le-a văzut. De aceea, modelul se evaluează mereu pe un **set de testare** (_test set_) separat, iar arhitectura și hiperparametrii se aleg astfel încât să evităm **supraînvățarea** (_overfitting_).

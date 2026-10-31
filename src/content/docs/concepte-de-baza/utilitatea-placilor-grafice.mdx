@@ -9,6 +9,7 @@ tags:
   - Concepte de bază
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import Python from '@components/Python.astro';
 
 Aproape toate modelele moderne de inteligență artificială, de la recunoașterea imaginilor până la [modelele de limbaj mari](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) (LLM), sunt antrenate și rulate pe un tip de procesor creat inițial pentru jocurile video, **placa grafică** (_graphics processing unit_, GPU). Accesul la plăci grafice a ajuns să decidă cât de mari pot fi modelele, cât costă antrenarea lor și cât de repede răspund. Pentru a înțelege de ce, trebuie să ne uităm la tipul de calcul pe care îl face o rețea neuronală.
@@ -23,9 +24,15 @@ O placă grafică a fost gândită să calculeze culoarea a milioane de pixeli d
 
 Un strat al unei [rețele neuronale](/retele-neuronale/ce-sunt-retelele-neuronale/) înmulțește vectorul de intrare cu o matrice de ponderi și adună un termen liber.
 
+<DeepDive title="Formula unui strat">
+
 $$
 \mathbf{y} = W\mathbf{x} + \mathbf{b}
 $$
+
+unde $\mathbf{x}$ este vectorul de intrare, $W$ este matricea de ponderi, $\mathbf{b}$ este termenul liber (_bias_), iar $\mathbf{y}$ este vectorul de ieșire al stratului.
+
+</DeepDive>
 
 Când rețeaua prelucrează un lot de exemple deodată, vectorii devin matrice, iar operația devine o **înmulțire de matrice**. Fiecare element al rezultatului este o sumă de produse care nu depinde de celelalte elemente, deci toate pot fi calculate în paralel. Un model de limbaj face, pentru fiecare token, aproximativ $2P$ operații în virgulă mobilă, unde $P$ este numărul de parametri, așa cum arată pagina despre [costul computațional](/modele-lingvistice/arhitectura-transformer/#costul-computațional). Pentru un model de 8 miliarde de parametri, asta înseamnă 16 miliarde de operații pentru un singur token.
 

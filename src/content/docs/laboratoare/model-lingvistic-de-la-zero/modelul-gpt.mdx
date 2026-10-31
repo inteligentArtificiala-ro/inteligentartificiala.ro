@@ -9,6 +9,7 @@ tags:
   - Transformer
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import Python from '@components/Python.astro';
 import SourceFile from '@components/SourceFile.astro';
 import { Steps } from '@astrojs/starlight/components';
@@ -90,11 +91,17 @@ După atenție, fiecare token trece separat printr-o rețea feed-forward cu un s
 
 Funcția de activare este **GELU** (_Gaussian error linear unit_), propusă în 2016 de [Hendrycks și Gimpel](https://arxiv.org/abs/1606.08415).
 
+<DeepDive title="Formula funcției GELU">
+
 $$
 \operatorname{GELU}(x) = x \cdot \Phi(x) = \frac{x}{2}\left(1 + \operatorname{erf}\frac{x}{\sqrt{2}}\right)
 $$
 
-unde $\Phi(x)$ este probabilitatea ca o variabilă cu distribuție normală standard să fie cel mult $x$, iar $\operatorname{erf}$ este funcția eroare. PyTorch are deja `F.gelu`, dar aici funcția este scrisă explicit, ca formula să se vadă în cod. Spre deosebire de ReLU, GELU este netedă și lasă să treacă puțin și din valorile negative apropiate de zero.
+unde $\Phi(x)$ este probabilitatea ca o variabilă cu distribuție normală standard să fie cel mult $x$, iar $\operatorname{erf}$ este funcția eroare.
+
+</DeepDive>
+
+PyTorch are deja `F.gelu`, dar aici funcția este scrisă explicit, ca formula să se vadă în cod. Spre deosebire de ReLU, GELU este netedă și lasă să treacă puțin și din valorile negative apropiate de zero.
 
 <Python
   code={String.raw`

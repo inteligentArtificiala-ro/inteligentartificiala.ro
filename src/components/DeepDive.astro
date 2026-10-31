@@ -1,0 +1,70 @@
+---
+/**
+ * Un detaliu opțional, strâns implicit: formula sau mecanismul din spatele unei idei explicate deja în text. Pagina se
+ * poate citi de la un capăt la altul fără el, iar cine vrea matematica o deschide.
+ *
+ * ```mdx
+ * import DeepDive from '@components/DeepDive.astro';
+ *
+ * <DeepDive title="Formula temperaturii">
+ *
+ * Text, formule $$…$$ și cod, ca în restul paginii (cu rânduri goale în jurul lor).
+ *
+ * </DeepDive>
+ * ```
+ *
+ * Căutarea din pagină a browserului deschide singură caseta când găsește ceva în ea, iar Pagefind îi indexează textul.
+ */
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<details class='deep-dive'>
+  <summary>
+    <span class='eticheta'>Pentru curioși</span>
+    <span class='titlu'>{title}</span>
+  </summary>
+  <div class='continut'>
+    <slot />
+  </div>
+</details>
+
+<style>
+  .deep-dive {
+    margin-block: 1.25rem;
+  }
+
+  /* Săgeata vine din stilurile Starlight pentru <summary> (::before). Centrat, ca să stea pe rândul textului. */
+  summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 0.6rem;
+    row-gap: 0.15rem;
+    cursor: pointer;
+    color: var(--sl-color-white);
+  }
+
+  .eticheta {
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sl-color-text-accent);
+  }
+
+  .titlu {
+    font-weight: 600;
+  }
+
+  /* Pe hârtie, caseta apare deschisă. */
+  @media print {
+    .deep-dive::details-content {
+      content-visibility: visible;
+      block-size: auto;
+    }
+  }
+</style>

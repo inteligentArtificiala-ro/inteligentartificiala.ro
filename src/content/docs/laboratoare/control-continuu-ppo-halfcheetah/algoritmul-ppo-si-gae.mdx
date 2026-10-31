@@ -10,6 +10,7 @@ tags:
   - Control continuu
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import Python from '@components/Python.astro';
 import SourceFile from '@components/SourceFile.astro';
 
@@ -19,17 +20,25 @@ Algoritmul **PPO** (_Proximal Policy Optimization_), propus în 2017 de John Sch
 
 ## Raportul de probabilități
 
-Fie $\pi_{\theta_{\text{vechi}}}$ strategia cu care am colectat cele mai recente traiectorii din mediu și $\pi_\theta$ noua strategie, pe care vrem să o optimizăm. Definim **raportul de probabilități** (_probability ratio_) $r_t(\theta)$ astfel:
+Fie $\pi_{\theta_{\text{vechi}}}$ strategia cu care am colectat cele mai recente traiectorii din mediu și $\pi_\theta$ noua strategie, pe care vrem să o optimizăm. **Raportul de probabilități** (_probability ratio_) $r_t(\theta)$ este probabilitatea pe care noua strategie o dă acțiunii $a_t$ în starea $s_t$, împărțită la probabilitatea pe care i-o dădea strategia veche.
+
+<DeepDive title="Formula raportului de probabilități">
+
+Definim raportul de probabilități $r_t(\theta)$ astfel.
 
 $$
 r_t(\theta) = \frac{\pi_\theta(a_t \mid s_t)}{\pi_{\theta_{\text{vechi}}}(a_t \mid s_t)} = \exp\left( \log \pi_\theta(a_t \mid s_t) - \log \pi_{\theta_{\text{vechi}}}(a_t \mid s_t) \right)
 $$
 
+</DeepDive>
+
 La începutul fiecărui ciclu de optimizare, $\theta = \theta_{\text{vechi}}$, deci raportul este exact $r_t(\theta) = 1$. Dacă noua strategie face acțiunea $a_t$ mai probabilă decât înainte, $r_t(\theta) > 1$. Dacă o face mai puțin probabilă, $r_t(\theta) < 1$.
 
 ## Funcția obiectiv tăiată (clipped surrogate objective)
 
-Dacă am maximiza direct produsul $r_t(\theta) \hat{A}_t$, schimbările mari ale lui $r_t(\theta)$ ar putea destabiliza strategia. De aceea, PPO folosește o **funcție obiectiv tăiată** (_clipped surrogate objective_), în care raportul este trunchiat la un interval în jurul lui 1:
+Dacă am maximiza direct produsul $r_t(\theta) \hat{A}_t$, schimbările mari ale lui $r_t(\theta)$ ar putea destabiliza strategia. De aceea, PPO folosește o **funcție obiectiv tăiată** (_clipped surrogate objective_), în care raportul este trunchiat la un interval în jurul lui 1, de obicei între 0,8 și 1,2. Cât timp raportul rămâne în acest interval, obiectivul este chiar produsul $r_t(\theta) \hat{A}_t$. Dacă o acțiune bună devine mai probabilă sau una slabă mai puțin probabilă decât permite intervalul, obiectivul nu mai crește, așa că strategia nu câștigă nimic dacă face un pas prea mare într-o singură iterație.
+
+<DeepDive title="Funcția obiectiv tăiată">
 
 $$
 \mathcal{L}^{CLIP}(\theta) = \hat{\mathbb{E}}_t \left[ \min\left( r_t(\theta)\hat{A}_t, \, \operatorname{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon)\hat{A}_t \right) \right]
@@ -41,6 +50,8 @@ Funcția `min` alege varianta mai pesimistă dintre obiectivul netrunchiat și c
 
 1. **Avantaj pozitiv ($\hat{A}_t > 0$)**: acțiunea a fost mai bună decât media. Vrem să-i creștem probabilitatea ($r_t > 1$). Însă dacă $r_t > 1+\epsilon$ (adică $r_t > 1{,}2$), termenul trunchiat devine $(1+\epsilon)\hat{A}_t$, care este mai mic decât $r_t \hat{A}_t$. Funcția `min` alege valoarea plafonată, iar gradientul devine zero. Astfel, strategia nu mai are niciun câștig dacă face un pas prea mare într-o singură iterație.
 2. **Avantaj negativ ($\hat{A}_t < 0$)**: acțiunea a fost mai slabă decât media. Vrem să-i scădem probabilitatea ($r_t < 1$). Dacă $r_t < 1-\epsilon$ (adică $r_t < 0{,}8$), termenul trunchiat devine $(1-\epsilon)\hat{A}_t$. Cum avantajul este negativ, acest termen este mai mic decât $r_t \hat{A}_t$, așa că funcția `min` îl alege pe el, iar gradientul devine din nou zero. Strategia nu câștigă nimic dacă scade prea mult probabilitatea acțiunii într-o singură iterație.
+
+</DeepDive>
 
 ### Vizualizare interactivă
 
@@ -75,19 +86,27 @@ Observăm că, pentru $\hat{A}_t = +1$, odată ce $r_t$ depășește $1{,}2$, ob
 
 Ca să știm cât de bună a fost o acțiune față de ce ne așteptam în medie în starea respectivă, avem nevoie de o estimare bună a [avantajului](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/#funcții-de-valoare) $A(s_t, a_t)$.
 
-Cea mai simplă estimare este eroarea de diferență temporală (_temporal difference_, TD) la un singur pas:
+Cea mai simplă estimare este eroarea de diferență temporală (_temporal difference_, TD) la un singur pas. Ea compară recompensa primită la acest pas, plus valoarea estimată a stării următoare, cu valoarea estimată a stării curente.
+
+<DeepDive title="Eroarea TD la un singur pas">
 
 $$
 \delta_t^V = r_{t+1} + \gamma V(s_{t+1}) - V(s_t)
 $$
 
+</DeepDive>
+
 Are o varianță mică, dar depinde mult de cât de precis este criticul $V(s)$. La polul opus, recompensa cumulată Monte Carlo, calculată pe toată traiectoria, este nedeplasată (_unbiased_), dar are o varianță foarte mare.
 
-**Estimarea generalizată a avantajului** (_Generalized Advantage Estimation_, GAE) face o interpolare între cele două extreme, cu ajutorul unui parametru de netezire suplimentar, $\lambda \in [0, 1]$:
+**Estimarea generalizată a avantajului** (_Generalized Advantage Estimation_, GAE) face o interpolare între cele două extreme, cu ajutorul unui parametru de netezire suplimentar, $\lambda \in [0, 1]$.
+
+<DeepDive title="Estimarea avantajului (GAE)">
 
 $$
 \hat{A}_t^{GAE(\gamma, \lambda)} = \sum_{l=0}^{\infty} (\gamma \lambda)^l \delta_{t+l}^V = \delta_t^V + \gamma \lambda \hat{A}_{t+1}^{GAE(\gamma, \lambda)}
 $$
+
+</DeepDive>
 
 - Când $\lambda = 0$, obținem eroarea TD la un singur pas, adică $\hat{A}_t = \delta_t^V$ (varianță minimă).
 - Când $\lambda = 1$, obținem suma Monte Carlo a recompenselor minus valoarea stării (fără deplasare).
@@ -96,7 +115,7 @@ $$
 În sarcini de control continuu precum HalfCheetah, combinația $\gamma = 0{,}99$ și $\lambda = 0{,}95$ oferă un echilibru bun între stabilitate și viteza de învățare. Avem nevoie de un $\gamma$ mare pentru că robotul trebuie să planifice mișcări cu efecte pe termen lung. Valoarea $\lambda = 0{,}95$ netezește avantajele fără deplasarea mare pe care o are estimarea TD la un singur pas.
 :::
 
-Datorită recurenței de mai sus, GAE se calculează foarte eficient, cu o singură trecere prin traiectorie, în ordine inversă (de la ultimul pas, $T-1$, până la pasul 0).
+Pentru că fiecare avantaj se obține din avantajul pasului următor, GAE se calculează foarte eficient, cu o singură trecere prin traiectorie, în ordine inversă (de la ultimul pas, $T-1$, până la pasul 0).
 
 ## Bufferul de traiectorii
 

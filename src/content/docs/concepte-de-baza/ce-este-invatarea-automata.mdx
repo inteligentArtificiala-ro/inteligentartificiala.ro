@@ -10,6 +10,7 @@ tags:
   - Învățare automată
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import Python from '@components/Python.astro';
 import { Steps } from '@astrojs/starlight/components';
 
@@ -67,13 +68,39 @@ Agentul alege o acțiune, observă cum se schimbă starea mediului și primește
 Antrenarea unui model are nevoie de trei lucruri: o formă pentru model, o măsură a erorii și o metodă prin care eroarea scade treptat.
 
 <Steps>
-1. **Modelul** este o familie de funcții care depind de niște parametri: **ponderile** ($w$) și un termen liber (_bias_, notat $b$). Cel mai simplu exemplu este o relație liniară.
-   $$\hat{y} = w \cdot x + b$$
-2. **Funcția de pierdere** (_loss function_) măsoară cât de departe este predicția $\hat{y}$ a modelului de valoarea reală $y$. Pentru regresie se folosește adesea eroarea pătratică medie.
-   $$L = \frac{1}{N} \sum_{i=1}^N (\hat{y}_i - y_i)^2$$
-3. **Optimizarea** pornește de la niște valori inițiale pentru $w$ și $b$ (de obicei aleatoare, uneori zero). Prin [coborâre pe gradient](/retele-neuronale/ce-sunt-retelele-neuronale/#cum-învață-o-rețea-neuronală), calculăm derivata pierderii în raport cu fiecare parametru și modificăm puțin ponderile în direcția în care pierderea scade.
-   $$w \leftarrow w - \eta \frac{\partial L}{\partial w}$$
-   unde $\eta$ este **rata de învățare** (_learning rate_).
+1. **Modelul** este o familie de funcții care depind de niște parametri: **ponderile** ($w$) și un termen liber (_bias_, notat $b$). Cel mai simplu exemplu este o relație liniară, în care predicția se obține înmulțind intrarea cu ponderea și adunând termenul liber.
+
+   <DeepDive title="Formula modelului liniar">
+
+   $$
+   \hat{y} = w \cdot x + b
+   $$
+
+   unde $x$ este intrarea, iar $\hat{y}$ este predicția modelului.
+
+   </DeepDive>
+2. **Funcția de pierdere** (_loss function_) măsoară cât de departe este predicția $\hat{y}$ a modelului de valoarea reală $y$. Pentru regresie se folosește adesea eroarea pătratică medie, adică media pătratelor diferențelor dintre predicții și valorile reale.
+
+   <DeepDive title="Eroarea pătratică medie">
+
+   $$
+   L = \frac{1}{N} \sum_{i=1}^N (\hat{y}_i - y_i)^2
+   $$
+
+   unde $N$ este numărul de exemple, iar $\hat{y}_i$ și $y_i$ sunt predicția și valoarea reală pentru exemplul $i$.
+
+   </DeepDive>
+3. **Optimizarea** pornește de la niște valori inițiale pentru $w$ și $b$ (de obicei aleatoare, uneori zero). Prin [coborâre pe gradient](/retele-neuronale/ce-sunt-retelele-neuronale/#cum-învață-o-rețea-neuronală), calculăm derivata pierderii în raport cu fiecare parametru și modificăm puțin ponderile în direcția în care pierderea scade. Mărimea acestor modificări este dată de **rata de învățare** (_learning rate_).
+
+   <DeepDive title="Regula de actualizare a ponderilor">
+
+   $$
+   w \leftarrow w - \eta \frac{\partial L}{\partial w}
+   $$
+
+   unde $\eta$ este rata de învățare.
+
+   </DeepDive>
 </Steps>
 
 ### Generalizarea și prevenirea supraînvățării

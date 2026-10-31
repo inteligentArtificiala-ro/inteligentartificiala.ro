@@ -1,0 +1,310 @@
+---
+// Titlul paginii, urmat de reperele cititorului: nivelul, timpul de lectură și, pentru paginile aflate pe un traseu
+// de pe prima pagină (src/learning-paths.ts), linia traseului, cu pagina curentă și pagina următoare. Semnele de nivel
+// și culorile liniilor sunt cele din harta traseelor (src/components/LearningPaths.astro).
+//
+// O pagină poate fi pe mai multe trasee (începutul lor comun). Se afișează traseul ales pe prima pagină, ținut minte
+// în localStorage („traseu-ales”), iar fără el primul traseu care trece prin pagină. Paginile unui laborator sunt pe
+// traseu prin pagina lui de început.
+import { getCollection } from 'astro:content';
+import { LEVELS } from '../../consts';
+import { LEARNING_PATHS } from '../../learning-paths';
+
+const { entry } = Astro.locals.starlightRoute;
+const { title, level } = entry.data as typeof entry.data & { level?: keyof typeof LEVELS };
+
+// Lectură cu aproximativ 200 de cuvinte pe minut, fără importuri, cod, formule afișate, componente și bibliografie.
+const proza = (entry.body ?? '')
+  .split(/^## Bibliografie/m)[0]
+  .replace(/^import .*$/gm, '')
+  .replace(/```[\s\S]*?```/g, '')
+  .replace(/\$\$[\s\S]*?\$\$/g, '')
+  .replace(/<[^>]+>/g, '');
+const cuvinte = proza.split(/\s+/).filter((w) => /\p{L}/u.test(w)).length;
+const minute = Math.max(1, Math.ceil(cuvinte / 200));
+
+const titluri = new Map((await getCollection('docs')).map((d) => [d.id, d.data.title]));
+const dosarLaborator = (id: string) => (id.startsWith('laboratoare/') ? `${id.split('/').slice(0, 2).join('/')}/` : undefined);
+
+const trasee = LEARNING_PATHS.flatMap((traseu, i) => {
+  const index = traseu.pages.findIndex((id) => {
+    const dosar = dosarLaborator(id);
+    return id === entry.id || (dosar !== undefined && entry.id.startsWith(dosar));
+  });
+  if (index < 0) return [];
+  const statii = traseu.pages.map((id) => ({
+    href: `/${id}/`,
+    titlu: titluri.get(id) ?? id,
+    prefix: dosarLaborator(id) && `/${dosarLaborator(id)}`,
+  }));
+  return [{ ...traseu, numar: i + 1, index, statii, urmatoarea: statii[index + 1] }];
+});
+
+// Rulează imediat după linii, înainte de afișare, ca traseul ales să apară fără să sară de la un traseu la altul.
+// O pagină aflată pe un singur traseu devine traseul ales, și pentru harta de pe prima pagină. Paginile vizitate vin
+// din src/components/starlight/Head.astro. Fără localStorage, rămâne vizibil primul traseu.
+const alegeTraseul = `try {
+  const repere = document.getElementById('repere');
+  const linii = [...repere.querySelectorAll('nav[data-traseu]')];
+  const ales = String(JSON.parse(localStorage.getItem('traseu-ales') ?? 'null'));
+  const afisat = linii.find((n) => n.dataset.traseu === ales) ?? linii[0];
+  for (const n of linii) n.hidden = n !== afisat;
+  if (linii.length === 1) localStorage.setItem('traseu-ales', linii[0].dataset.traseu);
+  repere.addEventListener('click', ({ target }) => {
+    const link = target instanceof Element && target.closest('[data-alege]');
+    if (link) localStorage.setItem('traseu-ales', link.dataset.alege);
+  });
+  const vizitate = JSON.parse(localStorage.getItem('pagini-vizitate') ?? '[]');
+  for (const li of repere.querySelectorAll('li[data-pagina]')) {
+    const { pagina, prefix } = li.dataset;
+    li.toggleAttribute('data-vizitata', prefix ? vizitate.some((p) => p.startsWith(prefix)) : vizitate.includes(pagina));
+  }
+} catch {}`;
+---
+
+<h1 id='_top'>{title}</h1>
+
+{
+  level && (
+    <div id='repere' class='repere' data-pagefind-ignore>
+      <p class='meta'>
+        <span class='nivel' data-nivel={level}>
+          <span class='semn' aria-hidden='true' />
+          {LEVELS[level]}
+        </span>
+        <span>Lectură: {minute} min</span>
+      </p>
+      {trasee.map((t, i) => (
+        <nav
+          class='traseu'
+          data-traseu={t.numar}
+          hidden={i > 0}
+          aria-label={`Traseul ${t.numar}: ${t.name}`}
+          style={`--linie: var(--sl-color-${t.color})`}
+        >
+          <p class='antet'>
+            <span class='insigna' aria-hidden='true'>
+              {t.numar}
+            </span>
+            <a class='nume' href='/' data-alege={t.numar}>
+              {t.name}
+            </a>
+            <span class='pozitie'>
+              {t.index + 1} din {t.statii.length}
+            </span>
+          </p>
+          <ol class='statii'>
+            {t.statii.map((s, j) => (
+              <li data-pagina={s.href} data-prefix={s.prefix} class:list={{ curenta: j === t.index, laborator: s.prefix }}>
+                <a href={s.href} title={s.titlu} aria-current={j === t.index ? 'step' : undefined}>
+                  <span class='ascuns'>{s.titlu}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+          {t.urmatoarea && (
+            <a class='urmatoarea' href={t.urmatoarea.href}>
+              Următoarea pagină: {t.urmatoarea.titlu} <span aria-hidden='true'>→</span>
+            </a>
+          )}
+        </nav>
+      ))}
+      <script is:inline set:html={alegeTraseul} />
+    </div>
+  )
+}
+
+<style>
+  h1 {
+    margin-top: 1rem;
+    font-size: var(--sl-text-h1);
+    line-height: var(--sl-line-height-headings);
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+
+  .repere {
+    --cerneala: var(--sl-color-white);
+    --hartie: var(--sl-color-bg);
+    margin-top: var(--sl-exquisitus-space-sm, 0.75rem);
+    font-family: var(--sl-exquisitus-font-register, var(--sl-font));
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    margin: 0;
+  }
+
+  .nivel {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--sl-color-gray-2);
+  }
+
+  /* Semnele de nivel din legenda hărții: gol, pe jumătate plin, plin. */
+  .semn {
+    box-sizing: border-box;
+    width: 0.75rem;
+    height: 0.75rem;
+    border: 2px solid var(--cerneala);
+    border-radius: 50%;
+    background: var(--hartie);
+  }
+
+  [data-nivel='intermediar'] > .semn {
+    background: linear-gradient(var(--hartie) 50%, var(--cerneala) 50%);
+  }
+
+  [data-nivel='avansat'] > .semn {
+    background: var(--cerneala);
+  }
+
+  /* Linia traseului */
+
+  .traseu {
+    display: grid;
+    gap: 0.6rem;
+    max-width: 34rem;
+    margin-top: var(--sl-exquisitus-space-md, 1rem);
+    padding: 0.75rem 1rem 0.85rem;
+    border: 1px solid var(--sl-color-hairline, var(--sl-color-gray-5));
+    border-inline-start: 3px solid var(--linie);
+    border-radius: 4px;
+  }
+
+  .traseu[hidden] {
+    display: none;
+  }
+
+  .antet {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 0;
+  }
+
+  .insigna {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    align-self: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    background: var(--linie);
+    /* Cerneală închisă în ambele moduri, ca pe hartă. */
+    color: oklch(0.2 0.015 80);
+    font-size: var(--sl-text-xs);
+    font-weight: 700;
+  }
+
+  .nume {
+    font-weight: 600;
+    color: var(--sl-color-white);
+    text-decoration: none;
+  }
+
+  .nume:hover,
+  .nume:focus-visible {
+    color: var(--sl-color-accent-high);
+    text-decoration: underline;
+  }
+
+  .pozitie {
+    margin-inline-start: auto;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .statii {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Linia dintre prima și ultima stație. */
+  .statii::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0.75rem;
+    top: 50%;
+    height: 3px;
+    margin-top: -1.5px;
+    background: var(--linie);
+    opacity: 0.55;
+  }
+
+  .statii a {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .statii a::before {
+    content: '';
+    box-sizing: border-box;
+    width: 0.7rem;
+    height: 0.7rem;
+    border: 2px solid var(--linie);
+    border-radius: 50%;
+    background: var(--hartie);
+  }
+
+  .statii .laborator a::before {
+    border-radius: 2px;
+  }
+
+  .statii [data-vizitata] a::before {
+    background: var(--linie);
+  }
+
+  .statii .curenta a::before {
+    width: 1.05rem;
+    height: 1.05rem;
+    border-width: 3px;
+    border-color: var(--cerneala);
+    background: var(--linie);
+  }
+
+  .statii a:hover::before,
+  .statii a:focus-visible::before {
+    border-color: var(--sl-color-accent-high);
+  }
+
+  .statii a:focus-visible {
+    outline: 2px solid var(--sl-color-accent);
+    outline-offset: 1px;
+    border-radius: 50%;
+  }
+
+  .ascuns {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .urmatoarea {
+    justify-self: start;
+    font-weight: 500;
+    color: var(--sl-color-text-accent);
+    text-decoration: none;
+  }
+
+  .urmatoarea:hover,
+  .urmatoarea:focus-visible {
+    text-decoration: underline;
+  }
+</style>

@@ -11,6 +11,7 @@ tags:
   - Evaluare AI
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import HallucinationDiagram from '../../../components/diagrams/HallucinationDiagram.astro';
 import { Steps } from '@astrojs/starlight/components';
 
@@ -52,13 +53,17 @@ Halucinațiile nu sunt simple „scăpări de memorie”. Ele vin direct din mat
 
 ### 1. Obiectivul de predicție a următorului token
 
-La [preantrenare](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/), modelul este antrenat să minimizeze **entropia încrucișată** (_cross-entropy_):
+La [preantrenare](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/), modelul este antrenat să minimizeze **entropia încrucișată** (_cross-entropy_).
+
+<DeepDive title="Entropia încrucișată">
 
 $$
 \mathcal{L}(\theta) = - \sum_{t=1}^n \log P_\theta(x_t \mid x_1, \ldots, x_{t-1})
 $$
 
 unde $x_t$ este tokenul curent, iar $x_1, \ldots, x_{t-1}$ sunt tokenurile dinaintea lui.
+
+</DeepDive>
 
 Cu alte cuvinte, modelul învață să facă textul cât mai probabil. Pierderea scade dacă, după cuvintele „Doctorul a prescris un tratament cu…”, modelul prezice un termen medical plauzibil. Modelul nu este recompensat pentru că ar verifica, într-o bază de date farmacologică, dacă substanța se potrivește bolii, ci doar pentru că alege un termen care apare des în contexte asemănătoare.
 
@@ -72,13 +77,17 @@ O imagine JPEG comprimată păstrează formele mari și culorile generale, dar p
 
 ### 3. Efectul de avalanșă în generarea autoregresivă
 
-Textul este generat pas cu pas, câte un token pe rând:
+Textul este generat pas cu pas, câte un token pe rând. La fiecare pas, modelul extrage următorul token din distribuția de probabilitate pe care a calculat-o, iar temperatura de eșantionare stabilește cât de des alege și variante mai puțin probabile.
+
+<DeepDive title="Eșantionarea unui token">
 
 $$
 x_t \sim \operatorname{softmax}\left(\frac{\mathbf{z}_t}{T}\right)
 $$
 
 unde $\mathbf{z}_t$ este vectorul de scoruri nenormalizate (_logits_), iar $T$ este temperatura de eșantionare.
+
+</DeepDive>
 
 Să presupunem că, la un pas $t$, modelul alege un token greșit, de exemplu un an greșit pentru un eveniment istoric. Cauza poate fi o temperatură mai mare decât zero sau pur și simplu incertitudinea statistică a modelului. Tokenul ales intră imediat în [fereastra de context](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#limitări).
 
@@ -199,13 +208,17 @@ Antrenarea cu [recompense verificabile](/modele-lingvistice/invatare-prin-consol
 
 ### 6. Monitorizarea entropiei și a încrederii interne
 
-În timpul generării, sistemul care servește modelul poate urmări entropia distribuției softmax pentru fiecare token:
+În timpul generării, sistemul care servește modelul poate urmări entropia distribuției softmax pentru fiecare token, adică cât de împrăștiată este probabilitatea între continuările posibile.
+
+<DeepDive title="Entropia distribuției">
 
 $$
 H(x_t) = -\sum_{i=1}^{|V|} p_i \log p_i
 $$
 
 unde $p_i$ este probabilitatea pe care modelul o dă tokenului $i$ din vocabularul $V$.
+
+</DeepDive>
 
 O entropie mare pe tokenurile care fac parte din entități numite (nume proprii, sume, date calendaristice) arată că modelul este nehotărât și oscilează între mai multe continuări. În astfel de momente, sistemul poate interveni automat: îi semnalează utilizatorului că încrederea este scăzută, scurtează răspunsul sau trimite o interogare unui motor de căutare, pentru verificare.
 

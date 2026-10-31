@@ -8,6 +8,7 @@ tags:
   - Modele de difuzie
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import LatentDiffusionDiagram from '@components/diagrams/LatentDiffusionDiagram.astro';
 
 Scriem „o pisică portocalie care doarme pe o bancă în Cișmigiu, pictată în acuarelă”, iar în câteva secunde primim o imagine care nu a existat până atunci. Cele mai multe generatoare de imagini, precum Stable Diffusion, FLUX, Imagen sau DALL·E 3, sunt construite pe un [model de difuzie](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/). La modelul de difuzie se adaugă trei piese: o comprimare a imaginii într-un spațiu mult mai mic, un model care înțelege textul și un mecanism care obligă generarea să urmeze textul.
@@ -28,13 +29,19 @@ Ca imaginea să urmeze descrierea, rețeaua care elimină zgomotul primește, pe
 
 Stable Diffusion 1.x folosește codificatorul de text al lui **CLIP**, un model publicat de OpenAI în 2021. CLIP a fost antrenat pe 400 de milioane de perechi de imagini și descrieri să aducă o imagine și descrierea ei în puncte apropiate ale aceluiași spațiu vectorial. Imagen (Google, 2022) a arătat că un codificator luat dintr-un model de limbaj antrenat doar pe text, T5-XXL, înțelege mai bine descrierile lungi și complicate, iar creșterea acestui codificator îmbunătățește imaginile mai mult decât creșterea modelului de difuzie. Stable Diffusion 3 folosește ambele tipuri de codificatoare.
 
-Legătura dintre text și imagine se face prin **atenție încrucișată** (_cross-attention_), o variantă a [mecanismului de atenție](/modele-lingvistice/avem-nevoie-doar-de-atentie/) în care interogările vin dintr-o secvență, iar cheile și valorile din alta.
+Legătura dintre text și imagine se face prin **atenție încrucișată** (_cross-attention_), o variantă a [mecanismului de atenție](/modele-lingvistice/avem-nevoie-doar-de-atentie/) în care interogările vin dintr-o secvență, iar cheile și valorile din alta. Aici, interogările vin din imagine, iar cheile și valorile din text.
+
+<DeepDive title="Formula atenției încrucișate">
 
 $$
 \operatorname{Attention}(Q, K, V) = \operatorname{softmax}\left(\frac{Q K^\top}{\sqrt{d_k}}\right) V, \qquad Q = h_{\text{img}} W_Q, \quad K = h_{\text{text}} W_K, \quad V = h_{\text{text}} W_V
 $$
 
-Interogările $Q$ vin din reprezentarea imaginii, $h_{\text{img}}$, iar cheile $K$ și valorile $V$ vin din vectorii textului, $h_{\text{text}}$. Fiecare zonă a imaginii caută astfel în text cuvintele care o privesc. Zona în care apare pisica se uită mai ales la „pisică” și la „portocalie”, iar fundalul la „bancă” și la „Cișmigiu”.
+Interogările $Q$ vin din reprezentarea imaginii, $h_{\text{img}}$, iar cheile $K$ și valorile $V$ vin din vectorii textului, $h_{\text{text}}$.
+
+</DeepDive>
+
+Fiecare zonă a imaginii caută astfel în text cuvintele care o privesc. Zona în care apare pisica se uită mai ales la „pisică” și la „portocalie”, iar fundalul la „bancă” și la „Cișmigiu”.
 
 ### Arhitectura rețelei
 
@@ -44,13 +51,19 @@ Stable Diffusion 3 (Stability AI, 2024) și FLUX.1 (Black Forest Labs, 2024, 12 
 
 ## Ghidarea fără clasificator
 
-O rețea condiționată de text urmează descrierea doar vag. Soluția folosită de aproape toate generatoarele este **ghidarea fără clasificator** (_classifier-free guidance_, CFG), propusă de Jonathan Ho și Tim Salimans în 2021. La antrenare, textul este înlocuit cu un text gol într-o mică parte din exemple (de obicei 10–20%), așa că aceeași rețea învață să elimine zgomotul și cu text, și fără. La generare, rețeaua este rulată de două ori la fiecare pas, iar cele două estimări ale zgomotului se combină.
+O rețea condiționată de text urmează descrierea doar vag. Soluția folosită de aproape toate generatoarele este **ghidarea fără clasificator** (_classifier-free guidance_, CFG), propusă de Jonathan Ho și Tim Salimans în 2021. La antrenare, textul este înlocuit cu un text gol într-o mică parte din exemple (de obicei 10–20%), așa că aceeași rețea învață să elimine zgomotul și cu text, și fără. La generare, rețeaua este rulată de două ori la fiecare pas, iar cele două estimări ale zgomotului se combină. Diferența dintre ele arată ce schimbă textul în imagine, iar ghidarea o înmulțește cu **scala de ghidare** (_guidance scale_), notată $w$.
+
+<DeepDive title="Formula ghidării fără clasificator">
 
 $$
 \tilde\varepsilon = \varepsilon_\theta(x_t, t, \varnothing) + w \left( \varepsilon_\theta(x_t, t, c) - \varepsilon_\theta(x_t, t, \varnothing) \right)
 $$
 
-Aici $c$ este textul, $\varnothing$ este textul gol, iar $w$ este **scala de ghidare** (_guidance scale_). Diferența dintre cele două estimări arată ce schimbă textul în imagine, iar o valoare $w > 1$ amplifică această schimbare. Pentru Stable Diffusion, valoarea implicită este $w = 7{,}5$. O valoare prea mică duce la imagini care ignoră o parte din descriere, iar una prea mare la culori exagerate și la un aspect artificial. Pentru că rețeaua rulează de două ori, ghidarea dublează și costul fiecărui pas.
+Aici $c$ este textul, $\varnothing$ este textul gol, iar $w$ este scala de ghidare.
+
+</DeepDive>
+
+O valoare $w > 1$ amplifică schimbarea adusă de text. Pentru Stable Diffusion, valoarea implicită este $w = 7{,}5$. O valoare prea mică duce la imagini care ignoră o parte din descriere, iar una prea mare la culori exagerate și la un aspect artificial. Pentru că rețeaua rulează de două ori, ghidarea dublează și costul fiecărui pas.
 
 **Promptul negativ** (_negative prompt_) folosește același mecanism. Textul gol $\varnothing$ este înlocuit cu o descriere a ceea ce nu vrem să apară, de exemplu „neclar, text, degete în plus”, iar generarea este împinsă în direcția opusă acestei descrieri. Laboratorul despre difuzie scrie formula ghidării [în Python](/laboratoare/difuzie-imagini-si-sunete/imagini-din-text/#generarea-cu-ghidarea-fără-clasificator), pentru Stable Diffusion 1.5, și compară imaginile obținute cu mai multe valori ale scalei.
 

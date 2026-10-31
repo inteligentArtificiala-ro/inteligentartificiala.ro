@@ -11,6 +11,7 @@ tags:
   - Sisteme agentice
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import RagToolCallingDiagram from '../../../components/diagrams/RagToolCallingDiagram.astro';
 import { Steps } from '@astrojs/starlight/components';
 
@@ -71,9 +72,17 @@ Documentele lungi (manuale tehnice, contracte, arhive de cod) nu pot fi trimise 
 
 ### 2. Reprezentarea vectorială (embeddings)
 
-Fiecare fragment trece printr-un model specializat de reprezentare vectorială (_embedding model_), care transformă textul într-un vector numeric de dimensiune fixă, de exemplu un șir de 1.536 de numere reale:
+Fiecare fragment trece printr-un model specializat de reprezentare vectorială (_embedding model_), care transformă textul într-un vector numeric de dimensiune fixă, de exemplu un șir de 1.536 de numere reale.
 
-$$\vec{v} = \operatorname{Embed}(\text{fragment}) \in \mathbb{R}^d$$
+<DeepDive title="Vectorul unui fragment">
+
+$$
+\vec{v} = \operatorname{Embed}(\text{fragment}) \in \mathbb{R}^d
+$$
+
+unde $d$ este dimensiunea vectorului, de exemplu 1.536.
+
+</DeepDive>
 
 Partea utilă a acestui spațiu vectorial este că textele cu înțeles apropiat ajung aproape unele de altele, chiar dacă folosesc cuvinte diferite. De exemplu, _„eroare de rețea”_ și _„conexiune întreruptă”_ au vectori orientați aproape în aceeași direcție.
 
@@ -83,8 +92,19 @@ Vectorii tuturor fragmentelor sunt salvați într-o **bază de date vectorială*
 
 <Steps>
 1. **Vectorizarea întrebării**: și întrebarea este transformată într-un vector $\vec{q}$.
-2. **Calculul asemănării**: baza de date calculează **asemănarea cosinus** (_cosine similarity_) dintre vectorul întrebării și vectorii tuturor fragmentelor.
-   $$\operatorname{sim}(\vec{q}, \vec{v}) = \frac{\vec{q} \cdot \vec{v}}{\|\vec{q}\| \|\vec{v}\|}$$
+2. **Calculul asemănării**: baza de date calculează **asemănarea cosinus** (_cosine similarity_) dintre vectorul întrebării și vectorii tuturor fragmentelor. Scorul este cu atât mai mare cu cât cei doi vectori sunt orientați mai aproape de aceeași direcție, adică cu cât textele au înțelesuri mai apropiate.
+
+   <DeepDive title="Asemănarea cosinus">
+
+   Asemănarea cosinus este cosinusul unghiului dintre cei doi vectori.
+
+   $$
+   \operatorname{sim}(\vec{q}, \vec{v}) = \frac{\vec{q} \cdot \vec{v}}{\|\vec{q}\| \|\vec{v}\|}
+   $$
+
+   unde $\vec{q} \cdot \vec{v}$ este produsul scalar al vectorilor, iar $\|\vec{q}\|$ și $\|\vec{v}\|$ sunt lungimile lor.
+
+   </DeepDive>
 3. **Selecția contextului**: sistemul păstrează cele mai relevante $k$ fragmente, de exemplu primele 3–5 pasaje cu scorul cel mai mare.
 </Steps>
 

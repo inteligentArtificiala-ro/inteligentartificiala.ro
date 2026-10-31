@@ -8,6 +8,7 @@ tags:
   - Învățare prin consolidare
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import AgentEnvironmentDiagram from '@components/diagrams/AgentEnvironmentDiagram.astro';
 
 **Învățarea prin consolidare** (_reinforcement learning_, RL) este ramura [învățării automate](/concepte-de-baza/ce-este-invatarea-automata/) în care un sistem învață din consecințele propriilor decizii. Nu primește răspunsul corect pentru fiecare exemplu, ca în **învățarea supervizată** (_supervised learning_), ci doar un semnal numeric care arată cât de bună a fost o decizie. Semnalul poate veni și cu întârziere. De exemplu, o mutare dintr-un joc se dovedește bună sau proastă abia la final.
@@ -24,33 +25,49 @@ Dacă starea următoare și recompensa depind doar de starea și de acțiunea cu
 
 ## Recompensa cumulată
 
-Agentul nu urmărește doar recompensa imediată, ci suma recompenselor viitoare. **Recompensa cumulată** (_return_) de la pasul $t$ se calculează astfel.
+Agentul nu urmărește doar recompensa imediată, ci suma recompenselor viitoare. **Recompensa cumulată** (_return_) de la pasul $t$ adună recompensele care urmează, dar cele mai îndepărtate în timp contează mai puțin, în funcție de un **factor de actualizare** (_discount factor_) cuprins între 0 și 1.
+
+<DeepDive title="Formula recompensei cumulate">
+
+Recompensa cumulată de la pasul $t$ se calculează astfel.
 
 $$
 G_t = r_{t+1} + \gamma\, r_{t+2} + \gamma^2 r_{t+3} + \ldots = \sum_{k=0}^{\infty} \gamma^k r_{t+k+1}
 $$
 
-unde $\gamma \in [0, 1]$ este **factorul de actualizare** (_discount factor_). Cu $\gamma$ apropiat de 0, agentul ține cont aproape numai de recompensele imediate. Cu $\gamma$ apropiat de 1, recompensele îndepărtate contează aproape la fel de mult. Pentru episoade de lungime finită se poate folosi și $\gamma = 1$.
+unde $\gamma \in [0, 1]$ este factorul de actualizare. Cu $\gamma$ apropiat de 0, agentul ține cont aproape numai de recompensele imediate. Cu $\gamma$ apropiat de 1, recompensele îndepărtate contează aproape la fel de mult. Pentru episoade de lungime finită se poate folosi și $\gamma = 1$.
+
+</DeepDive>
 
 ## Strategia de decizie (Policy)
 
 Felul în care agentul își alege acțiunile se numește **strategie de decizie** (_policy_). O strategie stocastică dă, pentru fiecare stare, o distribuție de probabilitate peste acțiunile posibile.
 
+Scopul învățării este să găsim o strategie care maximizează recompensa cumulată așteptată, socotită de la începutul episodului.
+
+<DeepDive title="Strategia și obiectivul învățării">
+
 $$
 \pi(a \mid s) = P(a_t = a \mid s_t = s)
 $$
 
-Scopul învățării este să găsim o strategie care maximizează recompensa cumulată așteptată, socotită de la începutul episodului.
-
 $$
 J(\pi) = \mathbb{E}_{\pi}\left[ G_0 \right]
 $$
+
+unde $\pi(a \mid s)$ este probabilitatea ca agentul să aleagă acțiunea $a$ în starea $s$, $J(\pi)$ este recompensa cumulată așteptată de la începutul episodului, iar $\mathbb{E}_{\pi}$ este media peste episoadele generate urmând strategia $\pi$.
+
+</DeepDive>
 
 Când strategia este o rețea neuronală cu parametrii $\theta$, o notăm $\pi_\theta$. Rețeaua primește starea și dă probabilitățile acțiunilor, la fel cum un [model de limbaj](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) primește un context și dă probabilitățile tokenului următor.
 
 ## Funcții de valoare
 
 O **funcție de valoare** (_value function_) estimează cât de bună este o situație, adică ce recompensă cumulată poate aștepta agentul de acolo înainte, dacă urmează strategia $\pi$.
+
+$V^{\pi}(s)$ este valoarea unei stări. $Q^{\pi}(s, a)$ este valoarea alegerii acțiunii $a$ în starea $s$, după care agentul continuă să urmeze strategia $\pi$. Diferența dintre ele se numește **avantaj** (_advantage_).
+
+<DeepDive title="Funcțiile de valoare și avantajul">
 
 $$
 V^{\pi}(s) = \mathbb{E}_{\pi}\left[ G_t \mid s_t = s \right]
@@ -60,11 +77,13 @@ $$
 Q^{\pi}(s, a) = \mathbb{E}_{\pi}\left[ G_t \mid s_t = s,\ a_t = a \right]
 $$
 
-$V^{\pi}(s)$ este valoarea unei stări. $Q^{\pi}(s, a)$ este valoarea alegerii acțiunii $a$ în starea $s$, după care agentul continuă să urmeze strategia $\pi$. Diferența dintre ele se numește **avantaj** (_advantage_).
-
 $$
 A^{\pi}(s, a) = Q^{\pi}(s, a) - V^{\pi}(s)
 $$
+
+unde $G_t$ este recompensa cumulată de la pasul $t$.
+
+</DeepDive>
 
 Un avantaj pozitiv arată că acțiunea $a$ este mai bună decât media acțiunilor pe care strategia le-ar alege în acea stare. Avantajul apare în aproape toate metodele moderne, inclusiv în cele folosite pentru LLM-uri.
 

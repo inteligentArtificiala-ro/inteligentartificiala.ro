@@ -9,6 +9,7 @@ tags:
   - Transformer
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import DecoderDiagram from '@components/diagrams/DecoderDiagram.astro';
 import Python from '@components/Python.astro';
 import { Steps } from '@astrojs/starlight/components';
@@ -45,6 +46,8 @@ Textul trece prin model în patru etape.
 
 Fiecare token are un vector $h$ de dimensiune $d$, care trece prin toate blocurile. O componentă nu înlocuiește vectorul, ci citește o versiune normalizată a lui și îi adaugă rezultatul.
 
+<DeepDive title="Formula unui bloc">
+
 $$
 h \leftarrow h + \operatorname{Attn}(\operatorname{RMSNorm}(h))
 $$
@@ -52,6 +55,10 @@ $$
 $$
 h \leftarrow h + \operatorname{FFN}(\operatorname{RMSNorm}(h))
 $$
+
+unde $\operatorname{Attn}$ este atenția, $\operatorname{FFN}$ este rețeaua feed-forward, iar săgeata înseamnă că $h$ primește valoarea din dreapta.
+
+</DeepDive>
 
 Vectorul care se modifică astfel de la un bloc la altul se numește **flux rezidual** (_residual stream_). Fiecare componentă îi adaugă o corecție, iar componentele următoare citesc suma tuturor corecțiilor de până atunci.
 
@@ -61,11 +68,19 @@ Față de articolul din 2017, normalizarea s-a mutat înaintea componentei. Vari
 
 Normalizarea folosită este **RMSNorm** (_root mean square normalization_), propusă în 2019 de [Zhang și Sennrich](https://arxiv.org/abs/1910.07467).
 
+Vectorul $x$ este împărțit la rădăcina medie pătratică a componentelor lui, apoi fiecare componentă este înmulțită cu ponderea corespunzătoare din vectorul învățat $g$.
+
+<DeepDive title="Formula RMSNorm">
+
 $$
 \operatorname{RMSNorm}(x) = \frac{x}{\sqrt{\frac{1}{d} \sum_{i=1}^{d} x_i^2 + \varepsilon}} \odot g
 $$
 
-Vectorul $x$ este împărțit la rădăcina medie pătratică a componentelor lui, apoi fiecare componentă este înmulțită cu ponderea corespunzătoare din vectorul învățat $g$. Simbolul $\odot$ înseamnă înmulțire element cu element, iar $\varepsilon$ este o constantă mică, $10^{-5}$ la SmolLM2, care evită împărțirea la zero. Față de normalizarea pe strat din 2017, RMSNorm nu scade media și nu are _bias_. Calculul este mai simplu, iar rezultatele sunt comparabile.
+Simbolul $\odot$ înseamnă înmulțire element cu element, iar $\varepsilon$ este o constantă mică, $10^{-5}$ la SmolLM2, care evită împărțirea la zero.
+
+</DeepDive>
+
+Față de normalizarea pe strat din 2017, RMSNorm nu scade media și nu are _bias_. Calculul este mai simplu, iar rezultatele sunt comparabile.
 
 ## Atenția cauzală cu interogări grupate
 
@@ -81,6 +96,10 @@ Modelul din 2017 aduna o codificare pozițională la reprezentările vectoriale,
 
 Componentele unui vector sunt grupate în perechi. Pentru tokenul de pe poziția $m$, fiecare pereche $i$ este rotită în planul ei cu unghiul $m \theta_i$.
 
+<DeepDive title="Formula rotirii">
+
+Pentru vectorul de interogare $q$, rotirea perechii $i$ este o înmulțire cu o matrice de rotație. Cheile se rotesc la fel.
+
 $$
 \begin{pmatrix} q'_{2i} \\ q'_{2i+1} \end{pmatrix} =
 \begin{pmatrix} \cos m\theta_i & -\sin m\theta_i \\ \sin m\theta_i & \cos m\theta_i \end{pmatrix}
@@ -91,13 +110,19 @@ $$
 \theta_i = b^{-2i / d_{\text{head}}}
 $$
 
-Baza $b$ era 10.000 în articolul original. SmolLM2 folosește 100.000. Primele perechi se rotesc repede de la o poziție la alta, iar ultimele foarte încet, ca acele unui ceas. Implementările diferă prin felul în care grupează componentele în perechi, dar principiul este același.
+Baza $b$ era 10.000 în articolul original. SmolLM2 folosește 100.000.
+
+</DeepDive>
+
+Primele perechi se rotesc repede de la o poziție la alta, iar ultimele foarte încet, ca acele unui ceas. Implementările diferă prin felul în care grupează componentele în perechi, dar principiul este același.
 
 Proprietatea importantă apare în produsul scalar dintre o interogare de pe poziția $m$ și o cheie de pe poziția $n$. Rotirea cu unghiul $m\theta_i$ și rotirea cu $n\theta_i$ se combină într-o singură rotire cu $(n - m)\theta_i$, așa că scorul de atenție depinde doar de distanța dintre tokenuri, nu de pozițiile lor absolute. Valorile nu sunt rotite, deci informația transmisă rămâne neschimbată.
 
 ## Rețeaua feed-forward SwiGLU
 
 Rețeaua feed-forward din fiecare bloc folosește o variantă cu poartă, numită **SwiGLU**, studiată de [Shazeer](https://arxiv.org/abs/2002.05202) în 2020.
+
+<DeepDive title="Formula SwiGLU">
 
 $$
 \operatorname{FFN}(x) = \big(\operatorname{SiLU}(x W_{\text{gate}}) \odot x W_{\text{up}}\big) W_{\text{down}}
@@ -107,7 +132,11 @@ $$
 \operatorname{SiLU}(z) = z \cdot \sigma(z)
 $$
 
-unde $\sigma$ este funcția sigmoidă. Vectorul $x$ este proiectat de două ori în dimensiunea $d_{\text{ff}}$. O proiecție trece prin SiLU și devine o „poartă”, care decide cât din cealaltă proiecție trece mai departe. Rezultatul este proiectat înapoi în dimensiunea $d$ prin $W_{\text{down}}$.
+unde $\sigma$ este funcția sigmoidă.
+
+</DeepDive>
+
+Vectorul $x$ este proiectat de două ori în dimensiunea $d_{\text{ff}}$. O proiecție trece prin SiLU și devine o „poartă”, care decide cât din cealaltă proiecție trece mai departe. Rezultatul este proiectat înapoi în dimensiunea $d$ prin $W_{\text{down}}$.
 
 Sunt trei matrice în loc de două, așa că $d_{\text{ff}}$ se alege de obicei în jur de $\frac{8}{3} d$, pentru ca numărul de parametri să rămână apropiat de cel al rețelei clasice cu $d_{\text{ff}} = 4d$. La SmolLM2, $d_{\text{ff}} = 1.536 = \frac{8}{3} \cdot 576$. Ca la multe modele actuale, niciun strat liniar nu are _bias_. Rețeaua feed-forward conține aproximativ trei sferturi din parametrii unui bloc.
 
@@ -115,9 +144,15 @@ Sunt trei matrice în loc de două, așa că $d_{\text{ff}}$ se alege de obicei 
 
 După ultimul bloc, vectorul trece prin RMSNorm-ul final și apoi printr-un strat liniar care dă câte un scor pentru fiecare token din vocabular.
 
+<DeepDive title="Formula stratului de ieșire">
+
 $$
 z = h\, E^\top
 $$
+
+unde $h$ este vectorul tokenului după RMSNorm-ul final, iar $z$ conține câte un scor pentru fiecare token din vocabular.
+
+</DeepDive>
 
 La SmolLM2, acest strat folosește chiar matricea de reprezentări vectoriale $E$ de la intrare, transpusă. Ponderile sunt **legate** (_tied embeddings_), ceea ce economisește aproximativ 28 de milioane de parametri. Scorurile $z$ trec apoi prin softmax, ca în [secțiunea despre generarea textului](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#cum-este-generat-textul).
 
@@ -165,11 +200,15 @@ La fiecare pas de decodare, tokenul nou are nevoie de cheile și valorile tuturo
 
 Memoria ocupată crește cu lungimea contextului $n$.
 
+<DeepDive title="Formula memoriei cache">
+
 $$
 M = 2 \cdot N \cdot h_{\text{kv}} \cdot d_{\text{head}} \cdot n \cdot b
 $$
 
 unde factorul 2 vine de la chei și valori, iar $b$ este numărul de octeți pentru o valoare, de exemplu 4 pentru numerele pe 32 de biți.
+
+</DeepDive>
 
 <Python
   code={`

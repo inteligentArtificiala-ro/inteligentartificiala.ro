@@ -55,56 +55,70 @@ export default defineConfig({
         SiteTitle: './src/components/starlight/SiteTitle.astro',
         Footer: './src/components/starlight/Footer.astro',
         Hero: './src/components/starlight/Hero.astro',
+        PageTitle: './src/components/starlight/PageTitle.astro',
       },
+      // Grupurile din bara laterală sunt strânse, în afară de cel al paginii curente, pe care Starlight îl deschide singur.
       sidebar: [
         {
           label: 'Concepte de bază',
+          collapsed: true,
           items: [{ autogenerate: { directory: 'concepte-de-baza' } }],
         },
         {
           label: 'Rețele neuronale',
+          collapsed: true,
           items: [{ autogenerate: { directory: 'retele-neuronale' } }],
         },
         {
           label: 'Învățare prin consolidare',
+          collapsed: true,
           items: [{ autogenerate: { directory: 'invatare-prin-consolidare' } }],
         },
         {
           label: 'Modele de limbaj mari (LLM)',
+          collapsed: true,
           items: [{ autogenerate: { directory: 'modele-lingvistice' } }],
         },
         {
           label: 'Comportament agentic',
+          collapsed: true,
           items: [{ autogenerate: { directory: 'comportament-agentic' } }],
         },
         {
           label: 'Modele de difuzie',
+          collapsed: true,
           items: [{ autogenerate: { directory: 'modele-de-difuzie' } }],
         },
         {
           label: 'Laboratoare',
+          collapsed: true,
           items: [
             { label: 'Prezentare generală', slug: 'laboratoare' },
             {
               label: 'Un model de limbaj local cu Transformers',
+              collapsed: true,
               items: [{ autogenerate: { directory: 'laboratoare/model-local-transformers' } }],
             },
             {
               label: 'Imagini și sunete cu modele de difuzie',
+              collapsed: true,
               items: [{ autogenerate: { directory: 'laboratoare/difuzie-imagini-si-sunete' } }],
             },
             {
               label: 'Un model de limbaj de la zero',
+              collapsed: true,
               items: [{ autogenerate: { directory: 'laboratoare/model-lingvistic-de-la-zero' } }],
             },
             {
               label: 'Control continuu cu PPO în MuJoCo',
+              collapsed: true,
               items: [{ autogenerate: { directory: 'laboratoare/control-continuu-ppo-halfcheetah' } }],
             },
           ],
         },
         {
           label: 'Proiect',
+          collapsed: true,
           items: [
             { label: 'Despre proiect', slug: 'despre' },
             { label: 'Glosar de termeni', slug: 'glosar' },

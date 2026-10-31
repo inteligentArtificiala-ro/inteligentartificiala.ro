@@ -10,6 +10,7 @@ tags:
   - Algoritmi
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import AlgorithmsAiDiagram from '../../../components/diagrams/AlgorithmsAiDiagram.astro';
 import { Steps } from '@astrojs/starlight/components';
 
@@ -36,14 +37,20 @@ A rezolva problema înseamnă a găsi un drum de la starea inițială la o stare
 
 Un algoritm clasic precum **căutarea în lățime** (_breadth-first search_, **BFS**) găsește garantat drumul cu cel mai mic număr de pași, dar explorează la fel de mult în toate direcțiile. Când numărul de stări crește exploziv, devine inutilizabil. Algoritmul lui **Dijkstra** găsește drumul cu cel mai mic cost total al muchiilor, dar se uită doar la costul deja parcurs. Nu are nicio idee despre cât mai este până la țintă.
 
-Pasul înainte decisiv pentru AI a venit odată cu algoritmul **$A^*$** ($A$-star), care folosește o funcție **euristică** $h(n)$ ca să estimeze cât mai costă drumul până la țintă.
+Pasul înainte decisiv pentru AI a venit odată cu algoritmul **$A^*$** ($A$-star), care folosește o funcție **euristică** $h(n)$ ca să estimeze cât mai costă drumul până la țintă. Pentru fiecare nod, $A^*$ adună costul drumului parcurs deja și această estimare, apoi continuă căutarea din nodul cu suma cea mai mică.
 
-$$f(n) = g(n) + h(n)$$
+<DeepDive title="Funcția de evaluare din A*">
+
+$$
+f(n) = g(n) + h(n)
+$$
 
 Iată ce înseamnă fiecare termen.
 - $g(n)$ este costul real al drumului parcurs de la starea inițială până la nodul curent $n$.
 - $h(n)$ este estimarea euristică a costului de la nodul $n$ până la țintă.
 - $f(n)$ este costul total estimat al drumului care trece prin $n$.
+
+</DeepDive>
 
 Dacă euristica este admisibilă (adică nu supraestimează niciodată costul real), $A^*$ găsește garantat drumul optim și, de regulă, explorează doar o mică parte din spațiul stărilor. În sistemele de azi, de exemplu în vehiculele autonome sau în roboții din depozite, rețelele neuronale interpretează datele venite direct de la senzori ca să identifice obstacolele, dar traiectoria sigură este calculată tot de algoritmi de căutare în grafuri.
 
@@ -53,7 +60,15 @@ Grafurile nu descriu doar lumea exterioară, ci și ce se întâmplă în interi
 
 Nodurile acestui graf sunt tensori și operații matematice (adunări, înmulțiri de matrice, funcții de activare neliniare). Algoritmul de **propagare înapoi a erorii** (_backpropagation_) parcurge graful în sens invers și aplică regula de derivare a funcțiilor compuse (_chain rule_) ca să calculeze gradientul funcției de pierdere în raport cu fiecare pondere.
 
-$$\frac{\partial \mathcal{L}}{\partial w} = \sum_{\text{căi}} \prod_{i} \frac{\partial z_{i+1}}{\partial z_i}$$
+<DeepDive title="Regula lanțului pe un graf de calcul">
+
+$$
+\frac{\partial \mathcal{L}}{\partial w} = \sum_{\text{căi}} \prod_{i} \frac{\partial z_{i+1}}{\partial z_i}
+$$
+
+Pe fiecare cale din graf care duce de la ponderea $w$ la pierderea $\mathcal{L}$, înmulțim derivatele locale dintre nodurile succesive $z_i$ și $z_{i+1}$, apoi adunăm rezultatele tuturor căilor.
+
+</DeepDive>
 
 O sortare topologică a grafului stabilește ordinea calculelor, astfel încât, la fiecare pas, toate valorile de care este nevoie să fie deja calculate și păstrate în memorie.
 
@@ -95,7 +110,15 @@ Un arbore este un tip particular de graf, organizat ierarhic, potrivit pentru a 
 
 Arborele complet al unui astfel de joc este mult prea mare ca să fie explorat în întregime, așa că algoritmul folosește **retezarea alfa-beta** (_alpha-beta pruning_). Dacă o ramură se dovedește deja mai slabă decât o variantă găsită anterior, algoritmul nu o mai explorează.
 
-$$\beta \le \alpha \implies \text{retezare ramură}$$
+<DeepDive title="Condiția de retezare">
+
+$$
+\beta \le \alpha \implies \text{retezare ramură}
+$$
+
+unde $\alpha$ este cel mai bun scor pe care și-l poate garanta deja jucătorul care maximizează, iar $\beta$ este cel mai bun scor pe care și-l poate garanta adversarul, care minimizează. Când $\beta \le \alpha$, niciunul dintre jucători nu ar lăsa partida să ajungă pe ramura curentă, așa că restul ei nu mai este explorat.
+
+</DeepDive>
 
 Această optimizare pur algoritmică a dublat, practic, adâncimea până la care pot căuta programele de șah (inclusiv Deep Blue), fără să schimbe mutarea aleasă.
 
@@ -136,7 +159,16 @@ De multe ori, problema unui sistem AI nu este că modelul nu ar fi destul de cap
 
 În inteligența artificială, principiul apare în multe locuri.
 - **Ecuația lui Bellman** din [învățarea prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/) exprimă valoarea unei stări, $V(s)$, prin valorile stărilor în care se poate ajunge din ea. Calculul se face iterativ, refolosind de fiecare dată valorile deja obținute.
-  $$V(s) = \max_a \left( R(s, a) + \gamma \sum_{s'} P(s' \mid s, a) V(s') \right)$$
+
+  <DeepDive title="Ecuația lui Bellman">
+
+  $$
+  V(s) = \max_a \left( R(s, a) + \gamma \sum_{s'} P(s' \mid s, a) V(s') \right)
+  $$
+
+  unde $R(s, a)$ este recompensa primită pentru acțiunea $a$ în starea $s$, $P(s' \mid s, a)$ este probabilitatea ca acțiunea să ducă în starea $s'$, iar $\gamma$ este factorul de actualizare, care face ca recompensele viitoare să conteze mai puțin decât cele imediate.
+
+  </DeepDive>
 - **Algoritmul Viterbi** găsește cea mai probabilă secvență de stări ascunse într-un proces Markov. Este folosit mult în recunoașterea vorbirii și în bioinformatică.
 
 ### Memoria cache pentru chei și valori (KV cache)
@@ -150,7 +182,15 @@ Pentru fiecare token, auto-atenția calculează trei vectori.
 
 Rezultatul atenției pentru poziția $t$ depinde de toate cheile și valorile de până la ea.
 
-$$\operatorname{Attention}(Q_t, K_{\le t}, V_{\le t}) = \operatorname{softmax}\left(\frac{Q_t K_{\le t}^\top}{\sqrt{d_k}}\right) V_{\le t}$$
+<DeepDive title="Formula atenției">
+
+$$
+\operatorname{Attention}(Q_t, K_{\le t}, V_{\le t}) = \operatorname{softmax}\left(\frac{Q_t K_{\le t}^\top}{\sqrt{d_k}}\right) V_{\le t}
+$$
+
+unde $Q_t$ este interogarea tokenului de pe poziția $t$, $K_{\le t}$ și $V_{\le t}$ sunt cheile și valorile tuturor tokenurilor de până la poziția $t$ inclusiv, iar $d_k$ este dimensiunea vectorilor cheie.
+
+</DeepDive>
 
 :::tip[Ce câștigăm cu KV cache]
 - **Fără caching**, la fiecare token nou, modelul recalculează tot istoricul. Pentru o secvență de lungime $N$, asta înseamnă $\mathcal{O}(N^2)$ operații, în mare parte aceleași calcule repetate inutil.
@@ -171,7 +211,15 @@ La modelele mari, KV cache poate ocupa zeci de gigaocteți din memoria plăcii g
 
 După ce rețeaua prelucrează contextul prin straturile ei de atenție, ultimul strat produce **scoruri nenormalizate** (_logits_), câte unul pentru fiecare token din vocabular (mai jos le spunem, pentru simplitate, cuvinte). Trecute prin funcția $\operatorname{softmax}$, aceste scoruri devin o distribuție de probabilitate.
 
-$$P(w_i \mid \text{context}) = \frac{\exp(z_i)}{\sum_j \exp(z_j)}$$
+<DeepDive title="Funcția softmax">
+
+$$
+P(w_i \mid \text{context}) = \frac{\exp(z_i)}{\sum_j \exp(z_j)}
+$$
+
+unde $z_i$ este scorul nenormalizat al cuvântului $w_i$, iar suma de la numitor parcurge tot vocabularul.
+
+</DeepDive>
 
 Aici se oprește rețeaua: ea nu a ales încă niciun cuvânt. Alegerea efectivă a următorului token este treaba unui algoritm de decodare.
 
@@ -188,9 +236,17 @@ Algoritm de decodare:
 
 Algoritmul ales influențează mult felul în care arată textul generat.
 
-- **Decodarea greedy** (_greedy decoding_) alege mereu cuvântul cu cea mai mare probabilitate.
-  $$\hat{w} = \arg\max_{w} P(w \mid \text{context})$$
-  Este rapidă și deterministă, potrivită pentru răspunsuri scurte și exacte, dar în textele lungi tinde să se repete.
+- **Decodarea greedy** (_greedy decoding_) alege mereu cuvântul cu cea mai mare probabilitate. Este rapidă și deterministă, potrivită pentru răspunsuri scurte și exacte, dar în textele lungi tinde să se repete.
+
+  <DeepDive title="Formula decodării greedy">
+
+  $$
+  \hat{w} = \arg\max_{w} P(w \mid \text{context})
+  $$
+
+  unde $\hat{w}$ este cuvântul ales la pasul curent.
+
+  </DeepDive>
 - **Eșantionarea cu temperatură** modifică distribuția împărțind scorurile nenormalizate la o constantă $T$, temperatura. O temperatură mică adună probabilitatea pe câteva variante foarte probabile, iar una mare egalizează șansele, ceea ce face textul mai variat.
 - **Filtrarea top-$k$ și top-$p$** (_nucleus sampling_)
   - *Top-$k$* păstrează doar cele $k$ cuvinte cele mai probabile și le ignoră pe celelalte.

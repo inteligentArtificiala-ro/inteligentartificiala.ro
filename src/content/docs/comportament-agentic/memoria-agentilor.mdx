@@ -11,6 +11,7 @@ tags:
   - RAG
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import AgentMemoryDiagram from '@components/diagrams/AgentMemoryDiagram.astro';
 import { Steps } from '@astrojs/starlight/components';
 
@@ -103,9 +104,17 @@ Mecanismul este cel de la [generarea augmentată prin regăsire (RAG)](/modele-l
 
 De aici apar câteva probleme pe care RAG-ul clasic le are mai rar.
 
-- **Relevanța nu ține doar de sens.** Lucrarea [Generative Agents](https://arxiv.org/abs/2304.03442) (Park și colaboratorii, 2023) ordonează amintirile după trei criterii adunate:
-  $$\text{scor} = \alpha \cdot \text{recență} + \beta \cdot \text{importanță} + \gamma \cdot \text{relevanță}$$
-  Recența scade exponențial cu timpul trecut, importanța este o notă de la 1 la 10 dată chiar de model când salvează amintirea, iar relevanța este asemănarea cosinus cu situația curentă. În lucrare, toți coeficienții $\alpha$, $\beta$ și $\gamma$ sunt egali cu 1.
+- **Relevanța nu ține doar de sens.** Lucrarea [Generative Agents](https://arxiv.org/abs/2304.03442) (Park și colaboratorii, 2023) ordonează amintirile după un scor care adună trei criterii: recența, importanța și relevanța. Recența scade exponențial cu timpul trecut, importanța este o notă de la 1 la 10 dată chiar de model când salvează amintirea, iar relevanța este asemănarea cosinus cu situația curentă.
+
+  <DeepDive title="Scorul unei amintiri">
+
+  $$
+  \text{scor} = \alpha \cdot \text{recență} + \beta \cdot \text{importanță} + \gamma \cdot \text{relevanță}
+  $$
+
+  În lucrare, toți coeficienții $\alpha$, $\beta$ și $\gamma$ sunt egali cu 1.
+
+  </DeepDive>
 - **Contradicțiile.** Dacă utilizatorul s-a mutat din Cluj în București, ambele fapte pot ajunge în baza de date, iar căutarea după asemănare le găsește pe amândouă. Sistemul trebuie să știe care este valabil acum.
 - **Duplicatele.** Același fapt, salvat de zece ori în formulări puțin diferite, ocupă primele locuri din rezultate și împinge afară informațiile utile.
 

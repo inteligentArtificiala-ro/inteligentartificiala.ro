@@ -10,6 +10,7 @@ tags:
 ---
 
 import AttentionDemo from '@components/AttentionDemo.astro';
+import DeepDive from '@components/DeepDive.astro';
 import MultiHeadAttentionDiagram from '@components/diagrams/MultiHeadAttentionDiagram.astro';
 import ScaledAttentionDiagram from '@components/diagrams/ScaledAttentionDiagram.astro';
 import TransformerDiagram from '@components/diagrams/TransformerDiagram.astro';
@@ -69,15 +70,23 @@ Mecanismul lucrează cu trei roluri, iar fiecare token produce câte un vector p
 
 O analogie bună este căutarea într-un dicționar. Interogarea se compară cu toate cheile, iar rezultatul combină valorile. Spre deosebire de un dicționar obișnuit, potrivirea nu este exactă, iar fiecare valoare contribuie cu atât mai mult cu cât cheia ei se potrivește mai bine.
 
-Cei trei vectori se obțin înmulțind reprezentarea tokenului cu trei matrice de ponderi, învățate la antrenare. Pentru toate tokenurile deodată, cu reprezentările așezate pe rândurile unei matrice $X$, avem:
+Cei trei vectori se obțin înmulțind reprezentarea tokenului cu trei matrice de ponderi, învățate la antrenare.
+
+<DeepDive title="Proiecțiile Q, K și V">
+
+Pentru toate tokenurile deodată, cu reprezentările așezate pe rândurile unei matrice $X$, avem:
 
 $$
 Q = X W^Q, \quad K = X W^K, \quad V = X W^V
 $$
 
+</DeepDive>
+
 ## Atenția prin produs scalar scalat
 
-Articolul numește formula de bază **atenție prin produs scalar scalat** (_scaled dot-product attention_).
+Articolul numește formula de bază **atenție prin produs scalar scalat** (_scaled dot-product attention_). Interogarea fiecărui token se compară, printr-un produs scalar, cu cheile tuturor tokenurilor. Scorurile obținute sunt împărțite la o constantă, iar softmax le transformă în ponderi pozitive, cu suma 1. Rezultatul este media valorilor, ponderată cu ele.
+
+<DeepDive title="Formula atenției">
 
 $$
 \operatorname{Attention}(Q, K, V) = \operatorname{softmax}\left(\frac{Q K^\top}{\sqrt{d_k}}\right) V
@@ -86,6 +95,8 @@ $$
 Produsul $Q K^\top$ conține produsele scalare dintre fiecare interogare și fiecare cheie. Elementul de pe rândul $i$ și coloana $j$ măsoară cât de bine se potrivește interogarea tokenului $i$ cu cheia tokenului $j$. Softmax se aplică pe fiecare rând și transformă scorurile în ponderi pozitive, cu suma 1. Înmulțirea cu $V$ face apoi media ponderată a valorilor.
 
 Mărimea $d_k$ este dimensiunea vectorilor cheie. Dacă vectorii au componente independente, cu media 0 și varianța 1, produsul lor scalar are varianța $d_k$. Pentru $d_k$ mare, scorurile devin mari în valoare absolută, iar softmax dă aproape toată ponderea unui singur token. În această zonă, gradienții sunt foarte mici și antrenarea încetinește. Împărțirea la $\sqrt{d_k}$ readuce varianța la 1.
+
+</DeepDive>
 
 <ScaledAttentionDiagram />
 
@@ -109,6 +120,10 @@ print("Forma ieșirii:", output.shape)
 Un model care generează text de la stânga la dreapta nu are voie să folosească tokenurile de după poziția curentă. La generare ele nu există încă, iar la antrenare i-ar dezvălui chiar tokenul pe care trebuie să-l prezică. De aceea, înainte de softmax se adaugă o **mască cauzală** (_causal mask_) $M$.
 :::
 
+<DeepDive title="Formula măștii cauzale">
+
+Elementul $M_{ij}$ se adună la scorul dintre interogarea tokenului $i$ și cheia tokenului $j$.
+
 $$
 M_{ij} = \begin{cases} 0 & \text{pentru } j \le i \\ -\infty & \text{pentru } j > i \end{cases}
 $$
@@ -117,7 +132,11 @@ $$
 \operatorname{softmax}\left(\frac{Q K^\top}{\sqrt{d_k}} + M\right) V
 $$
 
-După softmax, pozițiile cu $-\infty$ primesc ponderea 0. Codul de mai jos continuă exemplul anterior. Funcțiile și matricele din primul bloc sunt create automat înainte de rulare, așa că blocul funcționează și singur.
+După softmax, pozițiile cu $-\infty$ primesc ponderea 0.
+
+</DeepDive>
+
+Prin mască, tokenurile de după poziția curentă primesc ponderea 0. Codul de mai jos continuă exemplul anterior. Funcțiile și matricele din primul bloc sunt create automat înainte de rulare, așa că blocul funcționează și singur.
 
 <Python
   packages={['numpy']}
@@ -140,6 +159,8 @@ Primul token se vede doar pe el însuși, deci primește ponderea 1. Ultimul râ
 
 O operație de atenție calculează pentru fiecare token o singură medie ponderată, deci poate surprinde un singur tip de relație între tokenuri. **Atenția cu capete multiple** (_multi-head attention_) rulează în paralel $h$ atenții independente, numite capete de atenție, fiecare cu propriile proiecții liniare învățate.
 
+<DeepDive title="Formula atenției cu capete multiple">
+
 $$
 \operatorname{head}_i = \operatorname{Attention}(Q W_i^Q, K W_i^K, V W_i^V)
 $$
@@ -148,7 +169,11 @@ $$
 \operatorname{MultiHead}(Q, K, V) = \operatorname{Concat}(\operatorname{head}_1, \ldots, \operatorname{head}_h) W^O
 $$
 
-Rezultatele capetelor se concatenează, iar matricea de proiecție $W^O$ le combină înapoi în spațiul modelului. În articolul original, $h = 8$, dimensiunea modelului este $d_{\text{model}} = 512$, iar fiecare cap lucrează cu vectori de dimensiune $d_k = d_v = d_{\text{model}} / h = 64$. Astfel, costul computațional total este comparabil cu cel al unei singure atenții pe dimensiunea completă, dar modelul poate urmări în același timp relații diferite, de exemplu sintactice și semantice.
+Rezultatele capetelor se concatenează, iar matricea de proiecție $W^O$ le combină înapoi în spațiul modelului.
+
+</DeepDive>
+
+Rezultatele capetelor sunt apoi combinate într-un singur vector pentru fiecare token. În articolul original, $h = 8$, dimensiunea modelului este $d_{\text{model}} = 512$, iar fiecare cap lucrează cu vectori de dimensiune $d_k = d_v = d_{\text{model}} / h = 64$. Astfel, costul computațional total este comparabil cu cel al unei singure atenții pe dimensiunea completă, dar modelul poate urmări în același timp relații diferite, de exemplu sintactice și semantice.
 
 <MultiHeadAttentionDiagram />
 
@@ -160,9 +185,15 @@ Modelul din articol a fost gândit pentru traducere automată. **Codificatorul**
 
 Codificatorul are $N = 6$ straturi identice, fiecare cu două blocuri. Primul este **auto-atenția** (_self-attention_) cu capete multiple, în care interogările, cheile și valorile vin din aceeași secvență. Al doilea este o **rețea feed-forward** (_feed-forward network_), aplicată separat fiecărei poziții.
 
+<DeepDive title="Formula rețelei feed-forward">
+
 $$
 \operatorname{FFN}(x) = \max(0,\, x W_1 + b_1) W_2 + b_2
 $$
+
+unde $x$ este vectorul unei poziții, $W_1$ și $W_2$ sunt matrice de ponderi, $b_1$ și $b_2$ sunt vectori de _bias_, iar $\max(0, \cdot)$ aplică funcția ReLU fiecărei componente.
+
+</DeepDive>
 
 Rețeaua are un strat ascuns de dimensiune $d_{\text{ff}} = 2048$ și funcția de activare [ReLU](/retele-neuronale/ce-sunt-retelele-neuronale/#definiție). Atenția amestecă informația între poziții, iar rețeaua feed-forward o prelucrează în fiecare poziție.
 
@@ -170,9 +201,15 @@ Decodorul are tot 6 straturi, cu trei componente. Prima este auto-atenția masca
 
 Fiecare componentă este înconjurată de o **conexiune reziduală** (_residual connection_) și urmată de o **normalizare pe strat** (_layer normalization_).
 
+<DeepDive title="Conexiunea reziduală și normalizarea">
+
 $$
 \operatorname{LayerNorm}(x + \operatorname{Sublayer}(x))
 $$
+
+unde $x$ este intrarea componentei, iar $\operatorname{Sublayer}$ este componenta însăși, adică atenția sau rețeaua feed-forward.
+
+</DeepDive>
 
 Conexiunea reziduală adună intrarea la rezultat, așa că fiecare componentă adaugă o corecție în loc să înlocuiască reprezentarea. Gradienții trec astfel mai ușor prin multe straturi. Normalizarea menține valorile pe o scară stabilă. La capătul decodorului, un strat liniar și softmax dau probabilitățile următorului token. Articolul folosește aceeași matrice de ponderi pentru reprezentările vectoriale și pentru acest strat liniar.
 
@@ -184,6 +221,8 @@ Auto-atenția, singură, nu ține cont de ordinea tokenurilor. Dacă amestecăm 
 
 Articolul adaugă la reprezentările vectoriale o **codificare pozițională** (_positional encoding_), formată din sinusuri și cosinusuri.
 
+<DeepDive title="Formula codificării poziționale">
+
 $$
 PE_{(pos,\, 2i)} = \sin\left(\frac{pos}{10000^{2i / d_{\text{model}}}}\right)
 $$
@@ -192,7 +231,11 @@ $$
 PE_{(pos,\, 2i+1)} = \cos\left(\frac{pos}{10000^{2i / d_{\text{model}}}}\right)
 $$
 
-unde $pos$ este poziția tokenului, iar $i$ indică perechea de dimensiuni din vector. Fiecare pereche oscilează cu altă frecvență, ca acele unui ceas care se rotesc cu viteze diferite. Autorii au ales această formă pentru că, pentru orice deplasare fixă $k$, $PE_{pos+k}$ este o funcție liniară de $PE_{pos}$, deci modelul poate învăța ușor poziții relative. Au testat și poziții învățate la antrenare, cu rezultate aproape identice.
+unde $pos$ este poziția tokenului, iar $i$ indică perechea de dimensiuni din vector. Autorii au ales această formă pentru că, pentru orice deplasare fixă $k$, $PE_{pos+k}$ este o funcție liniară de $PE_{pos}$, deci modelul poate învăța ușor poziții relative.
+
+</DeepDive>
+
+Fiecare pereche de dimensiuni din vector oscilează cu altă frecvență, ca acele unui ceas care se rotesc cu viteze diferite. Autorii au testat și poziții învățate la antrenare, cu rezultate aproape identice.
 
 ## Rezultatele din articol
 

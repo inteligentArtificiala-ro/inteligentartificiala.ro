@@ -8,6 +8,8 @@ tags:
   - Modele de difuzie
 ---
 
+import DeepDive from '@components/DeepDive.astro';
+
 Pipeline-ul de pe [prima pagină](/laboratoare/difuzie-imagini-si-sunete/prezentare/) face, pe ascuns, patru lucruri: transformă descrierea în vectori, pornește de la o reprezentare latentă aleatoare, o curăță pas cu pas cu un U-Net ghidat de text și o decodează într-o imagine. Pe această pagină facem pașii de mână, cu componentele lui Stable Diffusion 1.5 încărcate separat. Pagina despre [generarea imaginilor](/modele-de-difuzie/generarea-imaginilor/) explică teoria din spatele fiecărei componente, iar ghidul oficial care acoperă aceleași subiecte este [Understanding pipelines, models and schedulers](https://huggingface.co/docs/diffusers/using-diffusers/write_own_pipeline).
 
 ## Textul devine vectori
@@ -36,11 +38,17 @@ Tokenizatorul CLIP marchează sfârșitul fiecărui cuvânt cu `</w>`, adaugă l
 
 ## Generarea, cu ghidarea fără clasificator
 
-Codul de mai jos generează o imagine cu toate componentele, fără pipeline. Reprezentarea latentă are 4 × 64 × 64 de valori, de 48 de ori mai puține decât cele 3 × 512 × 512 ale imaginii. La fiecare pas, U-Net-ul estimează zgomotul de două ori, o dată cu descrierea și o dată cu textul gol, iar cele două estimări se combină după formula **ghidării fără clasificator** (_classifier-free guidance_).
+Codul de mai jos generează o imagine cu toate componentele, fără pipeline. Reprezentarea latentă are 4 × 64 × 64 de valori, de 48 de ori mai puține decât cele 3 × 512 × 512 ale imaginii. La fiecare pas, U-Net-ul estimează zgomotul de două ori, o dată cu descrierea și o dată cu textul gol, iar cele două estimări se combină după formula **ghidării fără clasificator** (_classifier-free guidance_). Diferența dintre ele arată ce schimbă textul în imagine, iar ghidarea o înmulțește cu scala de ghidare $w$.
+
+<DeepDive title="Formula ghidării fără clasificator">
 
 $$
 \tilde\varepsilon = \varepsilon_\theta(x_t, t, \varnothing) + w \left( \varepsilon_\theta(x_t, t, c) - \varepsilon_\theta(x_t, t, \varnothing) \right)
 $$
+
+unde $c$ este descrierea, iar $\varnothing$ este textul gol.
+
+</DeepDive>
 
 ```python
 import torch

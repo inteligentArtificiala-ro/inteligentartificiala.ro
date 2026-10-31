@@ -10,6 +10,7 @@ tags:
   - Control continuu
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import SourceFile from '@components/SourceFile.astro';
 import { Steps } from '@astrojs/starlight/components';
 
@@ -38,9 +39,17 @@ Funcția `train` alternează două faze: interacțiunea cu mediul și optimizare
 <Steps>
 1. **Colectarea traiectoriilor**: agentul acționează în cele 4 medii MuJoCo și eșantionează acțiuni din distribuția normală prezisă de actor. Salvăm stările, acțiunile, log-probabilitățile, recompensele și valorile stării $V(s)$.
 2. **Estimarea avantajelor GAE**: la sfârșitul lotului, `buffer.compute_gae()` parcurge datele în sens invers și calculează avantajele $\hat{A}_t$ și recompensele cumulate țintă.
-3. **Optimizarea pe mini-loturi**: rețeaua parcurge mini-loturile timp de 10 epoci și optimizează funcția de pierdere totală, dată de formula
-   $$\mathcal{L}(\theta, \phi) = -\mathcal{L}^{CLIP}(\theta) + c_1 \mathcal{L}^{VF}(\phi) - c_2 H(\pi_\theta)$$
+3. **Optimizarea pe mini-loturi**: rețeaua parcurge mini-loturile timp de 10 epoci și optimizează funcția de pierdere totală. Aceasta combină funcția obiectiv tăiată a actorului, eroarea criticului și un bonus de entropie.
+
+   <DeepDive title="Funcția de pierdere totală">
+
+   $$
+   \mathcal{L}(\theta, \phi) = -\mathcal{L}^{CLIP}(\theta) + c_1 \mathcal{L}^{VF}(\phi) - c_2 H(\pi_\theta)
+   $$
+
    unde $\mathcal{L}^{VF}$ este eroarea pătratică a criticului (opțional trunchiată), iar $H$ este bonusul de entropie. $\mathcal{L}^{CLIP}$ apare cu minus pentru că este un obiectiv pe care vrem să-l maximizăm, iar optimizatorul minimizează pierderea.
+
+   </DeepDive>
 4. **Oprirea timpurie cu KL**: dacă divergența Kullback-Leibler aproximativă dintre strategia veche și cea nouă depășește pragul de $0{,}015$, optimizarea pe lotul curent se oprește mai devreme. Așa protejăm strategia de pași prea mari.
 </Steps>
 

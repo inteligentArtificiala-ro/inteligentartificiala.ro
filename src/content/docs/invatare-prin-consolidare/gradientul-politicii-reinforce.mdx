@@ -8,6 +8,7 @@ tags:
   - Învățare prin consolidare
 ---
 
+import DeepDive from '@components/DeepDive.astro';
 import Python from '@components/Python.astro';
 import { Steps } from '@astrojs/starlight/components';
 
@@ -19,15 +20,23 @@ Pagina folosește noțiunile introduse în [Învățare prin consolidare](/invat
 
 O strategie $\pi_\theta$ este o funcție cu parametrii $\theta$, de exemplu o rețea neuronală care primește starea curentă și dă probabilitățile acțiunilor posibile. Vrem să maximizăm valoarea așteptată a recompensei cumulate.
 
+<DeepDive title="Funcția obiectiv">
+
 $$
 J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\left[ R(\tau) \right]
 $$
 
 unde $\tau = (s_0, a_0, r_1, s_1, a_1, \ldots)$ este o **traiectorie** (_trajectory_), adică un episod complet generat urmând strategia, iar $R(\tau)$ este recompensa lui totală.
 
+</DeepDive>
+
 Aici nu putem aplica direct coborârea pe gradient. Recompensa vine de la un mediu pe care de obicei nu îl putem deriva și pentru care nu avem o formulă, iar acțiunile sunt eșantionate aleatoriu. Gradientul strategiei ocolește ambele obstacole.
 
 ## Formula gradientului
+
+Gradientul recompensei așteptate se poate scrie tot ca o medie, pe care o estimăm din episoadele generate cu strategia, fără să derivăm mediul sau recompensa. În această medie, fiecare acțiune contribuie cu direcția în care trebuie mutați parametrii ca ea să devină mai probabilă, înmulțită cu recompensa cumulată obținută după ea.
+
+<DeepDive title="Derivarea gradientului strategiei">
 
 Pentru orice distribuție de probabilitate $p_\theta(x)$ și orice funcție scalară $f(x)$ este adevărată următoarea identitate.
 
@@ -43,7 +52,11 @@ $$
 \nabla_\theta J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\left[ \sum_{t} \nabla_\theta \log \pi_\theta(a_t \mid s_t)\, G_t \right]
 $$
 
-unde $G_t$ este recompensa cumulată de la pasul $t$ până la sfârșitul episodului. O acțiune poate influența doar ce se întâmplă după ea, de aceea o ponderăm cu $G_t$, nu cu recompensa totală a episodului. Rezultatul se numește **teorema gradientului strategiei** (_policy gradient theorem_). Richard Sutton și colaboratorii lui l-au demonstrat în 2000.
+unde $G_t$ este recompensa cumulată de la pasul $t$ până la sfârșitul episodului. O acțiune poate influența doar ce se întâmplă după ea, de aceea o ponderăm cu $G_t$, nu cu recompensa totală a episodului.
+
+</DeepDive>
+
+Rezultatul se numește **teorema gradientului strategiei** (_policy gradient theorem_). Richard Sutton și colaboratorii lui l-au demonstrat în 2000.
 
 ## Algoritmul
 
@@ -53,22 +66,37 @@ REINFORCE estimează gradientul din episoade complete.
 1. Generăm un episod cu strategia curentă $\pi_\theta$ și reținem stările, acțiunile și recompensele care apar pe parcurs.
 2. Pentru fiecare pas $t$ calculăm recompensa cumulată $G_t$, de la acel pas până la final.
 3. Actualizăm parametrii cu rata de învățare $\alpha$.
-   $$\theta \leftarrow \theta + \alpha \sum_{t} G_t\, \nabla_\theta \log \pi_\theta(a_t \mid s_t)$$
+
+   <DeepDive title="Regula de actualizare">
+
+   $$
+   \theta \leftarrow \theta + \alpha \sum_{t} G_t\, \nabla_\theta \log \pi_\theta(a_t \mid s_t)
+   $$
+
+   Termenul $\nabla_\theta \log \pi_\theta(a_t \mid s_t)$ arată în ce direcție trebuie mutați parametrii ca acțiunea aleasă să devină mai probabilă, iar numărul $G_t$ stabilește cât de mare este pasul.
+
+   </DeepDive>
 </Steps>
 
-Intuitiv, acțiunile urmate de recompense mari devin mai probabile în episoadele următoare, iar cele care aduc puțin sunt descurajate. Termenul $\nabla_\theta \log \pi_\theta(a_t \mid s_t)$ arată în ce direcție trebuie mutați parametrii ca acțiunea aleasă să devină mai probabilă, iar numărul $G_t$ stabilește cât de mare este pasul.
+Intuitiv, acțiunile urmate de recompense mari devin mai probabile în episoadele următoare, iar cele care aduc puțin sunt descurajate.
 
 ## Linia de bază
 
 Estimarea gradientului are o **varianță** (_variance_) mare. Două episoade generate cu aceeași strategie pot avea recompense foarte diferite, așa că actualizările oscilează. Dacă toate recompensele sunt pozitive, orice acțiune aleasă devine mai probabilă, chiar și una slabă, doar că mai puțin decât una foarte bună.
 
-Soluția este să scădem o **linie de bază** (_baseline_) $b(s_t)$, care nu depinde de acțiune.
+Soluția este să scădem din recompensa cumulată $G_t$ o **linie de bază** (_baseline_) $b(s_t)$, care nu depinde de acțiune.
+
+<DeepDive title="Gradientul cu linie de bază">
 
 $$
 \nabla_\theta J(\theta) = \mathbb{E}\left[ \sum_{t} \nabla_\theta \log \pi_\theta(a_t \mid s_t)\, \big( G_t - b(s_t) \big) \right]
 $$
 
-Termenul scăzut are media zero, deci estimarea gradientului rămâne nedeplasată (_unbiased_), dar varianța scade mult. Acum devin mai probabile doar acțiunile mai bune decât linia de bază. O alegere firească pentru $b(s_t)$ este funcția de valoare $V(s_t)$, iar diferența $G_t - V(s_t)$ este o estimare a avantajului. Când $V$ este aproximată de o a doua rețea, metoda devine **actor-critic**.
+Termenul scăzut are media zero, deci estimarea gradientului rămâne nedeplasată (_unbiased_), dar varianța scade mult.
+
+</DeepDive>
+
+Acum devin mai probabile doar acțiunile mai bune decât linia de bază. O alegere firească pentru $b(s_t)$ este funcția de valoare $V(s_t)$, iar diferența $G_t - V(s_t)$ este o estimare a avantajului. Când $V$ este aproximată de o a doua rețea, metoda devine **actor-critic**.
 
 ## Un automat cu trei manete
 
