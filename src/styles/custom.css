@@ -251,9 +251,9 @@ site-search dialog {
 
 html:not([data-has-sidebar]) .page {
   --sl-content-width: 110rem;
-  /* Coloana din dreapta a primei pagini, comună hero-ului (lista secțiunilor) și secțiunilor de sub el (lista
-     laboratoarelor, conversația cu modelul), pe ecranele late. */
-  --acasa-coloana-dreapta: 36rem;
+  /* Coloanele primei pagini pe ecranele late, comune hero-ului (textul și lista secțiunilor) și secțiunilor de sub el
+     (lista laboratoarelor, conversația cu modelul): două jumătăți egale. */
+  --acasa-coloane: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 @media (min-width: 72rem) {
