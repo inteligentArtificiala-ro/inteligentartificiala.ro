@@ -1,0 +1,151 @@
+---
+// Un strat de transmitere a mesajelor într-o rețea neuronală pe grafuri: vecinii nodului v îi trimit vectorii lor,
+// nodul îi adună printr-o funcție care nu depinde de ordinea vecinilor, apoi își calculează noul vector.
+import '../../styles/diagrams.css';
+import Box from './Box.astro';
+
+const V = { x: 200, y: 140, r: 26 };
+const NEIGHBORS = [
+  { x: 70, y: 52, label: 'a' },
+  { x: 48, y: 150, label: 'b' },
+  { x: 92, y: 238, label: 'c' },
+  { x: 205, y: 36, label: 'd' },
+];
+const R = 20;
+// Câteva muchii între vecini, ca desenul să arate ca un graf, nu ca o stea.
+const OTHER_EDGES = [
+  [0, 1],
+  [0, 3],
+];
+// Săgeata pornește de la marginea vecinului și se oprește la marginea lui v.
+const arrows = NEIGHBORS.map((u) => {
+  const dx = V.x - u.x;
+  const dy = V.y - u.y;
+  const length = Math.hypot(dx, dy);
+  return {
+    x1: u.x + (dx / length) * (R + 3),
+    y1: u.y + (dy / length) * (R + 3),
+    x2: V.x - (dx / length) * (V.r + 5),
+    y2: V.y - (dy / length) * (V.r + 5),
+  };
+});
+const BOX_Y = V.y - 26;
+const STEPS = [
+  { x: 262, kind: 'attention', lines: ['Agregare', 'sumă, medie, atenție'] },
+  { x: 418, kind: 'feed-forward', lines: ['Actualizare', 'ponderi comune'] },
+  { x: 574, kind: 'output', lines: ['Vectorul nou', 'al lui v'] },
+];
+const BOX_WIDTH = 136;
+---
+
+<figure class='diagram message-passing-diagram'>
+  <div class='diagram-scroll'>
+    <svg viewBox='20 8 700 272' role='img' aria-labelledby='message-passing-title message-passing-desc'>
+      <title id='message-passing-title'>Un strat de transmitere a mesajelor</title>
+      <desc id='message-passing-desc'>
+        Nodul v are patru vecini, a, b, c și d. Fiecare vecin îi trimite vectorul lui, ca mesaj. Nodul v adună mesajele
+        printr-o agregare care nu depinde de ordinea vecinilor, de exemplu o sumă, o medie sau o medie ponderată prin
+        atenție. Apoi actualizarea, o rețea mică ale cărei ponderi sunt aceleași pentru toate nodurile, combină
+        rezultatul cu vectorul vechi al lui v și produce vectorul nou al lui v.
+      </desc>
+      <defs>
+        <marker
+          id='message-passing-arrow'
+          viewBox='0 0 10 10'
+          refX='9'
+          refY='5'
+          markerWidth='6'
+          markerHeight='6'
+          orient='auto-start-reverse'
+        >
+          <path d='M 0 0 L 10 5 L 0 10 z'></path>
+        </marker>
+        <marker
+          id='message-passing-arrow-accent'
+          viewBox='0 0 10 10'
+          refX='9'
+          refY='5'
+          markerWidth='6'
+          markerHeight='6'
+          orient='auto-start-reverse'
+        >
+          <path class='accent' d='M 0 0 L 10 5 L 0 10 z'></path>
+        </marker>
+      </defs>
+
+      {
+        OTHER_EDGES.map(([i, j]) => (
+          <line class='edge' x1={NEIGHBORS[i].x} y1={NEIGHBORS[i].y} x2={NEIGHBORS[j].x} y2={NEIGHBORS[j].y} />
+        ))
+      }
+      <g class='arrow message' marker-end='url(#message-passing-arrow-accent)'>
+        {arrows.map((a) => <line x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2} />)}
+      </g>
+      {
+        NEIGHBORS.map((u) => (
+          <g>
+            <circle class='node' cx={u.x} cy={u.y} r={R} />
+            <text x={u.x} y={u.y + 5} text-anchor='middle'>
+              {u.label}
+            </text>
+          </g>
+        ))
+      }
+      <circle class='node target' cx={V.x} cy={V.y} r={V.r} />
+      <text x={V.x} y={V.y + 5} text-anchor='middle'>
+        v
+      </text>
+      <text class='label' x='40' y='272'>
+        Vecinii lui v îi trimit vectorii lor.
+      </text>
+
+      <g class='arrow' marker-end='url(#message-passing-arrow)'>
+        <path d={`M${V.x + V.r + 4} ${V.y} H${STEPS[0].x - 4}`} />
+        {STEPS.slice(1).map((step, i) => <path d={`M${STEPS[i].x + BOX_WIDTH} ${V.y} H${step.x - 4}`} />)}
+      </g>
+      {
+        STEPS.map((step) => (
+          <Box x={step.x} y={BOX_Y} width={BOX_WIDTH} height={52} kind={step.kind} lines={step.lines} />
+        ))
+      }
+      <text class='title' x={STEPS[0].x} y='64'>
+        Același calcul, pentru fiecare nod
+      </text>
+    </svg>
+  </div>
+  <figcaption>
+    Un strat al rețelei. Toate nodurile fac același calcul în paralel, cu aceleași ponderi, deci rețeaua funcționează
+    pe grafuri de orice mărime.
+  </figcaption>
+</figure>
+
+<style>
+  .message-passing-diagram svg {
+    min-width: 34rem;
+    max-width: 44rem;
+  }
+
+  .message-passing-diagram .node {
+    fill: color-mix(in oklab, var(--sl-color-purple) 18%, var(--sl-color-bg));
+    stroke: var(--sl-color-purple);
+    stroke-width: 1.5;
+  }
+
+  .message-passing-diagram .node.target {
+    fill: color-mix(in oklab, var(--sl-color-accent) 22%, var(--sl-color-bg));
+    stroke: var(--sl-color-accent);
+  }
+
+  .message-passing-diagram .edge {
+    stroke: var(--sl-color-gray-4);
+    stroke-width: 1.5;
+  }
+
+  .message-passing-diagram .arrow.message {
+    stroke: var(--sl-color-accent);
+  }
+
+  .message-passing-diagram marker path.accent {
+    fill: var(--sl-color-accent);
+  }
+</style>

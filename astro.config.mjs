@@ -70,6 +70,11 @@ export default defineConfig({
           items: [{ autogenerate: { directory: 'retele-neuronale' } }],
         },
         {
+          label: 'Rețele neuronale pe grafuri',
+          collapsed: true,
+          items: [{ autogenerate: { directory: 'retele-neuronale-pe-grafuri' } }],
+        },
+        {
           label: 'Învățare prin consolidare',
           collapsed: true,
           items: [{ autogenerate: { directory: 'invatare-prin-consolidare' } }],

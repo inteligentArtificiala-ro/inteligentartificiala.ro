@@ -38,11 +38,13 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
 | Căutare pe fascicul | Beam Search | Strategie de decodare care păstrează la fiecare pas mai multe secvențe candidate, pentru a găsi o secvență cât mai probabilă. |
+| Câmp receptiv | Receptive Field | Partea din date de care depinde rezultatul unui neuron sau al unui nod. Într-o rețea pe grafuri cu k straturi, sunt nodurile aflate la cel mult k muchii distanță. |
 | Clonarea vocii | Voice Cloning | Generarea vorbirii cu vocea unei persoane anume, pornind de la o înregistrare scurtă a acelei voci. |
 | Coborâre pe gradient | Gradient Descent | Metoda de optimizare care ajustează parametrii modelului în direcția opusă gradientului funcției de pierdere. |
 | Codec audio neuronal | Neural Audio Codec | Autoencoder care comprimă sunetul într-un șir de tokenuri dintr-un vocabular fix și îl poate reconstrui din ele, de exemplu EnCodec. |
 | Codificare pozițională | Positional Encoding | Informația despre poziția tokenurilor într-o secvență, adăugată la reprezentările vectoriale sau aplicată direct în calculul atenției. |
 | Codificator de text | Text Encoder | Model care transformă un text într-un șir de vectori, folosit pentru a ghida generarea unei imagini, de exemplu CLIP sau T5. |
+| Comprimare excesivă | Over-squashing | Limită a rețelelor pe grafuri în care informația de la multe noduri îndepărtate trebuie să treacă prin puține muchii și să încapă într-un vector de mărime fixă. |
 | Conexiune reziduală | Residual Connection | Legătură care adună intrarea unui bloc la ieșirea lui, astfel încât informația și gradienții să treacă direct peste straturi, ca în rețelele reziduale. |
 | Convoluție | Convolution | Operație care aplică filtre pe date spațiale sau secvențiale (folosită în rețelele convoluționale, CNN). |
 | Cuantizare | Quantization | Tehnică de reducere a mărimii modelului prin stocarea ponderilor cu mai puțini biți. |
@@ -90,9 +92,11 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 |-------------|-------------|------------|
 | Generare augmentată prin regăsire (RAG) | Retrieval-Augmented Generation (RAG) | Metodă prin care sistemul caută documente relevante și le pune în contextul modelului înainte ca acesta să răspundă. |
 | Ghidare fără clasificator | Classifier-Free Guidance (CFG) | Tehnică de generare care combină estimarea zgomotului făcută cu text și fără text, ca rezultatul să urmeze mai fidel descrierea. |
+| Grad (al unui nod) | Degree | Numărul de vecini ai unui nod dintr-un graf. |
 | Gradient | Gradient | Vectorul derivatelor parțiale, care indică direcția în care funcția de pierdere crește cel mai repede. |
 | Gradienți care dispar | Vanishing Gradients | Problemă a rețelelor adânci în care gradienții devin foarte mici pe măsură ce sunt propagați înapoi, iar primele straturi aproape nu mai învață. |
 | Gradienți care explodează | Exploding Gradients | Problemă a rețelelor adânci sau recurente în care gradienții devin foarte mari pe măsură ce sunt propagați înapoi, iar antrenarea devine instabilă. |
+| Graf | Graph | Structură formată din noduri și muchii, adică legături între perechi de noduri, de exemplu atomii și legăturile unei molecule. |
 | Graf computațional | Computational Graph | Graf în care nodurile sunt operațiile unui calcul, iar muchiile duc valorile intermediare, folosit pentru calculul automat al gradienților. |
 | GRPO | GRPO (Group Relative Policy Optimization) | Algoritm de învățare prin consolidare care compară mai multe răspunsuri la același prompt și le face mai probabile pe cele mai bune decât media grupului. |
 
@@ -111,6 +115,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | ID-uri de intrare | Input IDs | Numerele care identifică tokenurile după tokenizare. |
 | Inferență | Inference | Folosirea unui model antrenat pentru a produce predicții sau text. |
 | Inițializare | Initialization | Alegerea valorilor inițiale ale parametrilor modelului, înainte de antrenare. |
+| Invarianță la permutări | Permutation Invariance | Proprietatea unui model de a da același rezultat oricum ar fi numerotate elementele intrării, de exemplu nodurile unui graf. |
 
 ## L
 
@@ -126,6 +131,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
 | Mască | Mask | Vector sau matrice care indică ce tokenuri sunt vizibile și care trebuie ignorate. |
+| Matrice de adiacență | Adjacency Matrix | Matrice cu câte un rând și o coloană pentru fiecare nod al unui graf, în care valoarea de pe poziția (i, j) arată dacă nodurile i și j sunt legate. |
 | Memorare | Memorization | Reproducerea aproape identică, de către un model generativ, a unor exemple din datele de antrenare. |
 | Memoria agentului | Agent Memory | Mecanismele prin care un agent păstrează informații între pași sau sesiuni și le aduce înapoi în context când are nevoie de ele. |
 | Memoria cache pentru chei și valori | KV Cache | Păstrarea cheilor și valorilor de atenție ale tokenurilor deja procesate, ca să nu fie recalculate la generarea fiecărui token nou. |
@@ -138,12 +144,15 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Model de raționament | Reasoning Model | Model de limbaj antrenat special să genereze un raționament lung înainte de răspunsul final. |
 | Model salvat | Checkpoint | Fișier care salvează starea modelului (ponderile și starea optimizatorului) la un moment dat. |
 | _Momentum_ | Momentum | Tehnică de optimizare care accelerează convergența prin păstrarea unei „inerții” din pașii anteriori. |
+| Muchie | Edge | Legătură între două noduri ale unui graf. |
 
 ## N
 
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
+| Netezire excesivă | Over-smoothing | Fenomenul prin care, după multe straturi ale unei rețele pe grafuri, vectorii tuturor nodurilor ajung să semene între ei. |
 | Neuron artificial | Artificial Neuron | Unitatea de bază a unei rețele neuronale, care primește intrări și produce o ieșire. |
+| Nod | Node | Element al unui graf, de exemplu un atom dintr-o moleculă sau o persoană dintr-o rețea socială. |
 | Normalizare pe lot | Batch Normalization | Tehnică de normalizare a activărilor pe fiecare lot, pentru a stabiliza și accelera antrenarea. |
 
 ## O
@@ -182,9 +191,11 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Reprezentare vectorială | Embedding | Vector dens care reprezintă un token, un cuvânt sau un text, astfel încât sensurile asemănătoare să aibă vectori apropiați. |
 | Retropropagare | Backpropagation | Algoritmul care calculează eficient gradienții tuturor parametrilor, aplicând regula lanțului de la ieșire spre intrare. |
 | Retropropagare în timp (BPTT) | Backpropagation Through Time | Retropropagarea aplicată unei rețele recurente desfășurate în timp, în care gradienții trec înapoi prin toți pașii secvenței. |
+| Rețea convoluțională pe grafuri (GCN) | Graph Convolutional Network | Rețea pe grafuri în care fiecare strat face o medie ponderată a vectorilor unui nod și ai vecinilor lui, cu ponderi care țin cont de grade. |
 | Rețea feed-forward | Feed-forward Network | Componentă a unui bloc Transformer care aplică aceeași transformare neliniară fiecărei poziții, independent. |
 | Rețea generativă adversarială (GAN) | Generative Adversarial Network | Pereche de rețele antrenate una împotriva celeilalte: una generează exemple, iar cealaltă încearcă să le deosebească de cele reale. |
 | Rețea neuronală | Neural Network | Structură de neuroni artificiali interconectați, organizați în straturi, care învață reprezentări din date. |
+| Rețea neuronală pe grafuri (GNN) | Graph Neural Network | Rețea neuronală care lucrează direct pe un graf, prin transmiterea mesajelor între noduri vecine. |
 | RLHF | RLHF (Reinforcement Learning from Human Feedback) | Învățare prin consolidare din feedback uman, o tehnică de aliniere în care modelul este optimizat după un model de recompensă antrenat pe preferințe umane. |
 
 ## S
@@ -221,6 +232,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Tokenuri speciale | Special Tokens | Tokenuri rezervate pentru a marca sfârșitul textului, completarea (padding) sau rolurile din conversație. |
 | Transformer | Transformer | Arhitectură de rețea neuronală bazată pe atenție, pe care se sprijină majoritatea modelelor de limbaj actuale. |
 | Transformer de difuzie (DiT) | Diffusion Transformer | Transformer folosit ca rețea de eliminare a zgomotului într-un model de difuzie, care primește imaginea sau clipul tăiat în petice. |
+| Transmiterea mesajelor | Message Passing | Mecanismul rețelelor pe grafuri în care, la fiecare strat, fiecare nod primește vectorii vecinilor, îi agregă și își actualizează propriul vector. |
 
 ## V
 

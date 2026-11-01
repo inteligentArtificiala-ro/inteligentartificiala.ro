@@ -1,0 +1,95 @@
+---
+title: Aplicații ale rețelelor pe grafuri
+description: Unde sunt folosite rețelele neuronale pe grafuri, de la durata drumurilor în Google Maps și prognoza meteo cu GraphCast la antibiotice, materiale noi, recomandări și simularea fizicii.
+sidebar:
+  order: 2
+level: intermediar
+tags:
+  - Rețele neuronale
+  - Grafuri
+---
+
+Pagina despre [rețelele neuronale pe grafuri](/retele-neuronale-pe-grafuri/ce-sunt-retelele-neuronale-pe-grafuri/) explică mecanismul lor: fiecare nod își actualizează vectorul pornind de la vectorii vecinilor. Pentru a folosi o astfel de rețea, prima întrebare este ce sunt nodurile și ce sunt muchiile. Odată ce graful este ales, același mecanism poate prezice durata unui drum, vremea de mâine sau efectul unei molecule asupra unei bacterii.
+
+| Aplicație | Noduri | Muchii | Ce prezice rețeaua |
+|-----------|--------|--------|--------------------|
+| Google Maps | porțiuni de drum | porțiunile care se continuă una pe alta | durata drumului |
+| GraphCast | puncte de pe o rețea care acoperă Pământul | legături la mai multe distanțe | vremea peste 6 ore, pas cu pas până la 10 zile |
+| Halicina | atomii unei molecule | legăturile chimice | dacă molecula oprește creșterea unei bacterii |
+| GNoME | atomii unui cristal | atomii aflați aproape unii de alții | dacă un cristal este stabil |
+| PinSage | imagini salvate (pinuri) și colecții (panouri) | o imagine salvată într-o colecție | ce imagini se potrivesc unei imagini date |
+| Simularea fizicii | particule de apă, nisip sau alte materiale | particulele aflate aproape | mișcarea la pasul următor |
+
+## Durata drumurilor în Google Maps
+
+O estimare a duratei unui drum trebuie să știe nu doar cât de aglomerată este strada pe care ne aflăm, ci și cum se va schimba traficul în următoarele minute, pe străzile pe care urmează să ajungem. Un ambuteiaj de pe o stradă se întinde, în câteva minute, și pe străzile care duc spre ea.
+
+În 2020, DeepMind și echipa Google Maps au introdus o rețea pe grafuri pentru această problemă. Rețeaua de drumuri este împărțită în **supersegmente**: șiruri de porțiuni de drum legate între ele, care urmează traseele obișnuite ale traficului. Fiecare supersegment este un graf, în care nodurile sunt porțiunile de drum, iar o muchie leagă două porțiuni care se continuă una pe alta. Prin transmiterea mesajelor, fiecare porțiune află ce se întâmplă pe porțiunile vecine, iar rețeaua estimează cât durează parcurgerea întregului supersegment.
+
+Google Maps estima deja corect durata pentru peste 97% dintre drumuri. Rețeaua pe grafuri a redus mult cazurile în care estimarea greșea mult: în Sydney, cu peste 40% față de modelul folosit anterior, iar în celelalte orașe analizate, cu procente cuprinse între 16% (Londra și Copenhaga) și 51% (Taichung, în Taiwan).
+
+## Prognoza vremii: GraphCast
+
+Modelele meteorologice clasice rezolvă numeric ecuațiile fizicii atmosferei, pe supercalculatoare. GraphCast, publicat de Google DeepMind în 2023, învață prognoza direct din datele meteorologice ale ultimelor decenii.
+
+Atmosfera este descrisă pe o grilă cu pasul de 0,25 grade, adică aproximativ 28 de kilometri la ecuator, pe 37 de niveluri de altitudine. Rețeaua lucrează în trei etape:
+
+1. **codificarea**: valorile de pe grilă sunt mutate pe nodurile unei rețele de puncte care acoperă tot Pământul;
+2. **procesarea**: 16 straturi de transmitere a mesajelor rulează pe această rețea de puncte;
+3. **decodarea**: rezultatul este mutat înapoi pe grilă, ca prognoză pentru peste 6 ore.
+
+Prognoza pentru 6 ore devine apoi intrare pentru următorul pas, iar repetarea duce prognoza până la 10 zile.
+
+Rețeaua de puncte este construită dintr-un icosaedru, un poliedru cu 20 de fețe triunghiulare, ale cărui fețe sunt împărțite în triunghiuri tot mai mici, de 6 ori la rând. La final are 40.962 de noduri. Graful păstrează însă muchiile de la toate etapele împărțirii: muchiile scurte, de la ultima etapă, transportă detaliile locale, iar cele lungi, de la primele etape, duc informația peste mii de kilometri într-un singur strat. Este o soluție directă la problema câmpului receptiv: fără muchiile lungi, un sistem meteorologic din Atlantic ar avea nevoie de foarte multe straturi ca să influențeze prognoza pentru Europa.
+
+O prognoză pe 10 zile durează sub un minut pe un singur cip Google Cloud TPU v4. Comparat cu HRES, modelul determinist al Centrului European pentru Prognoze Meteorologice pe Termen Mediu (ECMWF), cel mai precis sistem operațional de acest fel, GraphCast a fost mai precis pentru 90,3% dintre cele 1.380 de mărimi și termene de prognoză verificate.
+
+ECMWF a testat GraphCast în timp real încă din 2023. Din 25 februarie 2025, centrul folosește operațional propriul model antrenat pe date, AIFS, care codifică și decodează datele tot cu o rețea pe grafuri, iar la mijloc folosește un Transformer. Succesorul lui GraphCast, GenCast (2024), este un [model de difuzie](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/) care produce mai multe prognoze posibile. Rețeaua lui de eliminare a zgomotului lucrează pe aceeași rețea de puncte, cu un Transformer pe graf, iar prognozele lui pe 15 zile au fost mai bune decât cele ale sistemului de ansamblu al ECMWF pentru 97,2% din 1.320 de ținte.
+
+## Molecule și antibiotice
+
+O moleculă este un graf natural: atomii sunt nodurile, iar legăturile chimice sunt muchiile. Unul dintre primele succese ale transmiterii mesajelor a venit din chimie. În 2017, Justin Gilmer și colegii săi au antrenat o rețea pe setul QM9, cu aproximativ 134.000 de molecule organice mici, și au estimat 11 dintre cele 13 proprietăți ale lor cu precizia cerută de chimiști, fără calculele costisitoare ale chimiei cuantice.
+
+În 2020, Jonathan Stokes și colegii săi, de la MIT, au folosit o rețea pe grafuri numită Chemprop ca să caute antibiotice noi. Au antrenat-o pe 2.335 de molecule, despre care se știa dacă opresc creșterea bacteriei _E. coli_, apoi au folosit-o ca să evalueze 6.111 molecule din Drug Repurposing Hub, o colecție de medicamente și de molecule studiate deja. Așa au găsit **halicina**, o moleculă care omora și bacterii rezistente la antibioticele existente, precum _Mycobacterium tuberculosis_ și enterobacteriile rezistente la carbapeneme. La șoareci, halicina a vindecat infecții cu _Clostridioides difficile_ și cu o tulpină de _Acinetobacter baumannii_ rezistentă la toate antibioticele disponibile. Tot atunci, rețeaua a evaluat peste 107 milioane de molecule din baza de date ZINC15. Din cele 23 de molecule alese pentru testare, 8 au avut efect antibacterian.
+
+În 2023, o echipă din care făcea parte și Stokes a repetat procesul pentru _Acinetobacter baumannii_. Rețeaua a evaluat aproximativ 7.500 de molecule și a găsit **abaucina**, care acționează doar asupra acestei bacterii și a vindecat infecții ale rănilor la șoareci. Un antibiotic atât de țintit afectează mai puțin celelalte bacterii din organism. Descoperirea unei molecule este însă doar primul pas: până la un medicament aprobat urmează ani de teste, inclusiv pe oameni.
+
+## Materiale noi: GNoME
+
+Un cristal este și el un graf de atomi. În 2023, Google DeepMind a publicat GNoME, un sistem bazat pe rețele pe grafuri antrenat să estimeze dacă un cristal este **stabil**, adică dacă are o energie mai mică decât orice combinație de materiale cunoscute în care s-ar putea descompune. GNoME a propus 2,2 milioane de structuri cristaline cu această proprietate față de materialele cunoscute până atunci. După ce au fost adăugate la lista materialelor stabile, 381.000 dintre ele au rămas stabile și față de celelalte structuri noi, ceea ce a dus lista la 421.000 de cristale stabile. Dintre acestea, 736 fuseseră deja obținute experimental de alte echipe.
+
+Rezultatele au fost primite și cu rezerve. În același număr al revistei _Nature_, o echipă de la Berkeley a descris A-Lab, un laborator automat care a încercat să sintetizeze materiale propuse de calcule. Articolul inițial anunța 41 de compuși noi obținuți din 58 de încercări. O corectură publicată în ianuarie 2026 a schimbat rezultatul în 36 de compuși din 57 de ținte, obținuți în 17 zile, și a precizat că „noi” însemna noi pentru baza de date de pornire, nu neapărat noi pentru știință. Chimiștii Anthony Cheetham și Ram Seshadri au publicat în 2024 o analiză critică a lucrării despre GNoME, care pune sub semnul întrebării cât de noi și de utile sunt structurile propuse.
+
+## Recomandări: PinSage
+
+Pinterest are un graf natural: imaginile salvate de utilizatori, numite pinuri, și colecțiile în care sunt salvate, numite panouri. Un pin este legat de fiecare panou în care a fost salvat. Două pinuri salvate des în aceleași panouri seamănă, chiar dacă imaginile arată diferit.
+
+În 2018, Pinterest și Universitatea Stanford au descris PinSage, o rețea pe grafuri pornită de la ideile lui [GraphSAGE](/retele-neuronale-pe-grafuri/ce-sunt-retelele-neuronale-pe-grafuri/#graphsage-și-rețelele-cu-atenție). Graful avea 3 miliarde de noduri (2 miliarde de pinuri și 1 miliard de panouri) și 18 miliarde de muchii, iar rețeaua a fost antrenată pe 7,5 miliarde de exemple. La un asemenea graf, nodurile nu pot aduna mesajele tuturor vecinilor, așa că fiecare nod folosește doar un număr mic de vecini, aleși după cât de des sunt vizitați în plimbări aleatoare prin graf. PinSage a fost folosit pentru pinurile recomandate lângă o imagine și pentru pagina principală a fiecărui utilizator, iar testele A/B au arătat o implicare a utilizatorilor cu 30% până la 100% mai mare.
+
+Idei asemănătoare sunt folosite și în alte rețele sociale. LinkedIn a descris în 2024 LiGNN, o rețea pe grafuri pentru recomandări, care, în testele A/B, a crescut cu 2% rata de clic pe reclame și cu 1% rata la care candidații primesc un răspuns la aplicațiile pentru locuri de muncă.
+
+## Simularea fizicii
+
+Un fluid sau un material granular, precum nisipul, poate fi simulat ca un set de particule. În 2020, Alvaro Sanchez-Gonzalez și colegii săi, de la DeepMind, au tratat fiecare particulă ca pe un nod, legat prin muchii de particulele aflate aproape de el. Rețeaua primește pozițiile și vitezele recente și prezice accelerația fiecărei particule la pasul următor, iar repetarea pașilor produce întreaga simulare.
+
+Același model a învățat să simuleze apa, nisipul, un material vâscos și obiecte rigide, inclusiv interacțiunile dintre ele, cu până la aproximativ 19.000 de particule. Pentru că rețeaua învață reguli locale, între particule apropiate, ea a funcționat și pe un spațiu mai mare, cu 85.000 de particule, de 34 de ori mai multe decât la antrenare, pe parcursul a 5.000 de pași.
+
+## Bibliografie
+
+- Borisyuk, F. et al. (2024). [LiGNN: Graph Neural Networks at LinkedIn](https://doi.org/10.1145/3637528.3671566). _KDD 2024_.
+- Cheetham, A. K. și Seshadri, R. (2024). [Artificial Intelligence Driving Materials Discovery? Perspective on the Article: Scaling Deep Learning for Materials Discovery](https://doi.org/10.1021/acs.chemmater.4c00643). _Chemistry of Materials_.
+- Derrow-Pinion, A. et al. (2021). [ETA Prediction with Graph Neural Networks in Google Maps](https://doi.org/10.1145/3459637.3481916). _CIKM 2021_.
+- Gilmer, J. et al. (2017). [Neural Message Passing for Quantum Chemistry](https://arxiv.org/abs/1704.01212). _ICML 2017_.
+- Lam, R. (2023). [GraphCast: AI model for faster and more accurate global weather forecasting](https://deepmind.google/discover/blog/graphcast-ai-model-for-faster-and-more-accurate-global-weather-forecasting/). Blogul Google DeepMind.
+- Lam, R. et al. (2023). [Learning skillful medium-range global weather forecasting](https://doi.org/10.1126/science.adi2336). _Science_.
+- Lang, S. et al. (2024). [AIFS -- ECMWF's data-driven forecasting system](https://arxiv.org/abs/2406.01465). Preprint arXiv:2406.01465.
+- Lange, O. și Perez, L. (2020). [Traffic prediction with advanced Graph Neural Networks](https://deepmind.google/discover/blog/traffic-prediction-with-advanced-graph-neural-networks/). Blogul Google DeepMind.
+- Liu, G. et al. (2023). [Deep learning-guided discovery of an antibiotic targeting Acinetobacter baumannii](https://doi.org/10.1038/s41589-023-01349-8). _Nature Chemical Biology_.
+- Merchant, A. et al. (2023). [Scaling deep learning for materials discovery](https://doi.org/10.1038/s41586-023-06735-9). _Nature_.
+- Moldovan, G. et al. (2025). [An update to ECMWF's machine-learned weather forecast model AIFS](https://arxiv.org/abs/2509.18994). Preprint arXiv:2509.18994.
+- Price, I. et al. (2024). [Probabilistic weather forecasting with machine learning](https://doi.org/10.1038/s41586-024-08252-9). _Nature_.
+- Sanchez-Gonzalez, A. et al. (2020). [Learning to Simulate Complex Physics with Graph Networks](https://arxiv.org/abs/2002.09405). _ICML 2020_.
+- Stokes, J. M. et al. (2020). [A Deep Learning Approach to Antibiotic Discovery](https://doi.org/10.1016/j.cell.2020.01.021). _Cell_.
+- Szymanski, N. J. et al. (2023). [An autonomous laboratory for the accelerated synthesis of inorganic materials](https://doi.org/10.1038/s41586-023-06734-w). _Nature_.
+- Szymanski, N. J. et al. (2026). [Author Correction: An autonomous laboratory for the accelerated synthesis of inorganic materials](https://doi.org/10.1038/s41586-025-09992-y). _Nature_.
+- Ying, R. et al. (2018). [Graph Convolutional Neural Networks for Web-Scale Recommender Systems](https://arxiv.org/abs/1806.01973). _KDD 2018_.

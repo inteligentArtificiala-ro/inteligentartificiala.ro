@@ -1,0 +1,133 @@
+---
+// Graful din exemplul paginii despre rețelele neuronale pe grafuri: zece persoane în două grupuri de prieteni, legate
+// printr-o singură muchie (Elena și Florin). Numărul din fiecare nod este stratul la care ajunge acolo, pentru prima
+// dată, informația pornită de la Ana, adică distanța în muchii până la Ana. Distanțele sunt calculate la build.
+import '../../styles/diagrams.css';
+
+const NODES = [
+  { name: 'Ana', x: 70, y: 75, label: 'above' },
+  { name: 'Bogdan', x: 60, y: 200, label: 'below' },
+  { name: 'Carmen', x: 180, y: 110, label: 'above' },
+  { name: 'Dan', x: 170, y: 240, label: 'below' },
+  { name: 'Elena', x: 285, y: 175, label: 'below' },
+  { name: 'Florin', x: 415, y: 175, label: 'below' },
+  { name: 'Gabriela', x: 520, y: 95, label: 'above' },
+  { name: 'Horia', x: 530, y: 240, label: 'below' },
+  { name: 'Ioana', x: 640, y: 120, label: 'above' },
+  { name: 'Laura', x: 650, y: 250, label: 'below' },
+];
+// Aceleași muchii ca în codul de pe pagină.
+const EDGES = [
+  [0, 1],
+  [0, 2],
+  [1, 2],
+  [1, 3],
+  [2, 3],
+  [2, 4],
+  [3, 4],
+  [4, 5],
+  [5, 6],
+  [5, 7],
+  [6, 7],
+  [6, 8],
+  [7, 8],
+  [7, 9],
+  [8, 9],
+];
+const BRIDGE = 7;
+const R = 20;
+
+// Căutare în lățime pornind de la Ana.
+const hops: number[] = NODES.map(() => -1);
+hops[0] = 0;
+const queue = [0];
+while (queue.length) {
+  const current = queue.shift() as number;
+  for (const [a, b] of EDGES) {
+    const next = a === current ? b : b === current ? a : -1;
+    if (next >= 0 && hops[next] < 0) {
+      hops[next] = hops[current] + 1;
+      queue.push(next);
+    }
+  }
+}
+const maxHops = Math.max(...hops);
+---
+
+<figure class='diagram graph-hops-diagram'>
+  <div class='diagram-scroll'>
+    <svg viewBox='20 25 680 270' role='img' aria-labelledby='graph-hops-title graph-hops-desc'>
+      <title id='graph-hops-title'>Graful din exemplu și distanța fiecărui nod până la Ana</title>
+      <desc id='graph-hops-desc'>
+        Zece persoane în două grupuri de prieteni. În primul grup sunt Ana, Bogdan, Carmen, Dan și Elena, iar în al
+        doilea Florin, Gabriela, Horia, Ioana și Laura. Singura legătură dintre grupuri este prietenia dintre Elena și
+        Florin. Informația pornită de la Ana ajunge după un strat la Bogdan și Carmen, după două straturi la Dan și
+        Elena, după trei la Florin, după patru la Gabriela și Horia și după cinci la Ioana și Laura.
+      </desc>
+
+      {
+        EDGES.map(([i, j], index) => (
+          <line
+            class:list={['edge', { bridge: index === BRIDGE }]}
+            x1={NODES[i].x}
+            y1={NODES[i].y}
+            x2={NODES[j].x}
+            y2={NODES[j].y}
+          />
+        ))
+      }
+      {
+        NODES.map((node, i) => (
+          <g>
+            <circle
+              class='node'
+              cx={node.x}
+              cy={node.y}
+              r={R}
+              style={`fill: color-mix(in oklab, var(--sl-color-accent) ${Math.round(55 - (49 * hops[i]) / maxHops)}%, var(--sl-color-bg))`}
+            />
+            <text class='hop' x={node.x} y={node.y + 5} text-anchor='middle'>
+              {hops[i]}
+            </text>
+            <text x={node.x} y={node.label === 'above' ? node.y - R - 8 : node.y + R + 17} text-anchor='middle'>
+              {node.name}
+            </text>
+          </g>
+        ))
+      }
+      <text class='label' x='350' y='162' text-anchor='middle'>
+        singura legătură
+      </text>
+    </svg>
+  </div>
+  <figcaption>
+    Numărul din fiecare nod este stratul la care ajunge acolo, pentru prima dată, informația pornită de la Ana.
+  </figcaption>
+</figure>
+
+<style>
+  .graph-hops-diagram svg {
+    min-width: 32rem;
+    max-width: 44rem;
+  }
+
+  .graph-hops-diagram .node {
+    stroke: var(--sl-color-accent);
+    stroke-width: 1.5;
+  }
+
+  .graph-hops-diagram .hop {
+    font-weight: 600;
+  }
+
+  .graph-hops-diagram .edge {
+    stroke: var(--sl-color-gray-4);
+    stroke-width: 1.5;
+  }
+
+  .graph-hops-diagram .edge.bridge {
+    stroke: var(--sl-color-accent);
+    stroke-width: 2.5;
+    stroke-dasharray: 6 4;
+  }
+</style>

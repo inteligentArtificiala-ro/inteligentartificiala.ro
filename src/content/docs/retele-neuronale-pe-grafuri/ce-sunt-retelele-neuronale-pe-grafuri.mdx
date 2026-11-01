@@ -1,0 +1,218 @@
+---
+title: Rețele neuronale pe grafuri
+description: Cum învață o rețea neuronală din date legate între ele, precum molecule, rețele sociale sau drumuri. Grafuri, transmiterea mesajelor între noduri, GCN și GAT, limitele lor și un exemplu care rulează în browser.
+sidebar:
+  order: 1
+level: intermediar
+tags:
+  - Rețele neuronale
+  - Grafuri
+---
+
+import DeepDive from '@components/DeepDive.astro';
+import GraphHopsDiagram from '@components/diagrams/GraphHopsDiagram.astro';
+import MessagePassingDiagram from '@components/diagrams/MessagePassingDiagram.astro';
+import Python from '@components/Python.astro';
+
+export const graph = String.raw`
+import numpy as np
+
+# Zece persoane în două grupuri de prieteni, legate printr-o singură prietenie (Elena și Florin)
+names = ["Ana", "Bogdan", "Carmen", "Dan", "Elena", "Florin", "Gabriela", "Horia", "Ioana", "Laura"]
+edges = [(0, 1), (0, 2), (1, 2), (1, 3), (2, 3), (2, 4), (3, 4), (4, 5),
+         (5, 6), (5, 7), (6, 7), (6, 8), (7, 8), (7, 9), (8, 9)]
+n = len(names)
+A = np.zeros((n, n))  # matricea de adiacență: A[i, j] = 1 dacă i și j sunt prieteni
+for i, j in edges:
+    A[i, j] = A[j, i] = 1
+`;
+
+O imagine este o grilă de pixeli, iar un text este un șir de tokenuri. Multe date nu arată însă nici ca o grilă, nici ca un șir. O moleculă este formată din atomi uniți prin legături chimice, o rețea socială din oameni legați prin prietenii, iar o rețea de drumuri din intersecții legate prin străzi. În aceste date, legăturile contează la fel de mult ca elementele pe care le leagă.
+
+O **rețea neuronală pe grafuri** (_graph neural network_, GNN) lucrează direct pe astfel de structuri. Fiecare element învață din elementele legate de el, iar după câțiva pași fiecare „știe” ceva despre vecinătatea lui. Rețele de acest fel estimează durata drumurilor în Google Maps, prognozează vremea în modelul GraphCast și au ajutat la descoperirea unui antibiotic nou, halicina. Pagina despre [aplicațiile rețelelor pe grafuri](/retele-neuronale-pe-grafuri/aplicatii-ale-retelelor-pe-grafuri/) descrie aceste exemple.
+
+## Definiție
+
+Un **graf** (_graph_) este format din **noduri** (_nodes_) și **muchii** (_edges_), adică legături între perechi de noduri. Fiecare nod are un vector de caracteristici: pentru un atom, de exemplu, elementul chimic și sarcina electrică, iar pentru un utilizator, vârsta și interesele. Și muchiile pot avea caracteristici, precum tipul legăturii chimice (simplă, dublă sau triplă), și pot avea un sens, ca citările dintre articolele științifice. Numărul de vecini ai unui nod se numește **grad** (_degree_).
+
+Calculatorul păstrează legăturile într-o **matrice de adiacență** (_adjacency matrix_), notată $A$, cu câte un rând și o coloană pentru fiecare nod. Valoarea de pe rândul $i$ și coloana $j$ este 1 dacă nodurile $i$ și $j$ sunt legate și 0 dacă nu sunt.
+
+O rețea pe grafuri poate răspunde la trei tipuri de întrebări.
+
+- **Despre noduri**: ce subiect are un articol științific dintr-o rețea de citări sau dacă un cont dintr-o rețea socială este fals.
+- **Despre muchii**: dacă între două noduri ar trebui să existe o legătură, de exemplu ce produs l-ar putea interesa pe un client.
+- **Despre întregul graf**: o proprietate a întregii molecule, de exemplu dacă poate opri creșterea unei bacterii.
+
+Modelul a fost descris în forma lui completă în 2009 de Franco Scarselli, Marco Gori și colegii lor, de la Universitatea din Siena. Rețelele pe grafuri au devenit larg folosite după 2017, odată cu rețelele convoluționale pe grafuri, descrise mai jos.
+
+## De ce nu merge o rețea obișnuită
+
+O [rețea neuronală](/retele-neuronale/ce-sunt-retelele-neuronale/) obișnuită primește la intrare un vector de lungime fixă, cu valorile mereu în aceeași ordine. Am putea transforma matricea de adiacență într-un vector și am putea da rețelei acest vector, dar apar trei probleme.
+
+- **Mărimea**: o moleculă poate avea 5 atomi sau 500, iar o rețea socială, miliarde de utilizatori.
+- **Ordinea**: nodurile nu au o ordine naturală. Dacă numerotăm altfel aceleași noduri, matricea de adiacență se schimbă, deși graful a rămas același. Un graf cu 10 noduri poate fi numerotat în $10!$ feluri, adică 3.628.800, iar rețeaua ar trebui să dea același răspuns pentru fiecare. Proprietatea se numește **invarianță la permutări** (_permutation invariance_).
+- **Vecinătatea**: într-o imagine, fiecare pixel are opt vecini, așezați mereu la fel, iar o **rețea neuronală convoluțională** (_convolutional neural network_, CNN) se bazează pe această regularitate. Într-un graf, un nod poate avea un singur vecin, iar altul o mie.
+
+Privite așa, și imaginile, și textele sunt grafuri: o imagine este o grilă în care fiecare pixel este legat de vecinii lui, iar un text este un lanț de tokenuri. Rețelele pe grafuri tratează cazul general, în care legăturile pot avea orice formă.
+
+## Transmiterea mesajelor
+
+Aproape toate rețelele pe grafuri folosesc **transmiterea mesajelor** (_message passing_). Fiecare nod are un vector, la început chiar vectorul lui de caracteristici. La fiecare strat al rețelei, fiecare nod face trei lucruri:
+
+1. primește de la fiecare vecin câte un **mesaj**, de obicei vectorul vecinului, eventual transformat;
+2. adună mesajele printr-o **agregare** (_aggregation_) care nu depinde de ordinea vecinilor, de exemplu o sumă, o medie sau un maxim;
+3. își **actualizează** (_update_) vectorul, combinând rezultatul agregării cu vectorul lui de dinainte, printr-o rețea mică.
+
+<MessagePassingDiagram />
+
+Toate nodurile folosesc aceleași ponderi, la fel cum o rețea convoluțională folosește același filtru în toate pozițiile unei imagini. Numărul de parametri nu depinde deci de mărimea grafului, iar aceeași rețea poate primi o moleculă mică sau una mare. Pentru că suma, media și maximul nu țin cont de ordine, nici rezultatul nu depinde de felul în care au fost numerotate nodurile. Cadrul general a fost formulat în 2017 de Justin Gilmer și colegii săi, de la Google, care au arătat că multe modele propuse până atunci sunt cazuri particulare ale lui.
+
+<DeepDive title="Formula unui strat de transmitere a mesajelor">
+
+$$
+h_v^{(k+1)} = \phi\left(h_v^{(k)},\ \bigoplus_{u \in \mathcal{N}(v)} \psi\left(h_v^{(k)}, h_u^{(k)}, e_{uv}\right)\right)
+$$
+
+$h_v^{(k)}$ este vectorul nodului $v$ după $k$ straturi, $\mathcal{N}(v)$ este mulțimea vecinilor lui $v$, iar $e_{uv}$ sunt caracteristicile muchiei dintre $u$ și $v$. Funcția $\psi$ calculează mesajul trimis de $u$, $\bigoplus$ este agregarea (sumă, medie sau maxim), iar $\phi$ este actualizarea. $\psi$ și $\phi$ sunt rețele mici, cu aceleași ponderi pentru toate nodurile.
+
+</DeepDive>
+
+După un strat, fiecare nod știe ceva despre vecinii lui. După două straturi știe ceva și despre vecinii vecinilor, pentru că aceștia și-au trimis informația mai departe încă de la primul strat. După $k$ straturi, vectorul unui nod depinde de toate nodurile aflate la cel mult $k$ muchii distanță. Această zonă se numește **câmp receptiv** (_receptive field_).
+
+Pentru o întrebare despre întregul graf, vectorii tuturor nodurilor sunt adunați la final într-un singur vector, de exemplu prin sumă sau medie, iar acest vector trece printr-un clasificator obișnuit. Pasul se numește **agregare la nivelul grafului** (_readout_).
+
+## Rețelele convoluționale pe grafuri (GCN)
+
+Cea mai cunoscută variantă este **rețeaua convoluțională pe grafuri** (_graph convolutional network_, GCN), propusă în 2017 de Thomas Kipf și Max Welling, de la Universitatea din Amsterdam. Într-un strat GCN, fiecare nod face o medie ponderată între vectorul lui și vectorii vecinilor, înmulțește rezultatul cu o matrice de ponderi comună tuturor nodurilor și aplică o funcție de activare, de exemplu ReLU.
+
+Ponderile mediei țin cont de grade. Fără ele, un nod cu o mie de vecini ar aduna valori de sute de ori mai mari decât un nod cu doi vecini. GCN împarte mesajul de pe fiecare muchie la rădăcina pătrată a produsului dintre gradele celor două noduri, așa că un vecin cu foarte multe legături contează mai puțin pentru fiecare dintre nodurile cu care este legat.
+
+<DeepDive title="Formula unui strat GCN">
+
+$$
+H^{(k+1)} = \sigma\left(\tilde D^{-1/2} \tilde A \tilde D^{-1/2} H^{(k)} W^{(k)}\right), \qquad \tilde A = A + I
+$$
+
+Matricea $H^{(k)}$ are câte un rând pentru fiecare nod, cu vectorul lui după $k$ straturi. $\tilde A$ este matricea de adiacență la care se adaugă matricea identitate $I$, adică o legătură a fiecărui nod cu el însuși, ca nodul să-și păstreze și propria valoare. $\tilde D$ este matricea diagonală cu gradele din $\tilde A$, $W^{(k)}$ este matricea de ponderi a stratului, aceeași pentru toate nodurile, iar $\sigma$ este funcția de activare. Pentru o muchie între nodurile $i$ și $j$, produsul $\tilde D^{-1/2} \tilde A \tilde D^{-1/2}$ dă ponderea $1/\sqrt{\tilde d_i \tilde d_j}$, unde $\tilde d_i$ este gradul nodului $i$.
+
+</DeepDive>
+
+Kipf și Welling au testat GCN pe rețele de citări între articole științifice. Pe setul Cora, cu 2.708 articole și 5.429 de citări, rețeaua a primit subiectul a doar 5,2% dintre articole, iar pe articolele de test l-a ghicit corect în 81,5% din cazuri. O problemă în care doar câteva noduri au etichete, iar rețeaua le deduce pe ale celorlalte, se numește **clasificare semi-supervizată** (_semi-supervised classification_).
+
+## GraphSAGE și rețelele cu atenție
+
+- **GraphSAGE** (Universitatea Stanford, 2017) a fost gândit pentru grafuri foarte mari. În loc să adune mesajele tuturor vecinilor, fiecare nod alege la întâmplare un număr fix dintre ei, de exemplu 25, așa că un strat costă la fel indiferent dacă nodul are 25 de vecini sau un milion. Rețeaua învață o regulă de calcul, nu câte un vector pentru fiecare nod, deci poate fi folosită și pentru noduri noi, care nu existau la antrenare.
+- **Rețelele cu atenție pe grafuri** (_graph attention networks_, GAT), propuse în 2018 de Petar Veličković și colegii săi, nu tratează toți vecinii la fel. Pentru fiecare muchie, rețeaua calculează o pondere de [atenție](/modele-lingvistice/avem-nevoie-doar-de-atentie/) din vectorii celor două noduri, iar agregarea devine o medie cu aceste ponderi. Un nod poate învăța astfel să țină cont mai mult de unii vecini decât de alții.
+
+## Ce nu poate deosebi o rețea pe grafuri
+
+Transmiterea mesajelor are o limită. Să luăm două grafuri cu câte șase noduri: un hexagon și două triunghiuri separate. În ambele, fiecare nod are exact doi vecini. Dacă toate nodurile pornesc cu același vector, fiecare nod primește la fiecare strat exact aceleași mesaje în ambele grafuri, așa că rețeaua nu le poate deosebi, oricât de multe straturi ar avea.
+
+În 2019, Keyulu Xu și colegii săi au arătat că rețelele bazate pe transmiterea mesajelor nu pot deosebi mai multe grafuri decât un algoritm clasic de comparare a grafurilor, numit testul Weisfeiler-Lehman. Tot ei au arătat că felul agregării contează. Media nu deosebește un nod cu un singur vecin de un nod cu trei vecini identici, pentru că media unui vector este aceeași cu media a trei copii ale lui. Suma îi deosebește. Rețeaua propusă de ei, GIN (_graph isomorphism network_), folosește suma și ajunge la aceeași putere ca testul Weisfeiler-Lehman.
+
+## Un exemplu care rulează în browser
+
+Graful de mai jos are zece persoane, în două grupuri de prieteni. Singura legătură dintre grupuri este prietenia dintre Elena și Florin.
+
+<GraphHopsDiagram />
+
+Primul exemplu pornește de la o informație pe care o are doar Ana: nodul ei are valoarea 1, iar toate celelalte au 0. La fiecare strat, fiecare nod face media dintre valoarea lui și valorile vecinilor. Exemplul nu folosește ponderi învățate, ca să se vadă doar transmiterea mesajelor. Codul afișează valorile după primele cinci straturi și după 200 de straturi, iar `·` înseamnă că informația nu a ajuns încă la acel nod.
+
+<Python
+  packages={['numpy']}
+  code={
+    graph +
+    String.raw`
+# Un strat de transmitere a mesajelor, fără ponderi învățate:
+# fiecare nod face media dintre valoarea lui și valorile vecinilor
+A_self = A + np.eye(n)  # fiecare nod este legat și de el însuși
+mean_neighbors = A_self / A_self.sum(axis=1, keepdims=True)
+
+def show(label, values):
+    cells = ("·" if v == 0 else "<0.001" if v < 0.0005 else f"{v:.3f}" for v in values)
+    print(f"{label:<11}" + "".join(f"{c:>9}" for c in cells))
+
+print(" " * 11 + "".join(f"{name:>9}" for name in names))
+x = np.zeros(n)
+x[0] = 1.0  # doar Ana are informația
+show("început", x)
+for layer in range(1, 201):
+    x = mean_neighbors @ x
+    if layer <= 5 or layer == 200:
+        show(f"strat {layer}", x)
+`
+  }
+/>
+
+Informația înaintează câte o muchie la fiecare strat, exact ca în diagramă. Florin primește ceva abia la al treilea strat, iar Ioana și Laura abia la al cincilea. După 200 de straturi, toate nodurile au aceeași valoare și nu se mai poate spune de unde a pornit informația. Acest fenomen limitează numărul de straturi, așa cum arată secțiunea despre [limite](#limitele-rețelelor-pe-grafuri).
+
+Al doilea exemplu este o clasificare semi-supervizată, ca în articolul despre GCN. Știm doar că Ana face parte din grupul 0 și că Laura face parte din grupul 1, iar rețeaua trebuie să găsească grupul tuturor celorlalți. Fiecare nod pornește doar cu identitatea lui, un vector [one-hot](/modele-lingvistice/embeddings-si-tokenizare/#comparație-cu-codificarea-one-hot), iar două straturi de agregare GCN îi aduc informație din vecinătatea de doi pași. Peste vectorii obținuți, codul antrenează un clasificator liniar, doar pe cele două noduri cu etichetă. Varianta fără funcții de activare între straturi se numește SGC (_simplified graph convolution_) și a fost propusă în 2019 de Felix Wu și colegii săi, care au arătat că, pe multe seturi de date, se descurcă aproape la fel de bine ca GCN și se antrenează mult mai repede.
+
+<Python
+  packages={['numpy']}
+  setup={graph}
+  code={String.raw`
+# Graful (names, edges, n și A) este cel din exemplul de mai sus.
+
+# Normalizarea din GCN: muchia dintre i și j primește ponderea 1 / sqrt(grad(i) * grad(j))
+A_self = A + np.eye(n)
+degree = A_self.sum(axis=1)
+S = A_self / np.sqrt(np.outer(degree, degree))
+
+# La început, fiecare nod știe doar cine este (un vector one-hot).
+# Două straturi de agregare îi aduc informație de la nodurile aflate la cel mult doi pași.
+X = np.eye(n)
+H = S @ S @ X
+
+# Știm grupul a doar două persoane: Ana este în grupul 0, iar Laura în grupul 1
+labeled = [0, 9]
+Y = np.array([[1.0, 0.0], [0.0, 1.0]])
+
+# Un clasificator liniar (softmax), antrenat prin coborâre pe gradient doar pe cele două noduri
+def softmax(z):
+    e = np.exp(z - z.max(axis=1, keepdims=True))
+    return e / e.sum(axis=1, keepdims=True)
+
+rng = np.random.default_rng(seed=0)
+W = rng.normal(scale=0.1, size=(n, 2))
+for step in range(500):
+    P = softmax(H[labeled] @ W)
+    W -= H[labeled].T @ (P - Y) / len(labeled)
+
+P = softmax(H @ W)
+for i, name in enumerate(names):
+    note = "   (etichetă dată)" if i in labeled else ""
+    print(f"{name:<9} grupul {P[i].argmax()}   probabilitatea grupului 1: {P[i, 1]:.2f}{note}")
+`}
+/>
+
+Cu doar două etichete, rețeaua pune toate cele zece persoane în grupul corect. Fiecare nod ajunge să semene cu nodul etichetat de care este mai aproape în graf. Elena și Florin, legați între ei peste granița dintre grupuri, au probabilitățile cele mai puțin sigure: 0,12 și 0,89.
+
+## Limitele rețelelor pe grafuri
+
+- **Netezirea excesivă** (_over-smoothing_): după multe straturi, vectorii tuturor nodurilor ajung să semene între ei, ca în primul exemplu. Qimai Li și colegii săi au descris fenomenul în 2018, pornind chiar de la GCN. De aceea, rețelele pe grafuri au adesea doar două sau trei straturi, în timp ce rețelele pentru imagini sau text au zeci.
+- **Comprimarea excesivă** (_over-squashing_): informația de la nodurile îndepărtate trebuie să treacă prin puține muchii. În exemplu, tot ce află grupul lui Florin despre grupul Anei trece prin muchia dintre Elena și Florin. Când câmpul receptiv crește foarte repede de la un strat la altul, tot mai multă informație trebuie strânsă într-un vector de aceeași mărime. Uri Alon și Eran Yahav au arătat în 2021 că acest blocaj explică de ce rețelele pe grafuri se descurcă greu când rezultatul depinde de noduri aflate departe unele de altele.
+- **Mărimea**: un graf cu miliarde de noduri nu încape în memoria unei [plăci grafice](/concepte-de-baza/utilitatea-placilor-grafice/). Antrenarea se face pe bucăți: se alege un lot de noduri și se iau doar vecinătățile lor, eventual eșantionate, ca la GraphSAGE.
+
+## Grafurile și Transformerul
+
+Un [Transformer](/modele-lingvistice/arhitectura-transformer/) poate fi privit ca o rețea pe un graf în care fiecare token este un nod legat de toate celelalte. [Mecanismul de atenție](/modele-lingvistice/avem-nevoie-doar-de-atentie/) este o agregare a mesajelor de la toți vecinii, cu ponderi calculate din vectorii nodurilor, ca la GAT. Într-un text nu există muchii care să spună ce cuvinte sunt legate, așa că Transformerul se uită la toate perechile și învață singur care contează. Ordinea cuvintelor, pe care un graf complet nu o reține, vine din [codificarea pozițională](/modele-lingvistice/avem-nevoie-doar-de-atentie/#codificarea-pozițională). Chaitanya Joshi a descris această legătură în 2020, în eseul [„Transformers are Graph Neural Networks”](https://thegradient.pub/transformers-are-graph-neural-networks/).
+
+Legătura funcționează și în sens invers. **Transformerele pe grafuri** (_graph transformers_) aplică atenția peste toate perechile de noduri ale unui graf, deci informația nu mai trebuie să treacă prin muchiile care fac blocaj, și adaugă structura grafului ca informație suplimentară. Graphormer (Microsoft Research, 2021), de exemplu, adaugă la scorul de atenție dintre două noduri un termen care depinde de distanța dintre ele în graf, măsurată în muchii.
+
+## Bibliografie
+
+- Alon, U. și Yahav, E. (2021). [On the Bottleneck of Graph Neural Networks and its Practical Implications](https://arxiv.org/abs/2006.05205). _ICLR 2021_.
+- Derrow-Pinion, A. et al. (2021). [ETA Prediction with Graph Neural Networks in Google Maps](https://doi.org/10.1145/3459637.3481916). _CIKM 2021_.
+- Gilmer, J. et al. (2017). [Neural Message Passing for Quantum Chemistry](https://arxiv.org/abs/1704.01212). _ICML 2017_.
+- Hamilton, W. L., Ying, R. și Leskovec, J. (2017). [Inductive Representation Learning on Large Graphs](https://arxiv.org/abs/1706.02216). _NeurIPS 2017_.
+- Joshi, C. K. (2020). [Transformers are Graph Neural Networks](https://thegradient.pub/transformers-are-graph-neural-networks/). _The Gradient_.
+- Kipf, T. N. și Welling, M. (2017). [Semi-Supervised Classification with Graph Convolutional Networks](https://arxiv.org/abs/1609.02907). _ICLR 2017_.
+- Lam, R. et al. (2023). [Learning skillful medium-range global weather forecasting](https://doi.org/10.1126/science.adi2336). _Science_.
+- Li, Q., Han, Z. și Wu, X.-M. (2018). [Deeper Insights into Graph Convolutional Networks for Semi-Supervised Learning](https://arxiv.org/abs/1801.07606). _AAAI 2018_.
+- Scarselli, F. et al. (2009). [The Graph Neural Network Model](https://doi.org/10.1109/TNN.2008.2005605). _IEEE Transactions on Neural Networks_, 20(1), 61–80.
+- Stokes, J. M. et al. (2020). [A Deep Learning Approach to Antibiotic Discovery](https://doi.org/10.1016/j.cell.2020.01.021). _Cell_.
+- Veličković, P. et al. (2018). [Graph Attention Networks](https://arxiv.org/abs/1710.10903). _ICLR 2018_.
+- Wu, F. et al. (2019). [Simplifying Graph Convolutional Networks](https://arxiv.org/abs/1902.07153). _ICML 2019_.
+- Xu, K. et al. (2019). [How Powerful are Graph Neural Networks?](https://arxiv.org/abs/1810.00826). _ICLR 2019_.
+- Ying, C. et al. (2021). [Do Transformers Really Perform Bad for Graph Representation?](https://arxiv.org/abs/2106.05234). _NeurIPS 2021_.
