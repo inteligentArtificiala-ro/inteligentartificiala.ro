@@ -176,6 +176,7 @@ site-search dialog {
 
 .bibliografie > li {
   padding-inline-start: 1.75em;
+  color: var(--sl-color-gray-2);
   text-indent: -1.75em;
 }
 
@@ -191,22 +192,33 @@ site-search dialog {
   font-variant-numeric: tabular-nums;
 }
 
-.bibliografie > li > em {
-  color: var(--sl-color-gray-3);
-}
-
+/* Titlul are culoarea textului, nu a legăturilor, ca lista să se citească drept bibliografie, nu ca un șir de
+   legături. O linie subțire arată că se poate da clic, iar culoarea de accent apare doar la trecerea cu mouse-ul. */
 .sl-markdown-content .bibliografie .bib-titlu {
-  text-decoration-color: color-mix(in oklch, currentColor 35%, transparent);
-  text-underline-offset: 0.2em;
+  color: var(--sl-color-white);
+  text-decoration-color: color-mix(in oklch, currentColor 28%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
 }
 
 .sl-markdown-content .bibliografie .bib-titlu:hover {
+  color: var(--sl-color-text-accent);
   text-decoration-color: currentColor;
 }
 
+/* Publicația, cu tot ce urmează după titlu, într-o singură nuanță. */
+.bib-sursa {
+  color: var(--sl-color-gray-3);
+}
+
 .sl-markdown-content .bib-inapoi {
-  margin-inline-start: 0.2em;
+  margin-inline-start: 0.25em;
+  color: var(--sl-color-gray-3);
   text-decoration: none;
+}
+
+.sl-markdown-content .bib-inapoi:hover {
+  color: var(--sl-color-text-accent);
 }
 
 .bib-inapoi sup {

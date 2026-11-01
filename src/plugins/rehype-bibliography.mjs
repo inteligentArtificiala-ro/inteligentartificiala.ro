@@ -65,6 +65,10 @@ export default function rehypeBibliography() {
       const title = entry.content.children.find((child) => child.type === 'element' && child.tagName === 'a');
       if (title?.type === 'element') {
         title.properties.className = ['bib-titlu'];
+        // Tot ce urmează după titlu (publicația, „Preprint arXiv:…”, „Blogul …”) primește același stil discret.
+        const after = entry.content.children.indexOf(title) + 1;
+        const source = entry.content.children.splice(after);
+        if (source.length) entry.content.children.push(element('span', { className: ['bib-sursa'] }, source));
         const href = normalizeHref(title.properties.href);
         if (href && !byHref.has(href)) byHref.set(href, { content: entry.content, key: entry.key, citations: [] });
       }
