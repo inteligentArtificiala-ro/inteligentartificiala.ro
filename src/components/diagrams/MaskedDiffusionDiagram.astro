@@ -1,0 +1,120 @@
+---
+// Procesul direct și procesul invers al difuziei cu mască, pe o propoziție de șase tokenuri (aici, un token este un
+// cuvânt). Fiecare token are momentul lui, după care rămâne ascuns, ca măștile să se adune de la un rând la altul.
+import '../../styles/diagrams.css';
+import Box from './Box.astro';
+
+const TOKENS = [
+  { text: 'Pisica', hideAt: 0.8 },
+  { text: 'neagră', hideAt: 0.45 },
+  { text: 'doarme', hideAt: 0.9 },
+  { text: 'pe', hideAt: 0.2 },
+  { text: 'covor', hideAt: 0.6 },
+  { text: '.', hideAt: 0.3 },
+];
+const STEPS = [
+  { t: 0, label: 't = 0' },
+  { t: 1 / 3, label: 't = 1/3' },
+  { t: 2 / 3, label: 't = 2/3' },
+  { t: 1, label: 't = 1' },
+];
+const LEFT = 70;
+const TOP = 50;
+const WIDTH = 72;
+const HEIGHT = 34;
+const PITCH_X = 78;
+const PITCH_Y = 52;
+const RIGHT = LEFT + TOKENS.length * PITCH_X;
+const BOTTOM = TOP + (STEPS.length - 1) * PITCH_Y + HEIGHT;
+
+const rows = STEPS.map((step, index) => ({
+  ...step,
+  y: TOP + index * PITCH_Y,
+  tokens: TOKENS.map((token, i) => ({ x: LEFT + i * PITCH_X, text: token.text, hidden: token.hideAt < step.t })),
+}));
+---
+
+<figure class='diagram masked-diffusion-diagram'>
+  <div class='diagram-scroll'>
+    <svg viewBox={`0 0 ${RIGHT + 52} ${BOTTOM + 52}`} role='img' aria-labelledby='masked-diffusion-title masked-diffusion-desc'>
+      <title id='masked-diffusion-title'>Procesul direct și procesul invers al difuziei cu mască</title>
+      <desc id='masked-diffusion-desc'>
+        Propoziția „Pisica neagră doarme pe covor.”, împărțită în șase tokenuri, la patru momente. La t = 0 toate
+        tokenurile sunt vizibile. La t = 1/3, două tokenuri, „pe” și punctul, sunt înlocuite cu tokenul de mască. La
+        t = 2/3 sunt ascunse patru tokenuri, iar la t = 1 toate șase. De sus în jos, procesul direct adaugă măști. De
+        jos în sus, procesul invers, învățat de rețea, completează măștile până la textul întreg.
+      </desc>
+      <defs>
+        <marker
+          id='masked-diffusion-arrow'
+          viewBox='0 0 10 10'
+          refX='9'
+          refY='5'
+          markerWidth='6'
+          markerHeight='6'
+          orient='auto-start-reverse'
+        >
+          <path d='M 0 0 L 10 5 L 0 10 z'></path>
+        </marker>
+        <marker
+          id='masked-diffusion-arrow-reverse'
+          viewBox='0 0 10 10'
+          refX='9'
+          refY='5'
+          markerWidth='6'
+          markerHeight='6'
+          orient='auto-start-reverse'
+        >
+          <path class='reverse' d='M 0 0 L 10 5 L 0 10 z'></path>
+        </marker>
+      </defs>
+
+      <text class='title' x={LEFT} y='28'>Procesul direct: se adaugă măști (fix) ↓</text>
+
+      {
+        rows.map((row) => (
+          <g>
+            <text x='12' y={row.y + HEIGHT / 2 + 5}>
+              {row.label}
+            </text>
+            {row.tokens.map((token) =>
+              token.hidden ? (
+                <Box x={token.x} y={row.y} width={WIDTH} height={HEIGHT} kind='mask' lines={['[M]']} dashed />
+              ) : (
+                <Box x={token.x} y={row.y} width={WIDTH} height={HEIGHT} kind='feed-forward' lines={[token.text]} />
+              ),
+            )}
+          </g>
+        ))
+      }
+
+      <path class='arrow' marker-end='url(#masked-diffusion-arrow)' d={`M${RIGHT + 14} ${TOP} V${BOTTOM}`} />
+      <path
+        class='arrow reverse'
+        marker-end='url(#masked-diffusion-arrow-reverse)'
+        d={`M${RIGHT + 36} ${BOTTOM} V${TOP}`}
+      />
+
+      <text class='title' x={LEFT} y={BOTTOM + 34}>↑ Procesul invers: rețeaua completează măștile (învățat)</text>
+    </svg>
+  </div>
+  <figcaption>
+    La momentul t, fiecare token este ascuns cu probabilitatea t, iar un token ascuns rămâne ascuns până la t = 1.
+    Pentru simplitate, fiecare cuvânt este aici un singur token.
+  </figcaption>
+</figure>
+
+<style>
+  .masked-diffusion-diagram svg {
+    min-width: 30rem;
+    max-width: 40rem;
+  }
+
+  .masked-diffusion-diagram .arrow.reverse {
+    stroke: var(--sl-color-accent);
+  }
+
+  .masked-diffusion-diagram marker path.reverse {
+    fill: var(--sl-color-accent);
+  }
+</style>

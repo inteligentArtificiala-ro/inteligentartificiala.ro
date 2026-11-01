@@ -86,9 +86,9 @@ export const LEARNING_PATHS: LearningPath[] = [
     ],
   },
   {
-    name: 'Cum se generează imagini, voce și video',
+    name: 'Cum se generează imagini, voce, video și text',
     description:
-      'Cum creează un model de difuzie o imagine pornind de la zgomot, ce se află în spatele generatoarelor de imagini, voce și video și cum recunoaștem un conținut generat sau falsificat. Traseul se încheie cu imagini și sunete generate cu modele deschise.',
+      'Cum creează un model de difuzie o imagine pornind de la zgomot, ce se află în spatele generatoarelor de imagini, voce și video, cum poate difuzia să scrie text și cum recunoaștem un conținut generat sau falsificat. Traseul se încheie cu imagini și sunete generate cu modele deschise.',
     color: 'red',
     pages: [
       ...BAZA,
@@ -96,6 +96,7 @@ export const LEARNING_PATHS: LearningPath[] = [
       'modele-de-difuzie/generarea-imaginilor',
       'modele-de-difuzie/generarea-vocii',
       'modele-de-difuzie/generarea-video',
+      'modele-de-difuzie/generarea-textului',
       'laboratoare/difuzie-imagini-si-sunete/prezentare',
     ],
   },

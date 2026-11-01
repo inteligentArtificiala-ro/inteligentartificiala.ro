@@ -53,9 +53,11 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
 | _Deepfake_ | Deepfake | Imagine, clip video sau înregistrare audio generată ori manipulată, care pare să arate o persoană, un loc sau un eveniment real. |
+| Decodare paralelă | Parallel Decoding | Fixarea mai multor tokenuri la aceeași trecere prin rețea, ca la modelele de limbaj bazate pe difuzie. |
 | Decodare speculativă | Speculative Decoding | Tehnică de accelerare a generării în care un model mic propune câteva tokenuri, iar modelul mare le verifică pe toate într-o singură trecere. |
 | Derivată | Derivative | Rata de schimbare a unei funcții, folosită la calculul gradienților. |
 | Diferențiere automată | Automatic Differentiation (autograd) | Calculul automat și exact al derivatelor unui program pe baza grafului computațional, oferit în PyTorch de `autograd`. |
+| Difuzie cu mască | Masked Diffusion | Model de difuzie pentru date discrete, precum textul, în care procesul direct înlocuiește tokenurile cu un token de mască, iar rețeaua învață să le completeze. |
 | Difuzie latentă | Latent Diffusion | Model de difuzie care lucrează pe reprezentarea comprimată a unei imagini, produsă de un autoencoder, nu direct pe pixeli. |
 | Dimensiune | Dimension | Numărul de valori dintr-un vector, de exemplu dintr-o reprezentare vectorială. |
 | Dimensiunea lotului | Batch Size | Numărul de exemple dintr-un lot folosit la un pas de antrenare. |
@@ -130,6 +132,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Metrici | Metrics | Măsuri pentru evaluarea performanței unui model (precizie, sensibilitate, perplexitate etc.). |
 | Model | Model | Funcția matematică, cu parametri învățați din date, care face predicții. |
 | Model de difuzie | Diffusion Model | Model generativ care învață să elimine treptat zgomotul din date și generează date noi pornind de la zgomot pur. |
+| Model de limbaj bazat pe difuzie | Diffusion Language Model | Model de limbaj care generează textul prin difuzie, fixând mai multe tokenuri la fiecare pas, în loc să scrie câte un token de la stânga la dreapta. |
 | Model de limbaj cauzal | Causal Language Model | Model care prezice următorul token dintr-o secvență pe baza tokenurilor anterioare, folosit la generarea de text. |
 | Model de limbaj mare (LLM) | Large Language Model (LLM) | Model de limbaj cu miliarde de parametri, antrenat pe cantități foarte mari de text. |
 | Model de raționament | Reasoning Model | Model de limbaj antrenat special să genereze un raționament lung înainte de răspunsul final. |
@@ -212,6 +215,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 |-------------|-------------|------------|
 | Temperatură | Temperature | Parametru care controlează cât de aleatoare este generarea, iar valorile mici dau răspunsuri mai previzibile. |
 | Token | Token | Unitatea de bază de text (cuvânt, parte de cuvânt sau caracter) cu care lucrează modelul. |
+| Token de mască | Mask Token | Token special care ascunde conținutul unei poziții dintr-un text, pe care modelul trebuie să-l ghicească, folosit de BERT și de difuzia cu mască. |
 | Tokenizare | Tokenization | Procesul de transformare a textului în tokenuri. |
 | Tokenuri de gândire | Thinking Tokens | Tokenurile raționamentului intermediar pe care un model îl generează înainte de răspuns, delimitate de obicei de marcaje precum `<think>` și `</think>`. |
 | Tokenuri speciale | Special Tokens | Tokenuri rezervate pentru a marca sfârșitul textului, completarea (padding) sau rolurile din conversație. |

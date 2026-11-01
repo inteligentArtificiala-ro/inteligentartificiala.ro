@@ -100,6 +100,12 @@
   stroke: var(--sl-color-red);
 }
 
+/* Tokenul de mască din diagramele despre difuzia pentru text (cu `dashed` în Box.astro). */
+.diagram .mask {
+  fill: var(--sl-color-gray-6);
+  stroke: var(--sl-color-gray-4);
+}
+
 .diagram .neutral {
   fill: var(--sl-color-bg);
   stroke: var(--sl-color-gray-4);
