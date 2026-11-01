@@ -37,6 +37,11 @@ export default defineConfig({
           label: 'GitHub',
           href: 'https://github.com/inteligentArtificiala-ro',
         },
+        {
+          icon: 'youtube',
+          label: 'YouTube',
+          href: 'https://www.youtube.com/@inteligentArtificiala',
+        },
       ],
       plugins: [starlightThemeExquisitus()],
       customCss: [

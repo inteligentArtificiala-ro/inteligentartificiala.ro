@@ -9,6 +9,7 @@ export const SITE = {
   locale: 'ro-RO',
   lang: 'ro',
   repo: 'https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro',
+  youtube: 'https://www.youtube.com/@inteligentArtificiala',
   googleAnalyticsId: 'G-C5RGL9RXDT',
 } as const;
 
