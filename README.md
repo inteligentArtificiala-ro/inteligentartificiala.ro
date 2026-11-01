@@ -23,6 +23,10 @@ Every lab has one Jupyter notebook, `public/laboratoare/<lab>/<lab>.ipynb`, with
 
 The notebooks of the first two labs are generated from the code blocks of the lab pages, so changes go into the pages, not into the notebooks. The mvGPT and PPO notebooks run those labs' scripts.
 
+## Videos
+
+The site has its own pages for the project's Romanian video series (https://www.youtube.com/@inteligentArtificiala): `/videouri/` lists the episodes and `/videouri/<id>/` shows one, with its chapters, code steps and transcript. Each episode is `src/content/videouri/<id>.json`, the `release.json` that aphrodite writes in the series' studio, copied here with its thumbnails (`public/videouri/`) by the studio's `scripts/site-sync.sh`. A documentation page includes an episode with `<Video id="<id>" />` (`src/components/Video.astro`), optionally from a chapter (`capitol="…"`) or a second (`la={754}`). The player loads from YouTube only when a reader presses play.
+
 - Licenses: [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)
 
 Every push to `main` is published automatically to GitHub Pages (`.github/workflows/deploy.yml`).

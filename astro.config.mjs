@@ -126,6 +126,8 @@ export default defineConfig({
             },
           ],
         },
+        // Seria video: lista episoadelor (src/pages/videouri/), câte o pagină pentru fiecare episod.
+        { label: 'Videouri', link: '/videouri/' },
         {
           label: 'Proiect',
           collapsed: true,

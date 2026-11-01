@@ -1,0 +1,211 @@
+---
+// Toate episoadele seriei video, cele mai noi primele, fiecare cu miniatura, data, durata și subtitlul. Episoadele
+// vin din src/content/videouri/ (src/utils/videouri.ts), deci un episod nou apare aici odată cu fișierul lui.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { SITE } from '../../consts';
+import { pluralize } from '../../utils/format';
+import { ceas, dataPublicarii, durata, eticheta, miniatura, paginaVideo, videouri } from '../../utils/videouri';
+
+const toate = (await videouri()).reverse();
+---
+
+<StarlightPage
+  frontmatter={{
+    title: 'Videouri',
+    description:
+      'Seria video a proiectului InteligentArtificiala.ro, în limba română: fiecare episod cu capitolele, codul și transcrierea completă.',
+    tableOfContents: false,
+  }}
+>
+  <p>
+    Episoadele seriei video a proiectului, în limba română. Fiecare episod are aici o pagină cu playerul, capitolele,
+    codul de la fiecare pas, acolo unde există, și transcrierea completă. Paginile documentației le includ acolo unde
+    explică aceleași idei.
+  </p>
+
+  {
+    toate.length === 0 ? (
+      <p class='gol'>
+        Primul episod este în lucru. Episoadele noi apar aici și pe{' '}
+        <a href={SITE.youtube}>canalul de YouTube al proiectului</a>.
+      </p>
+    ) : (
+      <>
+        <p class='rezumat not-content' data-pagefind-ignore>
+          {pluralize(toate.length, 'episod', 'episoade')} · <a class='canal' href={SITE.youtube}>canalul de YouTube</a>
+        </p>
+        <ul class='episoade not-content'>
+          {toate.map((v) => {
+            const imagine = miniatura(v, 'mica') ?? miniatura(v);
+            return (
+              <li>
+                <div class='miniatura'>
+                  {imagine ? (
+                    <img src={imagine} alt='' width='640' height='360' loading='lazy' decoding='async' />
+                  ) : (
+                    <span>{v.data.headline ?? v.data.title}</span>
+                  )}
+                  <span class='durata-mica'>{ceas(v.data.duration)}</span>
+                </div>
+                <div class='text'>
+                  <p class='eticheta'>{eticheta(v)}</p>
+                  <h2>
+                    <a href={paginaVideo(v)}>{v.data.title}</a>
+                  </h2>
+                  <p class='meta'>
+                    {dataPublicarii(v)} · {durata(v.data.duration)}
+                  </p>
+                  {v.data.subtitle && <p class='subtitlu'>{v.data.subtitle}</p>}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </>
+    )
+  }
+</StarlightPage>
+
+<style>
+  .gol {
+    padding: 1rem 1.25rem;
+    border: 1px dashed var(--sl-color-gray-5);
+    border-radius: 4px;
+  }
+
+  .episoade {
+    display: grid;
+    gap: 2rem;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Pe ecranele late, miniatura în stânga și textul în dreapta; pe telefon, una sub alta. Tot episodul este un
+     link: titlul se întinde peste el (h2 a::after), ca link-ul să fie unul singur la navigarea cu tastatura. */
+  li {
+    position: relative;
+    display: grid;
+    gap: 0.85rem 1.5rem;
+  }
+
+  @media (min-width: 40rem) {
+    li {
+      grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+
+  .miniatura {
+    position: relative;
+    display: grid;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 4px;
+    background: var(--sl-color-black);
+    text-decoration: none;
+  }
+
+  .miniatura img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+  }
+
+  li:hover .miniatura img {
+    transform: scale(1.03);
+  }
+
+  .miniatura > span:first-child {
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    font-family: var(--sl-font);
+    font-weight: 600;
+    color: var(--sl-color-gray-2);
+    text-align: center;
+  }
+
+  .durata-mica {
+    position: absolute;
+    right: 0.4rem;
+    bottom: 0.4rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 3px;
+    background: oklch(0.15 0.01 255 / 0.85);
+    font-family: var(--sl-font);
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    color: white;
+  }
+
+  .text {
+    font-family: var(--sl-font);
+  }
+
+  .text > * {
+    margin: 0;
+  }
+
+  .eticheta {
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
+  }
+
+  h2 {
+    margin-top: 0.15rem;
+    font-size: var(--sl-text-xl);
+    line-height: 1.3;
+  }
+
+  h2 a {
+    color: var(--sl-color-white);
+    text-decoration: none;
+  }
+
+  h2 a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  li:hover h2 a,
+  h2 a:focus-visible {
+    text-decoration: underline;
+    text-decoration-color: var(--sl-color-accent);
+  }
+
+  .rezumat {
+    margin-top: 1.5rem;
+    font-family: var(--sl-font);
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+
+  .canal {
+    color: var(--sl-color-text-accent);
+  }
+
+  .meta {
+    margin-top: 0.25rem;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+
+  .subtitlu {
+    margin-top: 0.5rem;
+    font-family: var(--sl-exquisitus-font-reading);
+    color: var(--sl-color-gray-2);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .miniatura img {
+      transition: none;
+    }
+  }
+</style>

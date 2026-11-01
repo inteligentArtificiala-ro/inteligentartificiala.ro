@@ -1,0 +1,296 @@
+---
+// Pagina unui episod din seria video: playerul, descrierea, capitolele, codul de la fiecare pas (tagurile din
+// repozitoriul codului, ca în episod), paginile documentației care includ videoul și transcrierea, sub capitolele ei.
+// Momentele de timp mută playerul (VideoPlayer.astro); deschise într-un tab nou, duc la același moment pe YouTube.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import VideoPlayer from '../../components/VideoPlayer.astro';
+import { SITE } from '../../consts';
+import {
+  capitolLa,
+  ceas,
+  dataPublicarii,
+  durata,
+  eticheta,
+  miniatura,
+  paginaVideo,
+  paginiCuVideo,
+  type Video,
+  videouri,
+  youtubeUrl,
+} from '../../utils/videouri';
+
+export async function getStaticPaths() {
+  const toate = await videouri();
+  return toate.map((v, i) => ({ params: { id: v.id }, props: { v, inainte: toate[i - 1], dupa: toate[i + 1] } }));
+}
+
+interface Props {
+  v: Video;
+  inainte?: Video;
+  dupa?: Video;
+}
+
+const { v, inainte, dupa } = Astro.props;
+const { data } = v;
+const salt = (t: number) => ({ href: youtubeUrl(v, t), 'data-salt': Math.floor(t) });
+
+const sectiuni = data.chapters.length
+  ? data.chapters
+      .map((c, i) => ({ ...c, paragrafe: data.transcript.filter((p) => capitolLa(v, p.t) === i) }))
+      .filter((s) => s.paragrafe.length)
+  : [{ t: 0, title: '', paragrafe: data.transcript }];
+
+const pasi = data.code?.steps.map((s, i) => ({ ...s, n: i + 1, capitol: data.chapters[capitolLa(v, s.t)]?.title }));
+const arbore = (tag: string) => `${data.code?.repo}/tree/${tag}`;
+const diferente = (de: string, la: string) => `${data.code?.repo}/compare/${de}...${la}`;
+
+const pagini = await paginiCuVideo(v.id);
+
+const headings = [
+  data.chapters.length > 0 && { depth: 2, slug: 'capitole', text: 'Capitole' },
+  pasi && { depth: 2, slug: 'codul', text: 'Codul' },
+  pagini.length > 0 && { depth: 2, slug: 'in-documentatie', text: 'În documentație' },
+  data.transcript.length > 0 && { depth: 2, slug: 'transcriere', text: 'Transcriere' },
+].filter((h) => !!h);
+
+// Datele structurate ale videoului (Schema.org VideoObject), cu capitolele ca momente cheie.
+const iso = (t: number) => `PT${Math.floor(t / 3600)}H${Math.floor((t % 3600) / 60)}M${Math.floor(t % 60)}S`;
+const imagine = miniatura(v);
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'VideoObject',
+  name: data.youtubeTitle,
+  description: data.description ?? data.subtitle ?? data.title,
+  thumbnailUrl: [imagine ? new URL(imagine, SITE.url).href : `https://i.ytimg.com/vi/${data.youtube.id}/maxresdefault.jpg`],
+  uploadDate: data.youtube.published,
+  duration: iso(data.duration),
+  embedUrl: `https://www.youtube-nocookie.com/embed/${data.youtube.id}`,
+  url: youtubeUrl(v),
+  inLanguage: 'ro',
+  hasPart: data.chapters.map((c, i) => ({
+    '@type': 'Clip',
+    name: c.title,
+    startOffset: Math.floor(c.t),
+    endOffset: Math.floor(data.chapters[i + 1]?.t ?? data.duration),
+    url: youtubeUrl(v, c.t),
+  })),
+};
+const pagina = (x?: Video) => x && { link: paginaVideo(x), label: x.data.title };
+---
+
+<StarlightPage
+  frontmatter={{
+    title: data.title,
+    description: data.subtitle ?? data.description ?? data.title,
+    prev: pagina(inainte) ?? false,
+    next: pagina(dupa) ?? false,
+    head: [
+      { tag: 'script', attrs: { type: 'application/ld+json' }, content: JSON.stringify(jsonLd) },
+      ...(imagine ? [{ tag: 'meta' as const, attrs: { property: 'og:image', content: new URL(imagine, SITE.url).href } }] : []),
+      { tag: 'meta', attrs: { property: 'og:type', content: 'video.episode' } },
+      { tag: 'meta', attrs: { property: 'video:release_date', content: data.youtube.published } },
+      { tag: 'meta', attrs: { property: 'video:duration', content: String(Math.round(data.duration)) } },
+    ],
+  }}
+  headings={headings}
+>
+  <p class='meta not-content' data-pagefind-ignore>
+    <a href='/videouri/'>{eticheta(v)}</a> · {dataPublicarii(v)} · {durata(data.duration)}
+  </p>
+
+  <VideoPlayer video={v} />
+
+  <p class='legaturi not-content' data-pagefind-ignore>
+    <a href={youtubeUrl(v)}>Pe YouTube</a>
+    {data.code && <a href={data.code.repo}>Codul pe GitHub</a>}
+    <a href='/videouri/'>Toate videourile</a>
+  </p>
+
+  {data.subtitle && <p class='subtitlu'>{data.subtitle}</p>}
+  {data.description && data.description !== data.subtitle && <p>{data.description}</p>}
+
+  {
+    data.chapters.length > 0 && (
+      <>
+        <h2 id='capitole'>Capitole</h2>
+        <ol class='capitole not-content'>
+          {data.chapters.map((c) => (
+            <li>
+              <a class='timp' {...salt(c.t)}>
+                {ceas(c.t)}
+              </a>
+              <span>{c.title}</span>
+            </li>
+          ))}
+        </ol>
+      </>
+    )
+  }
+
+  {
+    data.code && pasi && (
+      <>
+        <h2 id='codul'>Codul</h2>
+        <p>
+          Fiecare pas din episod este un tag în <a href={data.code.repo}>repozitoriul codului</a>. Codul de la sfârșitul
+          episodului este la <a href={arbore(data.code.end)}><code>{data.code.end}</code></a>.
+        </p>
+        <ol class='pasi not-content'>
+          {pasi.map((s) => (
+            <li>
+              <a class='timp' {...salt(s.t)}>
+                {ceas(s.t)}
+              </a>
+              <span class='pas'>
+                <code>{s.to}</code>
+                {s.capitol && <span class='capitol'>{s.capitol}</span>}
+              </span>
+              <span class='actiuni'>
+                <a href={arbore(s.to)}>Codul</a>
+                {s.from && <a href={diferente(s.from, s.to)}>Modificările</a>}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </>
+    )
+  }
+
+  {
+    pagini.length > 0 && (
+      <>
+        <h2 id='in-documentatie'>În documentație</h2>
+        <p>Paginile care includ acest video:</p>
+        <ul>
+          {pagini.map((p) => (
+            <li>
+              <a href={p.href}>{p.titlu}</a>
+            </li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+
+  {
+    data.transcript.length > 0 && (
+      <>
+        <h2 id='transcriere'>Transcriere</h2>
+        <div class='transcriere'>
+          {sectiuni.map((s) => (
+            <>
+              {s.title && <h3>{s.title}</h3>}
+              {s.paragrafe.map((p) => (
+                <p>
+                  <a class='timp' {...salt(p.t)} data-pagefind-ignore>
+                    {ceas(p.t)}
+                  </a>{' '}
+                  {p.text}
+                </p>
+              ))}
+            </>
+          ))}
+        </div>
+      </>
+    )
+  }
+</StarlightPage>
+
+<style>
+  .meta,
+  .legaturi {
+    font-family: var(--sl-font);
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+
+  .meta {
+    margin-bottom: 1rem;
+  }
+
+  .meta a {
+    font-weight: 600;
+    color: inherit;
+  }
+
+  .legaturi {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin-top: 0.75rem;
+  }
+
+  .legaturi a {
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+  }
+
+  .subtitlu {
+    font-size: var(--sl-text-lg);
+    color: var(--sl-color-gray-1);
+  }
+
+  .timp {
+    font-family: var(--sl-font-mono);
+    font-size: var(--sl-text-sm);
+    font-variant-numeric: tabular-nums;
+    color: var(--sl-color-text-accent);
+    text-decoration: none;
+  }
+
+  .timp:hover {
+    text-decoration: underline;
+  }
+
+  .capitole,
+  .pasi {
+    margin: 1rem 0 0;
+    padding: 0;
+    font-family: var(--sl-font);
+    list-style: none;
+  }
+
+  .capitole li,
+  .pasi li {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: baseline;
+    padding: 0.35rem 0;
+  }
+
+  .pasi li {
+    grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  }
+
+  .pasi li + li,
+  .capitole li + li {
+    border-top: 1px solid var(--sl-color-hairline);
+  }
+
+  .pas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 0.75rem;
+    align-items: baseline;
+  }
+
+  .capitol {
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+
+  .actiuni {
+    display: flex;
+    gap: 0.9rem;
+    font-size: var(--sl-text-sm);
+  }
+
+  .actiuni a {
+    color: var(--sl-color-text-accent);
+  }
+
+  .transcriere .timp {
+    margin-inline-end: 0.25rem;
+  }
+</style>

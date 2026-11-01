@@ -1,0 +1,73 @@
+---
+/**
+ * Un episod din seria video, inclus într-o pagină de documentație: playerul și, sub el, episodul, durata și
+ * legătura spre pagina videoului (cu capitolele, codul și transcrierea).
+ *
+ * ```mdx
+ * import Video from '@components/Video.astro';
+ *
+ * <Video id="ep001-perceptronul" />
+ * <Video id="ep001-perceptronul" capitol="Retropropagarea" />
+ * <Video id="ep001-perceptronul" la={754} />
+ * ```
+ *
+ * `id` este numele fișierului din src/content/videouri/, fără .json. `capitol` pornește videoul de la capitolul cu
+ * acel titlu, `la`, de la o secundă anume. Un id sau un capitol care nu există oprește build-ul. Pagina videoului
+ * listează paginile care îl includ astfel.
+ */
+import { durata, eticheta, paginaVideo, video } from '../utils/videouri';
+import VideoPlayer from './VideoPlayer.astro';
+
+interface Props {
+  id: string;
+  /** Titlul capitolului de la care pornește videoul. */
+  capitol?: string;
+  /** Secunda de la care pornește videoul. */
+  la?: number;
+}
+
+const { id, capitol, la } = Astro.props;
+const v = await video(id);
+const gasit = capitol === undefined ? undefined : v.data.chapters.find((c) => c.title === capitol);
+if (capitol !== undefined && !gasit) {
+  throw new Error(`Videoul „${id}” nu are capitolul „${capitol}”. Capitolele: ${v.data.chapters.map((c) => c.title).join(', ')}.`);
+}
+const start = gasit?.t ?? la ?? 0;
+---
+
+<figure class='video not-content'>
+  <VideoPlayer video={v} start={start} />
+  <figcaption>
+    <span class='eticheta'>{eticheta(v)}</span>
+    <a href={paginaVideo(v)}>{v.data.title}</a>
+    <span class='durata'>{gasit ? `capitolul „${gasit.title}”` : durata(v.data.duration)}</span>
+  </figcaption>
+</figure>
+
+<style>
+  .video {
+    margin-block: 1.5rem;
+  }
+
+  figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem 0.6rem;
+    font-family: var(--sl-font);
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+
+  .eticheta {
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  figcaption a {
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+</style>

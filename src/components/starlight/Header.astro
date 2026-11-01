@@ -14,6 +14,7 @@ import SiteTitle from './SiteTitle.astro';
 type SidebarEntry = StarlightRouteData['sidebar'][number];
 
 const MENIU = [
+  { label: 'Videouri', href: '/videouri/' },
   { label: 'Glosar', href: '/glosar/' },
   { label: 'Resurse', href: '/resurse-utile/' },
   { label: 'Despre', href: '/despre/' },
@@ -36,7 +37,7 @@ const laboratoare = [
     return href ? [{ label: e.label, href, curent: cale.startsWith(href.replace(/[^/]+\/$/, '')) }] : [];
   }),
 ];
-const meniu = MENIU.map((l) => ({ ...l, curent: cale === l.href }));
+const meniu = MENIU.map((l) => ({ ...l, curent: cale === l.href || (l.href === '/videouri/' && cale.startsWith(l.href)) }));
 ---
 
 <div class='header'>

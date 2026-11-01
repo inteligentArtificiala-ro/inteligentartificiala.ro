@@ -3,12 +3,12 @@ title: Cookie-uri și confidențialitate
 description: Ce date colectează site-ul, cu ce scop și cum poate fi retras acordul pentru cookie-urile de analiză.
 ---
 
-_Actualizat pe 20 octombrie 2026_
+_Actualizat pe 1 noiembrie 2026_
 
 ## Pe scurt
 
 :::note[Pe scurt]
-InteligentArtificiala.ro folosește un singur serviciu extern care plasează cookie-uri: Google Analytics. Serviciul se încarcă **doar după acceptare**, din bannerul afișat la prima vizită. Fără acord, pe site nu rulează niciun script Google.
+InteligentArtificiala.ro folosește două servicii externe care pot plasa cookie-uri. Google Analytics se încarcă **doar după acceptare**, din bannerul afișat la prima vizită. Playerul YouTube se încarcă **doar la apăsarea butonului de redare** al unui video. Fără acord și fără redarea unui video, pe site nu rulează niciun script Google.
 :::
 
 ## Google Analytics
@@ -37,6 +37,10 @@ Harta traseelor de pe prima pagină arată ce pagini au fost deja deschise și d
 Paginile cu exemple de cod Python care pot fi rulate folosesc și IndexedDB, tot în browser. După prima rulare, interpretorul Python păstrează acolo pachetele descărcate (de exemplu NumPy), ca să nu le descarce din nou la vizitele următoare. Datele pot fi șterse din setările browserului, odată cu celelalte date ale site-ului.
 
 Demo-ul cu modelul de limbaj de pe pagina _Modele de limbaj mari (LLM)_ păstrează fișierele modelului (circa 170 MB) în Cache Storage, sub numele `transformers-cache`, doar după apăsarea butonului de încărcare și doar dacă browserul are spațiu suficient. Butonul „Ștergerea modelului din browser” din demo le șterge.
+
+## Videourile de pe YouTube
+
+Pagina [Videouri](/videouri/) și unele pagini din documentație includ episoade din seria video a proiectului, publicate pe YouTube. Până la apăsarea butonului de redare, pagina nu contactează YouTube: imaginea videoului este servită de pe același domeniu. La apăsarea butonului, playerul se încarcă de pe youtube-nocookie.com, varianta playerului YouTube (Google Ireland Limited) cu confidențialitate îmbunătățită. Din acel moment, YouTube primește adresa IP și date tehnice despre browser și poate păstra în browser cookie-uri și alte date, pentru redare, statistici și securitate, conform [politicii de confidențialitate Google](https://policies.google.com/privacy). Linkurile „Pe YouTube” deschid videoul direct pe youtube.com.
 
 ## Găzduire și alte servicii
 

@@ -1,0 +1,160 @@
+---
+/**
+ * Playerul unui episod din seria video. Până la apăsarea butonului de redare, pagina nu contactează YouTube: se vede
+ * miniatura, servită de pe domeniul site-ului. La redare, butonul este înlocuit de playerul de pe
+ * youtube-nocookie.com, pornit de la `start` (descris pe /cookie-uri/).
+ *
+ * Linkurile de timp de pe pagină (`<a href="…youtube…&t=…" data-salt="123">`, vezi `salt()`) mută playerul la momentul
+ * lor, pornindu-l dacă nu rulează încă. Deschise într-un tab nou, duc la același moment pe YouTube.
+ */
+import { embedUrl, miniatura, type Video } from '../utils/videouri';
+
+interface Props {
+  video: Video;
+  /** Secunda de la care pornește redarea. */
+  start?: number;
+}
+
+const { video, start = 0 } = Astro.props;
+const imagine = miniatura(video);
+---
+
+<div class='video-player not-content' data-player={video.id} data-embed={embedUrl(video)} data-start={Math.floor(start)}>
+  <button type='button' class='pornire'>
+    {imagine && <img src={imagine} alt='' width='1280' height='720' loading='lazy' decoding='async' />}
+    {!imagine && <span class='fara-miniatura'>{video.data.headline ?? video.data.title}</span>}
+    <span class='redare' aria-hidden='true'>
+      <svg viewBox='0 0 24 24' width='28' height='28' aria-hidden='true'><path d='M8 5.5v13l11-6.5z' fill='currentColor'></path></svg>
+    </span>
+    <span class='sr-only'>Redarea videoului: {video.data.title}</span>
+  </button>
+</div>
+<p class='nota-player not-content' data-pagefind-ignore>
+  La redare, playerul se încarcă de pe YouTube (<a href='/cookie-uri/#videourile-de-pe-youtube'>detalii</a>).
+</p>
+
+<style>
+  .video-player {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 4px;
+    background: var(--sl-color-black);
+  }
+
+  .pornire,
+  .video-player :global(iframe) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .pornire {
+    display: grid;
+    place-items: center;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  .pornire img,
+  .fara-miniatura {
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+  }
+
+  .pornire img {
+    object-fit: cover;
+  }
+
+  .fara-miniatura {
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+    font-family: var(--sl-font);
+    font-size: var(--sl-text-2xl);
+    font-weight: 600;
+    color: var(--sl-color-gray-2);
+  }
+
+  .redare {
+    grid-area: 1 / 1;
+    display: grid;
+    place-items: center;
+    width: 4.25rem;
+    height: 3rem;
+    padding-inline-start: 0.2rem;
+    border-radius: 0.75rem;
+    background: oklch(0.2 0.01 255 / 0.82);
+    color: white;
+    transition: background 0.15s ease;
+  }
+
+  .pornire:hover .redare,
+  .pornire:focus-visible .redare {
+    background: oklch(0.55 0.21 27);
+  }
+
+  .pornire:focus-visible {
+    outline: 2px solid var(--sl-color-accent);
+    outline-offset: -2px;
+  }
+
+  .nota-player {
+    margin-top: 0.4rem;
+    font-family: var(--sl-font);
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+  }
+
+  .nota-player a {
+    color: inherit;
+  }
+</style>
+
+<script>
+  // Înlocuiește butonul cu playerul YouTube, pornit de la secunda dată.
+  function porneste(player: HTMLElement, secunda: number) {
+    const url = new URL(player.dataset.embed ?? '');
+    if (secunda >= 1) url.searchParams.set('start', String(Math.floor(secunda)));
+    else url.searchParams.delete('start');
+    const iframe = document.createElement('iframe');
+    iframe.src = url.href;
+    iframe.title = player.querySelector('.sr-only')?.textContent ?? 'Video';
+    iframe.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    iframe.allowFullscreen = true;
+    iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+    player.replaceChildren(iframe);
+  }
+
+  // Mută un player deja pornit (API-ul de iframe al YouTube, prin postMessage, fără scriptul lui).
+  function muta(iframe: HTMLIFrameElement, secunda: number) {
+    const comanda = (func: string, args: unknown[] = []) =>
+      iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), '*');
+    comanda('seekTo', [secunda, true]);
+    comanda('playVideo');
+  }
+
+  for (const player of document.querySelectorAll<HTMLElement>('[data-player]')) {
+    player.querySelector('.pornire')?.addEventListener('click', () => porneste(player, Number(player.dataset.start)));
+  }
+
+  // Un link de timp lucrează cu primul player de pe pagină (sau cu cel numit în data-player-tinta).
+  document.addEventListener('click', (e) => {
+    const link = e.target instanceof Element && e.target.closest<HTMLAnchorElement>('a[data-salt]');
+    if (!link || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const tinta = link.dataset.playerTinta;
+    const player = document.querySelector<HTMLElement>(tinta ? `[data-player="${tinta}"]` : '[data-player]');
+    if (!player) return;
+    e.preventDefault();
+    const secunda = Number(link.dataset.salt);
+    const iframe = player.querySelector('iframe');
+    if (iframe) muta(iframe, secunda);
+    else porneste(player, secunda);
+    if (player.getBoundingClientRect().top < 0) player.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+</script>
