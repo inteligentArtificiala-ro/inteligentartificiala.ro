@@ -1,0 +1,140 @@
+name: Verificarea laboratoarelor
+
+# În fiecare săptămână, notebookul fiecărui laborator rulează de la prima la ultima celulă, ca într-un runtime Colab
+# nou (Linux, utilizatorul root, Python 3.12, PyTorch deja instalat), dar doar pe procesor. Celulele descarcă codul
+# laboratoarelor de pe site, deci se verifică exact ce primește un cititor. Rezultatele ajung pe ramura `verificari`
+# (verificari.json), iar deploy.yml, pornit la finalul acestui workflow, le afișează pe paginile laboratoarelor.
+# Detalii în scripts/verificare-laboratoare.py.
+
+on:
+  schedule:
+    - cron: '17 2 * * 1' # lunea, la 02:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  lista:
+    name: Lista laboratoarelor
+    runs-on: ubuntu-latest
+    outputs:
+      laboratoare: ${{ steps.lista.outputs.laboratoare }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: public/laboratoare/*/*.ipynb
+          sparse-checkout-cone-mode: false
+
+      - name: Notebookurile public/laboratoare/<laborator>/<laborator>.ipynb
+        id: lista
+        run: |
+          laboratoare=()
+          for nb in public/laboratoare/*/*.ipynb; do
+            lab=$(basename "$(dirname "$nb")")
+            [ "$nb" = "public/laboratoare/$lab/$lab.ipynb" ] && laboratoare+=("$lab")
+          done
+          json=$(printf '%s\n' "${laboratoare[@]}" | jq -Rcs 'split("\n") | map(select(. != ""))')
+          echo "$json"
+          echo "laboratoare=$json" >> "$GITHUB_OUTPUT"
+
+  rulare:
+    name: ${{ matrix.laborator }}
+    needs: lista
+    runs-on: ubuntu-latest
+    container: python:3.12-bookworm
+    timeout-minutes: 340
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        laborator: ${{ fromJSON(needs.lista.outputs.laboratoare) }}
+    env:
+      NOTEBOOK: public/laboratoare/${{ matrix.laborator }}/${{ matrix.laborator }}.ipynb
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            scripts/verificare-laboratoare.py
+            public/laboratoare/${{ matrix.laborator }}/${{ matrix.laborator }}.ipynb
+          sparse-checkout-cone-mode: false
+
+      # Ce găsește notebookul deja instalat în Colab: PyTorch (aici varianta pentru procesor), pachetele științifice
+      # obișnuite și bibliotecile EGL, prin care MuJoCo randează fără ecran (aici cu Mesa, pe procesor).
+      - name: Mediul de lucru
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends libegl1 libegl-mesa0 libgl1 libgl1-mesa-dri
+          pip install -q --root-user-action=ignore torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -q --root-user-action=ignore numpy scipy matplotlib pillow ipython ipykernel nbclient nbformat
+
+      - name: Rularea notebookului
+        timeout-minutes: 320
+        run: python scripts/verificare-laboratoare.py rulare "$NOTEBOOK" rezultate --limita 300
+
+      - name: Rezultatul
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: rezultat-${{ matrix.laborator }}
+          path: rezultate/${{ matrix.laborator }}.json
+          if-no-files-found: ignore
+
+      - name: Notebookul rulat
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: notebook-${{ matrix.laborator }}
+          path: rezultate/${{ matrix.laborator }}.ipynb
+          if-no-files-found: ignore
+          retention-days: 30
+
+  # Un laborator fără rezultat (rularea a fost oprită înainte ca scriptul să scrie unul) își păstrează rezultatul
+  # anterior în verificari.json.
+  publicare:
+    name: Publicarea rezultatelor
+    needs: [lista, rulare]
+    if: ${{ !cancelled() && needs.lista.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: scripts/verificare-laboratoare.py
+          sparse-checkout-cone-mode: false
+
+      - name: Rezultatele laboratoarelor
+        uses: actions/download-artifact@v8
+        with:
+          pattern: rezultat-*
+          path: rezultate
+          merge-multiple: true
+
+      - name: Ramura verificari
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p rezultate
+          git init -q ramura
+          cd ramura
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch -q origin verificari; then
+            git checkout -q -b verificari FETCH_HEAD
+          else
+            git checkout -q --orphan verificari
+          fi
+          python3 ../scripts/verificare-laboratoare.py combinare ../rezultate verificari.json
+          git add verificari.json
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -q -m "Verificarea laboratoarelor din $(date -u +%Y-%m-%d)"
+          git push -q origin verificari

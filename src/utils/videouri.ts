@@ -3,7 +3,9 @@
 
 import { type CollectionEntry, getCollection } from 'astro:content';
 import { existsSync } from 'node:fs';
-import { pluralize } from './format';
+
+// Durata episodului, în cuvinte; aceeași funcție scrie și durata rulării notebookurilor laboratoarelor.
+export { durata } from './format';
 
 export type Video = CollectionEntry<'videouri'>;
 
@@ -51,15 +53,6 @@ export function ceas(t: number): string {
   const [h, m, sec] = [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60];
   const doua = (n: number) => String(n).padStart(2, '0');
   return h ? `${h}:${doua(m)}:${doua(sec)}` : `${m}:${doua(sec)}`;
-}
-
-/** Durata, în cuvinte: 42 de minute, 1 oră și 5 minute. */
-export function durata(t: number): string {
-  const minute = Math.max(1, Math.round(t / 60));
-  const [h, m] = [Math.floor(minute / 60), minute % 60];
-  if (!h) return pluralize(m, 'minut', 'minute');
-  const ore = pluralize(h, 'oră', 'ore');
-  return m ? `${ore} și ${pluralize(m, 'minut', 'minute')}` : ore;
 }
 
 /** Data publicării: 31 octombrie 2026. */

@@ -11,10 +11,12 @@
  *
  * Colab citește fișierul de pe ramura `main`, așa că un notebook nou se deschide abia după ce ajunge pe GitHub.
  * Pagina nu încarcă nimic de la Google: logoul este desenat în ColabLogo.astro, iar Colab primește vizitatorul doar
- * după clic.
+ * după clic. Dedesubt apare ultima rulare automată a notebookului (VerificareLaborator.astro).
  */
 import { colabUrl, verificaNotebook } from '../utils/notebooks';
+import { laboratorulNotebookului } from '../utils/verificari';
 import ColabLogo from './ColabLogo.astro';
+import VerificareLaborator from './VerificareLaborator.astro';
 
 interface Props {
   /** Calea notebookului, relativă la public/. */
@@ -26,22 +28,29 @@ verificaNotebook(notebook);
 const colab = colabUrl(notebook);
 ---
 
-<p class='colab not-content' data-pagefind-ignore>
-  <a class='deschidere' href={colab}>
-    <ColabLogo />
-    Deschidere în Google Colab
-  </a>
-  <a class='descarcare' href={`/${notebook}`} download>Descărcare notebook</a>
-</p>
+<div class='colab not-content' data-pagefind-ignore>
+  <p class='butoane'>
+    <a class='deschidere' href={colab}>
+      <ColabLogo />
+      Deschidere în Google Colab
+    </a>
+    <a class='descarcare' href={`/${notebook}`} download>Descărcare notebook</a>
+  </p>
+  <VerificareLaborator laborator={laboratorulNotebookului(notebook)} />
+</div>
 
 <style>
   .colab {
+    margin-block: 1.25rem;
+    font-family: var(--sl-font);
+  }
+
+  .butoane {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem 1.25rem;
-    margin-block: 1.25rem;
-    font-family: var(--sl-font);
+    margin: 0;
   }
 
   /* La începutul paginii, butonul stă imediat sub titlu, fără spațiul de deasupra. */

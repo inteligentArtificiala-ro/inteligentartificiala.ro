@@ -24,6 +24,14 @@ Every lab has one Jupyter notebook, `public/laboratoare/<lab>/<lab>.ipynb`, with
 
 The notebooks of the Transformers and diffusion labs are generated from the code blocks of the lab pages, so changes go into the pages, not into the notebooks. The PPO, neural-networks-from-scratch and mvGPT notebooks are written by hand and run those labs' scripts.
 
+### Weekly runs
+
+Every Monday, [`verificare-laboratoare.yml`](.github/workflows/verificare-laboratoare.yml) runs every lab notebook from the first cell to the last, as in a fresh Colab runtime (root, Python 3.12, PyTorch preinstalled) but on a CPU-only GitHub Actions runner. The cells download the lab code from the live site, so the run checks what readers get, and a `!` or `%pip` command that fails stops the run. [`scripts/verificare-laboratoare.py`](scripts/verificare-laboratoare.py) runs each notebook with nbclient and merges the results into `verificari.json` on the `verificari` branch; the executed notebooks are kept as workflow artifacts for 30 days. When the workflow finishes, the deploy runs, copies `verificari.json` into `src/data/`, and each lab's introduction page shows the last run under the Colab button: the date and duration, or the cell where it stopped, with a link to the log. To see the results locally:
+
+```bash
+git fetch origin verificari && mkdir -p src/data && git show FETCH_HEAD:verificari.json > src/data/verificari.json
+```
+
 ## Videos
 
 The site has its own pages for the project's Romanian video series (https://www.youtube.com/@inteligentArtificiala): `/videouri/` lists the episodes and `/videouri/<id>/` shows one, with its chapters, code steps and transcript. Each episode is `src/content/videouri/<id>.json`, the `release.json` that aphrodite writes in the series' studio, copied here with its thumbnails (`public/videouri/`) by the studio's `scripts/site-sync.sh`. A documentation page includes an episode with `<Video id="<id>" />` (`src/components/Video.astro`), optionally from a chapter (`capitol="…"`) or a second (`la={754}`). The player loads from YouTube only when a reader presses play.

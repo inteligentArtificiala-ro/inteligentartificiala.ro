@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # Rezultatele noi ale rulării săptămânale a notebookurilor (verificare-laboratoare.yml) ajung pe site.
+  workflow_run:
+    workflows: [Verificarea laboratoarelor]
+    types: [completed]
 
 permissions:
   contents: read
@@ -35,6 +39,17 @@ jobs:
 
       - name: Verificări (astro check, Biome, ortografie românească)
         run: npm run check
+
+      # Rezultatele rulării automate a notebookurilor, afișate sub butonul Colab al fiecărui laborator
+      # (src/utils/verificari.ts). Fără ramura `verificari`, paginile apar fără ele.
+      - name: Rezultatele verificării laboratoarelor
+        run: |
+          if git fetch -q origin verificari; then
+            mkdir -p src/data
+            git show FETCH_HEAD:verificari.json > src/data/verificari.json
+          else
+            echo 'Ramura verificari nu există încă.'
+          fi
 
       - name: Build (Astro + index Pagefind)
         run: npm run build

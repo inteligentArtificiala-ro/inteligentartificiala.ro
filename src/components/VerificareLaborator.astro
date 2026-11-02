@@ -1,0 +1,81 @@
+---
+/**
+ * Ultima rulare automată a notebookului unui laborator (.github/workflows/verificare-laboratoare.yml), sub butonul
+ * Colab (Colab.astro): data, durata și mediul, sau celula la care s-a oprit rularea, cu legătura către jurnal. Fără
+ * rezultate (src/utils/verificari.ts), componenta nu afișează nimic.
+ */
+import { durata, formatDate } from '../utils/format';
+import { verificareLaborator } from '../utils/verificari';
+
+interface Props {
+  /** Numele folderului laboratorului din public/laboratoare/. */
+  laborator: string;
+}
+
+const verificare = verificareLaborator(Astro.props.laborator);
+const ultima = verificare?.ultimaRulare;
+const reusita = verificare?.ultimaRulareReusita;
+const placa = ultima?.mediu.placaGrafica;
+---
+
+{
+  ultima && (
+    <p class='verificare' data-stare={ultima.stare}>
+      {ultima.stare === 'reusita' ? (
+        <>
+          <span class='semn' aria-hidden='true'>
+            ✓
+          </span>
+          Notebookul a rulat automat pe {formatDate(ultima.data)}, de la prima la ultima celulă, în{' '}
+          {durata(ultima.durata)}, pe un server GitHub Actions, {placa ? 'cu placă grafică' : 'fără placă grafică'}.
+        </>
+      ) : (
+        <>
+          Rularea automată din {formatDate(ultima.data)}{' '}
+          {ultima.eroare?.sursa ? (
+            <>
+              s-a oprit la celula cu <code>{ultima.eroare.sursa}</code>.
+            </>
+          ) : (
+            'nu a ajuns la ultima celulă.'
+          )}
+          {reusita && ` Ultima rulare completă: ${formatDate(reusita.data)}.`}
+        </>
+      )}{' '}
+      {ultima.jurnal && <a href={ultima.jurnal}>Jurnalul rulării</a>}
+    </p>
+  )
+}
+
+<style>
+  .verificare {
+    margin: 0.6rem 0 0;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-sm);
+    line-height: 1.5;
+  }
+
+  .semn {
+    margin-inline-end: 0.3rem;
+    color: var(--sl-color-green-high);
+    font-weight: 700;
+  }
+
+  [data-stare='esuata'] {
+    color: var(--sl-color-orange-high);
+  }
+
+  code {
+    font-size: var(--sl-text-xs);
+    overflow-wrap: anywhere;
+  }
+
+  a {
+    color: var(--sl-color-gray-2);
+  }
+
+  a:hover,
+  a:focus-visible {
+    color: var(--sl-color-white);
+  }
+</style>

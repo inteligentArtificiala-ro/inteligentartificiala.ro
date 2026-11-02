@@ -2,12 +2,13 @@
 // Laboratoarele de pe prima pagină, fiecare cu notebookul Jupyter care conține tot codul lui: deschiderea în Google
 // Colab, fișierul pe GitHub și descărcarea. Laboratoarele vin din grupul „Laboratoare” al barei laterale
 // (astro.config.mjs), ca în meniul din Header.astro, deci un laborator nou apare aici automat. Nivelul vine din pagina
-// de introducere a laboratorului.
+// de introducere a laboratorului, iar data ultimei rulări automate reușite a notebookului, din src/utils/verificari.ts.
 import { getCollection } from 'astro:content';
 import type { StarlightRouteData } from '@astrojs/starlight/route-data';
 import { LEVELS } from '../consts';
-import { pluralize } from '../utils/format';
+import { formatDate, pluralize } from '../utils/format';
 import { colabUrl, githubUrl, notebookLaborator, verificaNotebook } from '../utils/notebooks';
+import { verificareLaborator } from '../utils/verificari';
 import ColabLogo from './ColabLogo.astro';
 
 type SidebarEntry = StarlightRouteData['sidebar'][number];
@@ -25,8 +26,10 @@ const laboratoare = (grup?.type === 'group' ? grup.entries : []).flatMap((e) => 
   const pagini = links(e.entries);
   if (pagini.length === 0) return [];
   const id = pagini[0].href.replace(/^\/|\/$/g, '');
-  const notebook = notebookLaborator(id.split('/')[1]);
+  const laborator = id.split('/')[1];
+  const notebook = notebookLaborator(laborator);
   verificaNotebook(notebook);
+  const ultima = verificareLaborator(laborator)?.ultimaRulare;
   return [
     {
       nume: e.label,
@@ -35,6 +38,7 @@ const laboratoare = (grup?.type === 'group' ? grup.entries : []).flatMap((e) => 
       pagini: pluralize(pagini.length, 'pagină', 'pagini'),
       notebook,
       fisier: notebook.split('/').at(-1),
+      verificat: ultima?.stare === 'reusita' ? formatDate(ultima.data) : undefined,
     },
   ];
 });
@@ -42,7 +46,7 @@ const laboratoare = (grup?.type === 'group' ? grup.entries : []).flatMap((e) => 
 
 <ul class='laboratoare not-content' data-pagefind-ignore>
   {
-    laboratoare.map(({ nume, href, nivel, pagini, notebook, fisier }) => (
+    laboratoare.map(({ nume, href, nivel, pagini, notebook, fisier, verificat }) => (
       <li>
         <div class='antet'>
           <a class='nume' {href}>
@@ -56,6 +60,11 @@ const laboratoare = (grup?.type === 'group' ? grup.entries : []).flatMap((e) => 
               </span>
             )}
             <span>{pagini}</span>
+            {verificat && (
+              <span class='verificat' title='Notebookul a rulat automat de la prima la ultima celulă.'>
+                <span aria-hidden='true'>✓</span> rulat pe {verificat}
+              </span>
+            )}
           </span>
         </div>
         <div class='notebook'>
@@ -128,9 +137,15 @@ const laboratoare = (grup?.type === 'group' ? grup.entries : []).flatMap((e) => 
 
   .meta {
     display: inline-flex;
-    gap: 1rem;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
     font-size: var(--sl-text-sm);
     color: var(--sl-color-gray-3);
+  }
+
+  .verificat > span {
+    color: var(--sl-color-green-high);
+    font-weight: 700;
   }
 
   .nivel {

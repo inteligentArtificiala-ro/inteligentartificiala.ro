@@ -35,3 +35,6 @@ public/onnxruntime/
 
 # agent config
 .config/
+
+# rezultatele verificării laboratoarelor, copiate de deploy.yml de pe ramura `verificari` (src/utils/verificari.ts)
+src/data/verificari.json
