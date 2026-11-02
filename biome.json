@@ -15,6 +15,7 @@
       "!**/public/pyscript",
       "!**/public/onnxruntime",
       "!**/public/modele",
+      "!**/public/laboratoare/*/imagini",
       "!**/package-lock.json"
     ]
   },

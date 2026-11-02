@@ -1,0 +1,90 @@
+---
+/**
+ * O diagramă SVG desenată de Graphviz (programul dot), din public/, inclusă direct în pagină. Așa, culorile urmează
+ * modul luminos sau întunecat al site-ului, iar pagina arată exact imaginea pe care o produce codul laboratorului.
+ *
+ * ```mdx
+ * import GraphvizSvg from '@components/GraphvizSvg.astro';
+ *
+ * <GraphvizSvg path="laboratoare/retele-neuronale-de-la-zero/imagini/neuron.svg" alt="…" caption="…" />
+ * ```
+ *
+ * Diagrama are mărimea dată de Graphviz. Una mai lată decât coloana de text se derulează orizontal, ca textul din
+ * noduri să rămână lizibil.
+ */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import '../styles/diagrams.css';
+
+interface Props {
+  /** Calea fișierului SVG, relativă la public/. */
+  path: string;
+  /** Descrierea diagramei, pentru cititoarele de ecran. */
+  alt: string;
+  /** O legendă opțională, sub diagramă. */
+  caption?: string;
+}
+
+const { path, alt, caption } = Astro.props;
+const source = readFileSync(join(process.cwd(), 'public', path), 'utf8');
+const start = source.indexOf('<svg');
+if (start === -1) throw new Error(`${path} nu conține un element <svg>.`);
+
+// Lățimea dată de Graphviz, în puncte tipografice (pt). Diagrama este afișată puțin mai mare, cu textul de circa 13 px.
+const width = Number(source.match(/<svg[^>]*\bwidth="([\d.]+)pt"/)?.[1]);
+if (!width) throw new Error(`${path} nu are lățimea în pt, ca un SVG produs de Graphviz.`);
+const escapeHtml = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// Titlurile nodurilor (v0, v1_op…) ar apărea ca indicii la trecerea mouse-ului. Rămâne un singur titlu, descrierea.
+const svg = source
+  .slice(start)
+  .replace(/<!--[\s\S]*?-->\n?/g, '')
+  .replace(/<title>[\s\S]*?<\/title>\n?/g, '')
+  // Fără width și height, imaginea ia lățimea containerului, iar viewBox îi păstrează proporțiile.
+  .replace(
+    /<svg[^>]*>/,
+    (tag) =>
+      `${tag.replace(/\s(?:width|height)="[^"]*"/g, '').replace(/>$/, ' role="img">')}<title>${escapeHtml(alt)}</title>`,
+  );
+---
+
+<figure class='diagram graphviz not-content'>
+  <div class='diagram-scroll'>
+    <div class='graphviz-svg' style={{ width: `${Math.round(width * 1.15)}px` }} set:html={svg} />
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style is:global>
+  /* Graphviz desenează negru pe alb. Aici, fundalul dispare, iar liniile și textul iau culorile temei. */
+  .graphviz .graphviz-svg {
+    margin-inline: auto;
+  }
+
+  .graphviz .graph > polygon {
+    fill: transparent;
+  }
+
+  .graphviz .node polygon,
+  .graphviz .node polyline,
+  .graphviz .node ellipse,
+  .graphviz .edge path {
+    stroke: var(--sl-color-gray-3);
+  }
+
+  .graphviz .node ellipse {
+    fill: color-mix(in oklab, var(--sl-color-accent) 15%, var(--sl-color-bg));
+  }
+
+  .graphviz .edge polygon {
+    fill: var(--sl-color-gray-3);
+    stroke: var(--sl-color-gray-3);
+  }
+
+  /* Mărimea textului rămâne cea după care Graphviz a calculat nodurile (11 pt), nu cea din diagrams.css. */
+  .graphviz text {
+    fill: var(--sl-color-gray-1);
+    font-family: var(--sl-font);
+    font-size: 11px;
+  }
+</style>

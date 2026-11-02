@@ -1,0 +1,165 @@
+---
+title: Grafuri computaționale cu Graphviz
+description: Transformăm graful unei expresii în text DOT și îl desenăm cu Graphviz, înainte și după retropropagare, pentru o expresie, un neuron cu activare tanh și o rețea mică cu ReLU.
+sidebar:
+  order: 3
+level: incepator
+tags:
+  - Rețele neuronale
+---
+
+import GraphvizSvg from '@components/GraphvizSvg.astro';
+import Python from '@components/Python.astro';
+import SourceFile from '@components/SourceFile.astro';
+
+export const labSetup = String.raw`
+import os, sys
+from js import location
+from pyodide.http import open_url
+
+# Fișierele laboratorului, copiate în sistemul de fișiere din browser.
+LAB = location.origin + "/laboratoare/retele-neuronale-de-la-zero/cod/"
+for name in ["engine.py", "graph.py", "nn.py", "moons.py"]:
+    if not os.path.exists(name):
+        with open(name, "w", encoding="utf-8") as f:
+            f.write(open_url(LAB + name).read())
+sys.path.insert(0, ".")
+`;
+
+Pe [pagina anterioară](/laboratoare/retele-neuronale-de-la-zero/motorul-de-diferentiere/), fiecare obiect `Value` a ținut minte din ce valori a fost calculat. Aceste legături formează un graf, iar metoda `backward()` îl parcurge de la rezultat spre intrări. Pe această pagină îl desenăm, ca să vedem exact ce parcurge retropropagarea și cum apar gradienții pe nodurile lui.
+
+## Limbajul DOT
+
+[Graphviz](https://graphviz.org) este un set de programe pentru desenarea grafurilor, dezvoltat inițial la AT&T Bell Labs. Graful se descrie ca text, în limbajul **DOT**: o listă de noduri, fiecare cu atributele lui, și o listă de muchii, scrise cu săgeți. Programul `dot` așază singur nodurile, pe niveluri, și desenează muchiile.
+
+```text
+digraph {
+  rankdir=LR;
+  a [shape=record, label="{ a | { data 2.0000 | grad 0.0000 } }"];
+  b [shape=record, label="{ b | { data -3.0000 | grad 0.0000 } }"];
+  mul [label="*"];
+  a -> mul;
+  b -> mul;
+}
+```
+
+`digraph` înseamnă graf orientat, cu săgeți. `rankdir=LR` așază graful de la stânga la dreapta. Forma `record` împarte un dreptunghi în câmpuri, cu bara verticală `|` între ele, iar acoladele schimbă direcția în care sunt așezate câmpurile: numele valorii stă în stânga, iar valoarea și gradientul, unul sub altul, în dreapta.
+
+## De la valori la text DOT
+
+Fișierul `graph.py` are trei funcții. Prima, `trace`, adună toate valorile și legăturile dintre ele, pornind de la rezultat, la fel ca funcția `build` din `backward()`.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/graph.py" symbols={['trace', 'to_dot']} />
+
+Funcția `to_dot` scrie apoi graful în limbajul DOT. Fiecare valoare devine un dreptunghi, iar fiecare valoare care a rezultat dintr-o operație primește în plus un nod oval pentru operație. Muchiile merg de la operanzi spre operație și de la operație spre rezultat. Nodurile primesc nume scurte, `v0`, `v1` și așa mai departe, în ordinea în care le-a găsit `trace`.
+
+Funcția `to_dot` folosește doar Python, deci rulează și în browser. Exemplul de mai jos scrie textul DOT al expresiei $L = (a \cdot b + c) \cdot f$ de pe pagina anterioară, după retropropagare.
+
+<Python
+  setup={labSetup}
+  code={String.raw`
+from engine import Value
+from graph import to_dot
+
+a = Value(2.0, label="a")
+b = Value(-3.0, label="b")
+c = Value(7.0, label="c")
+f = Value(-2.0, label="f")
+e = a * b
+e.label = "e"
+d = e + c
+d.label = "d"
+L = d * f
+L.label = "L"
+L.backward()
+
+print(to_dot(L))
+`}
+/>
+
+## Desenarea cu Graphviz
+
+A treia funcție, `draw_graph`, dă textul DOT pachetului Python `graphviz`, care apelează programul `dot` și primește înapoi imaginea. Cu un nume de fișier, imaginea este și salvată, în formatul dat de extensie (`.svg`, `.png` sau `.pdf`).
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/graph.py" symbols={['draw_graph']} />
+
+În Jupyter și în Google Colab, obiectul întors de `draw_graph` se afișează singur, ca imagine, dacă este ultimul rând al unei celule. Graphviz nu rulează în browser, așa că diagramele de mai jos au fost desenate local, de scriptul `diagrams.py`. Pentru expresie, scriptul desenează graful de două ori, înainte și după `backward()`.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/diagrams.py" symbols={['draw_before_and_after']} />
+
+## Înainte și după backward()
+
+Imediat după calculul expresiei, fiecare nod are valoarea lui, dar toți gradienții sunt zero. Propagarea directă a calculat doar valorile.
+
+<GraphvizSvg
+  path='laboratoare/retele-neuronale-de-la-zero/imagini/expresie-inainte.svg'
+  alt='Graful expresiei L = (a * b + c) * f înainte de retropropagare. Valorile a = 2, b = -3, c = 7 și f = -2 duc, prin operațiile înmulțire, adunare și înmulțire, la e = -6, d = 1 și L = -2. Toți gradienții sunt 0.'
+  caption='Graful expresiei L = (a · b + c) · f, înainte de retropropagare: toți gradienții sunt 0.'
+/>
+
+După `L.backward()`, gradienții au fost completați de la dreapta la stânga. $L$ are gradientul 1, iar fiecare operație a trimis gradientul spre operanzii ei, după regula ei.
+
+<GraphvizSvg
+  path='laboratoare/retele-neuronale-de-la-zero/imagini/expresie-dupa.svg'
+  alt='Același graf după retropropagare. Gradienții sunt: L 1, d -2, f 1, e -2, c -2, a 6 și b -4.'
+  caption='Același graf după L.backward(): gradienții au fost trimiși de la L spre intrări.'
+/>
+
+Diagrama se citește de la dreapta la stânga. Înmulțirea finală, $L = d \cdot f$, dă fiecărui factor gradientul lui $L$ înmulțit cu celălalt factor: $d$ primește $f = -2$, iar $f$ primește $d = 1$. Adunarea $d = e + c$ trimite același $-2$ ambilor termeni. În sfârșit, înmulțirea $e = a \cdot b$ dă lui $a$ valoarea $-2 \cdot b = 6$ și lui $b$ valoarea $-2 \cdot a = -4$.
+
+## Un neuron
+
+Același mecanism funcționează pentru un neuron cu două intrări și activare tanh, cu intrările $x_1 = 1$ și $x_2 = -2$, ponderile $w_1 = 0{,}5$ și $w_2 = 0{,}25$ și _bias_-ul $b = 0{,}8$.
+
+<GraphvizSvg
+  path='laboratoare/retele-neuronale-de-la-zero/imagini/neuron.svg'
+  alt='Graful unui neuron: x1 * w1 și x2 * w2 sunt adunate în s = 0, apoi n = s + b = 0,8 și o = tanh(n) = 0,664. După retropropagare, n, s, b și cele două produse au gradientul 0,5591, w1 are 0,5591, w2 are -1,1181, x1 are 0,2795 și x2 are 0,1398.'
+  caption='Un neuron, o = tanh(x1 · w1 + x2 · w2 + b), după retropropagare.'
+/>
+
+Suma ponderată este $n = 0{,}8$, iar ieșirea este $o = \tanh(0{,}8) \approx 0{,}664$. Prin tanh, gradientul se înmulțește cu derivata ei, $1 - o^2 \approx 0{,}5591$. De aici, adunările îl trimit neschimbat spre _bias_ și spre cele două produse, iar înmulțirile îl înmulțesc cu celălalt factor. Gradientul ponderii $w_2$, de exemplu, este $0{,}5591 \cdot x_2 \approx -1{,}118$: dacă $w_2$ ar crește puțin, ieșirea ar scădea.
+
+Pentru antrenare contează doar gradienții ponderilor și ai _bias_-ului, pentru că pe ei îi putem modifica. Gradienții intrărilor $x_1$ și $x_2$ sunt calculați și ei, dar nu sunt folosiți.
+
+## O rețea mică
+
+Graful crește repede. Rețeaua de mai jos are 2 intrări, un strat ascuns cu 2 neuroni cu activare ReLU și un neuron de ieșire, fără activare. Ponderile au fost alese de mână și au nume: $w_{ji}$ leagă intrarea $i$ de neuronul ascuns $j$, iar $v_j$ leagă neuronul ascuns $j$ de ieșire. Ultimele noduri calculează pierderea pentru un singur exemplu, $(y - 1)^2$, adică eroarea pătratică față de ținta 1. Pe ecranele înguste, diagrama se derulează orizontal.
+
+<GraphvizSvg
+  path='laboratoare/retele-neuronale-de-la-zero/imagini/retea-mica.svg'
+  alt='Graful unei rețele cu intrările x1 = 1 și x2 = -1, doi neuroni ascunși cu ReLU și o ieșire y = 1,32, urmată de pierderea (y - 1)^2 = 0,1024. Primul neuron ascuns are suma 0,85 și este activ, iar ponderile lui au gradienți nenuli (w11 0,768, w12 -0,768, b1 0,768). Al doilea are suma -0,5, iese 0 prin ReLU, iar ponderile lui au gradientul 0.'
+  caption='O rețea cu 2 intrări, 2 neuroni ascunși cu ReLU și o ieșire, plus pierderea pe un exemplu, după retropropagare.'
+/>
+
+Câteva lucruri se văd direct pe diagramă:
+
+- Pierderea este $(1{,}32 - 1)^2 = 0{,}1024$, iar gradientul ei în raport cu $y$ este $2 \cdot (1{,}32 - 1) = 0{,}64$.
+- Scăderea $y - 1$ apare ca o adunare cu $-1$, pentru că așa este scrisă în `engine.py`. La fel, constanta $-1$ apare ca un nod separat, cu propriul gradient, pe care nu îl folosește nimeni.
+- Primul neuron ascuns are suma ponderată 0,85, deci ReLU îl lasă să treacă, iar ponderile lui primesc gradienți. Al doilea are suma $-0{,}5$, ReLU îl transformă în 0, iar gradientul se oprește aici: ponderile lui $w_{21}$, $w_{22}$ și $b_2$ au gradientul 0 și nu se vor schimba la acest pas.
+- Ponderea $v_2$ are și ea gradientul 0, pentru că înmulțește ieșirea 0 a neuronului inactiv.
+
+Rețeaua are doar 9 parametri, iar graful are deja câteva zeci de noduri. O rețea pentru recunoașterea cifrelor, cu peste 100.000 de parametri, ar avea sute de mii de noduri pentru o singură imagine. Diagramele sunt utile pentru înțelegere, dar următoarele pagini lucrează doar cu numere.
+
+## Rularea locală
+
+Pe calculatorul local, după [pregătirea mediului](/laboratoare/retele-neuronale-de-la-zero/prezentare/#pregătirea-mediului-de-lucru), diagramele de pe această pagină se obțin cu o singură comandă.
+
+```bash
+python diagrams.py
+```
+
+Scriptul afișează câteva valori și salvează cele patru imagini în directorul `imagini/`.
+
+```text
+Expresia L = (a * b + c) * f
+  L = -2.0
+Neuronul: o = 0.6640
+Rețeaua mică: pierderea = 0.1024
+Diagramele au fost salvate în imagini
+```
+
+## Bibliografie
+
+- Ellson, J. et al. (2002). [Graphviz: Open Source Graph Drawing Tools](https://doi.org/10.1007/3-540-45848-4_57). _Graph Drawing 2001_, Lecture Notes in Computer Science 2265, 483–484.
+- Gansner, E. R. et al. (1993). [A technique for drawing directed graphs](https://doi.org/10.1109/32.221135). _IEEE Transactions on Software Engineering_, 19(3), 214–230.
+- Karpathy, A. (2020). [micrograd](https://github.com/karpathy/micrograd). Cod sursă, GitHub.

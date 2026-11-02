@@ -1,0 +1,102 @@
+---
+title: Rețele neuronale de la zero
+description: Un laborator pentru începători în care scriem de la zero, în Python, un motor de diferențiere automată, desenăm grafuri computaționale cu Graphviz și antrenăm rețele neuronale, până la recunoașterea cifrelor MNIST.
+sidebar:
+  order: 1
+  label: Introducere
+level: incepator
+tags:
+  - Rețele neuronale
+---
+
+import Colab from '@components/Colab.astro';
+import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Colab notebook='laboratoare/retele-neuronale-de-la-zero/retele-neuronale-de-la-zero.ipynb' />
+
+Paginile despre [rețelele neuronale](/retele-neuronale/ce-sunt-retelele-neuronale/) și despre [retropropagare](/retele-neuronale/retropropagare/) explică, în teorie, ce calculează un neuron, cum se măsoară eroarea și cum ajung gradienții de la eroare înapoi la fiecare pondere. În acest laborator scriem toate acestea în cod, pornind de la un singur număr. Nu folosim nicio bibliotecă de învățare automată până la ultima pagină, unde aceeași rețea este scrisă și în PyTorch.
+
+Primul pas este un **motor de diferențiere automată** (_automatic differentiation_) pentru numere obișnuite: o clasă Python, `Value`, care ține minte din ce operații a rezultat fiecare număr și poate calcula singură gradienții prin retropropagare. Desenăm apoi, cu Graphviz, graful computațional pe care îl parcurge retropropagarea, înainte și după calculul gradienților. Din aceleași piese construim neuroni, straturi și o rețea cu mai multe straturi, pe care o antrenăm cu cod scris de mână. La final, trecem de la numere la matrice, cu NumPy, și antrenăm o rețea care recunoaște cifre scrise de mână.
+
+Motorul urmează ideea din [micrograd](https://github.com/karpathy/micrograd), scris de Andrej Karpathy, un motor de diferențiere automată pentru scalari, cu o mică bibliotecă de rețele neuronale deasupra lui, publicat cu licență MIT. Codul laboratorului este scris de la zero, cu comentarii în română, dar păstrează structura lui micrograd (`Value`, `Neuron`, `Layer`, `MLP`), ca cele două să poată fi comparate ușor. Karpathy construiește micrograd pas cu pas, în engleză, în videoclipul [The spelled-out intro to neural networks and backpropagation: building micrograd](https://www.youtube.com/watch?v=VMj-3S1tku0).
+
+## Etapele laboratorului
+
+<Steps>
+1. [**Un motor de diferențiere automată**](/laboratoare/retele-neuronale-de-la-zero/motorul-de-diferentiere/) construiește clasa `Value`, cu operațiile ei, derivatele lor locale și metoda `backward()`, care parcurge graful în ordine topologică inversă.
+2. [**Grafuri computaționale cu Graphviz**](/laboratoare/retele-neuronale-de-la-zero/grafuri-computationale/) transformă graful unei expresii în text DOT și îl desenează, înainte și după calculul gradienților, pentru o expresie, un neuron și o rețea mică.
+3. [**O rețea neuronală mică**](/laboratoare/retele-neuronale-de-la-zero/o-retea-neuronala-mica/) construiește neuroni, straturi și un MLP din obiecte `Value` și îl antrenează să separe două semilune de puncte.
+4. [**Cifrele MNIST cu NumPy și PyTorch**](/laboratoare/retele-neuronale-de-la-zero/cifrele-mnist/) trece de la numere la matrice, scrie de mână retropropagarea unei rețele 784 → 128 → 10 și o antrenează pe 60.000 de cifre, apoi scrie aceeași rețea în PyTorch.
+</Steps>
+
+## Ce rulează în browser și ce rulează local
+
+:::note[Python în pagină, diagrame și MNIST pe calculator]
+Motorul de diferențiere automată este scris doar în Python, fără alte pachete, așa că exemplele cu el rulează direct în pagină, cu Python în WebAssembly (Pyodide), și folosesc chiar fișierele laboratorului. Tot în browser rulează, cu NumPy, piesele rețelei pentru MNIST: propagarea directă, softmax și verificarea retropropagării.
+
+Graphviz nu rulează în browser, așa că diagramele de pe pagini sunt imaginile desenate local de codul laboratorului. Antrenarea pe MNIST are nevoie de setul de date complet și rulează tot local. Paginile arată rezultatele obținute, ca să le putem compara cu ce obținem pe propriul calculator.
+:::
+
+## Cerințe de sistem
+
+- **Python** 3.10 sau mai nou, cu pachetele `numpy`, `matplotlib` și `graphviz`. Pentru ultima secțiune, opțională, și `torch`.
+- **Graphviz**: programul `dot`, care desenează diagramele. Pachetul Python `graphviz` doar îl apelează.
+- **Spațiu pe disc**: 11 MB pentru setul de date MNIST, plus pachetele Python.
+- **Hardware**: orice procesor (CPU) obișnuit. Nu este nevoie de o placă grafică: antrenarea pe MNIST durează câteva secunde.
+
+Pentru a urmări codul, sunt suficiente cunoștințele de bază de Python.
+
+## Pregătirea mediului de lucru
+
+Pentru a descărca fișierele laboratorului și a instala pachetele, rulați comenzile de mai jos.
+
+```bash
+mkdir retele-de-la-zero && cd retele-de-la-zero
+for f in engine.py graph.py nn.py diagrams.py moons.py mnist_data.py mnist_numpy.py mnist_torch.py requirements.txt; do
+  curl -fsSO "https://inteligentartificiala.ro/laboratoare/retele-neuronale-de-la-zero/cod/$f"
+done
+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Programul `dot` se instalează separat, cu managerul de pachete al sistemului.
+
+<Tabs>
+  <TabItem label="macOS">
+  ```bash
+  brew install graphviz
+  ```
+  </TabItem>
+  <TabItem label="Ubuntu și Debian">
+  ```bash
+  sudo apt install graphviz
+  ```
+  </TabItem>
+  <TabItem label="Windows">
+  Programul de instalare se descarcă de pe [pagina oficială Graphviz](https://graphviz.org/download/). La instalare, se alege opțiunea care adaugă Graphviz în variabila `PATH`.
+  </TabItem>
+</Tabs>
+
+Tot laboratorul se reduce la patru comenzi, explicate pe paginile următoare.
+
+```bash
+python diagrams.py      # diagramele grafurilor computaționale, în directorul imagini/
+python moons.py         # rețeaua mică, antrenată pe două semilune de puncte
+python mnist_numpy.py   # rețeaua pentru MNIST, scrisă cu NumPy
+python mnist_torch.py   # aceeași rețea în PyTorch (după pip install torch)
+```
+
+## Rularea în Google Colab
+
+Laboratorul poate rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser, fără nicio instalare pe calculatorul propriu. Notebookul laboratorului, care se deschide în Colab cu butonul de la începutul paginii, descarcă fișierele de mai sus, desenează grafurile direct sub celule și rulează, în ordine, aceleași scripturi. Colab are deja NumPy, Matplotlib și PyTorch, iar programul `dot` este instalat de o celulă a notebookului, dacă lipsește. Laboratorul nu are nevoie de o placă grafică.
+
+## Bibliografie
+
+- Baydin, A. G. et al. (2018). [Automatic differentiation in machine learning: a survey](https://arxiv.org/abs/1502.05767). _Journal of Machine Learning Research_, 18(153), 1–43.
+- Ellson, J. et al. (2002). [Graphviz: Open Source Graph Drawing Tools](https://doi.org/10.1007/3-540-45848-4_57). _Graph Drawing 2001_, Lecture Notes in Computer Science 2265, 483–484.
+- Karpathy, A. (2020). [micrograd](https://github.com/karpathy/micrograd). Cod sursă, GitHub.
+- Karpathy, A. (2022). [The spelled-out intro to neural networks and backpropagation: building micrograd](https://www.youtube.com/watch?v=VMj-3S1tku0). Videoclip, YouTube.
+- LeCun, Y. et al. (1998). [Gradient-based learning applied to document recognition](https://doi.org/10.1109/5.726791). _Proceedings of the IEEE_, 86(11), 2278–2324.
+- Rumelhart, D. E., Hinton, G. E. și Williams, R. J. (1986). [Learning representations by back-propagating errors](https://doi.org/10.1038/323533a0). _Nature_, 323(6088), 533–536.

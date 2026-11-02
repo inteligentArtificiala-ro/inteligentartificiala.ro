@@ -1,0 +1,315 @@
+---
+title: Cifrele MNIST cu NumPy și PyTorch
+description: Trecem de la numere la matrice. Scriem cu NumPy o rețea 784 → 128 → 10, cu softmax, entropie încrucișată și retropropagare scrisă de mână, o antrenăm pe 60.000 de cifre MNIST, apoi o rescriem în PyTorch.
+sidebar:
+  order: 5
+level: incepator
+tags:
+  - Rețele neuronale
+---
+
+import DeepDive from '@components/DeepDive.astro';
+import Python from '@components/Python.astro';
+import SourceFile from '@components/SourceFile.astro';
+
+export const labSetup = String.raw`
+import os, sys
+from js import location
+from pyodide.http import open_url
+
+# Fișierele laboratorului, copiate în sistemul de fișiere din browser.
+LAB = location.origin + "/laboratoare/retele-neuronale-de-la-zero/cod/"
+for name in ["mnist_data.py", "mnist_numpy.py"]:
+    if not os.path.exists(name):
+        with open(name, "w", encoding="utf-8") as f:
+            f.write(open_url(LAB + name).read())
+sys.path.insert(0, ".")
+`;
+
+Pe [pagina anterioară](/laboratoare/retele-neuronale-de-la-zero/o-retea-neuronala-mica/), motorul pentru scalari a avut nevoie de circa o secundă pentru o singură imagine. Rețeaua rămâne aceeași, dar calculul ei se poate organiza altfel: toate sumele ponderate ale unui strat, pentru un lot întreg de imagini, sunt un singur produs de matrice. Pe această pagină scriem rețeaua cu NumPy, o bibliotecă Python pentru calcul cu matrice, și scriem de mână, pentru matrice, aceleași derivate pe care motorul le aplica număr cu număr.
+
+## Setul de date MNIST
+
+[MNIST](https://doi.org/10.1109/5.726791) este un set de 70.000 de cifre scrise de mână, publicat în 1998 de Yann LeCun, Léon Bottou, Yoshua Bengio și Patrick Haffner. Cifrele vin din două colecții ale institutului american NIST, scrise de angajați ai Biroului de Recensământ și de elevi de liceu. Fiecare imagine are 28 × 28 pixeli în tonuri de gri, cu cifra centrată. Setul este împărțit în 60.000 de imagini de antrenare și 10.000 de imagini de testare, scrise de alte persoane decât cele din setul de antrenare.
+
+Fișierul `mnist_data.py` descarcă setul o singură dată, în copia publicată de echipa Keras, de 11 MB, și verifică amprenta SHA-256 a fișierului.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/mnist_data.py" symbols={['URL', 'SHA256', 'download', 'load_mnist']} />
+
+Fiecare imagine devine un vector de 784 de numere (28 × 28), iar fiecare pixel, un număr între 0 și 1. Rețeaua nu știe că pixelii formau o imagine: pentru ea, o cifră este doar o listă de 784 de intrări.
+
+## De la numere la matrice
+
+Un strat cu 128 de neuroni are, pentru fiecare neuron, câte o pondere pentru fiecare dintre cele 784 de intrări. Toate aceste ponderi formează o matrice $W_1$, cu 784 de rânduri și 128 de coloane: coloana $j$ conține ponderile neuronului $j$. Dacă așezăm și imaginile unui lot pe rândurile unei matrice $X$, produsul $X W_1$ conține, pe rândul fiecărei imagini, sumele ponderate ale tuturor celor 128 de neuroni.
+
+<DeepDive title="Un strat ca produs de matrice">
+
+Pentru un lot de $B$ imagini, cu $X$ de forma $B \times 784$, $W_1$ de forma $784 \times 128$ și vectorul de _bias_ $b_1$ cu 128 de elemente:
+
+$$
+Z_1 = X W_1 + b_1, \qquad (Z_1)_{ij} = \sum_{k=1}^{784} X_{ik} (W_1)_{kj} + (b_1)_j
+$$
+
+Elementul $(Z_1)_{ij}$ este exact suma ponderată calculată de `Neuron` pentru imaginea $i$ și neuronul $j$. _Bias_-ul se adaugă fiecărui rând.
+
+</DeepDive>
+
+Exemplul de mai jos calculează o singură sumă ponderată în ambele feluri, cu o sumă în Python, ca motorul pentru scalari, și din produsul de matrice.
+
+<Python
+  packages={['numpy']}
+  setup={labSetup}
+  code={String.raw`
+import numpy as np
+from mnist_numpy import init_params
+
+params = init_params()
+rng = np.random.default_rng(0)
+x = rng.random((5, 784)).astype(np.float32)  # 5 „imagini”, cu pixeli aleatori
+
+# Neuronul 0 al stratului ascuns, pentru prima imagine, ca în motorul pentru scalari.
+z = params["b1"][0] + sum(params["W1"][k, 0] * x[0, k] for k in range(784))
+print("o sumă în Python:      ", z)
+
+# Toți neuronii, pentru toate imaginile, dintr-un singur produs de matrice.
+z1 = x @ params["W1"] + params["b1"]
+print("din produsul de matrice:", z1[0, 0])
+print("forma rezultatului:", z1.shape)
+`}
+/>
+
+Cele două numere coincid. Produsul de matrice face însă dintr-odată 5 × 128 de astfel de sume, cu cod compilat și optimizat, nu cu obiecte Python.
+
+## Propagarea directă
+
+Rețeaua are 784 de intrări, un strat ascuns de 128 de neuroni cu activare ReLU și un strat de ieșire cu 10 neuroni, câte unul pentru fiecare cifră. Are deci 784 × 128 + 128 + 128 × 10 + 10 = 101.770 de parametri.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/mnist_numpy.py" symbols={['init_params', 'forward']} />
+
+Ponderile pornesc de la valori aleatoare, cu [inițializarea He](/retele-neuronale/retropropagare/#inițializarea-ponderilor), potrivită pentru ReLU, iar _bias_-urile pornesc de la zero. Funcția `forward` întoarce și valorile intermediare, `x`, `z1` și `h`, de care retropropagarea va avea nevoie, la fel cum fiecare obiect `Value` își păstra operanzii.
+
+## Softmax și entropia încrucișată
+
+Cele 10 ieșiri sunt **scoruri nenormalizate** (_logits_): numere oarecare, pozitive sau negative. Funcția **softmax** le transformă în probabilități: fiecare scor trece prin funcția exponențială, care face din orice număr unul pozitiv, apoi rezultatele sunt împărțite la suma lor, ca să dea 1 împreună. Cifra cu scorul cel mai mare primește cea mai mare probabilitate.
+
+Pierderea este **entropia încrucișată** (_cross-entropy_): logaritmul negativ al probabilității date cifrei corecte, mediat pe lot. Dacă rețeaua dă cifrei corecte probabilitatea 1, pierderea este 0. Dacă îi dă o probabilitate mică, pierderea crește foarte repede.
+
+<DeepDive title="Softmax și entropia încrucișată">
+
+Pentru scorurile $z_1, \ldots, z_{10}$ ale unei imagini, softmax dă probabilitățile:
+
+$$
+p_k = \frac{e^{z_k}}{\sum_{j=1}^{10} e^{z_j}}
+$$
+
+Pentru un lot de $N$ imagini, în care imaginea $i$ are eticheta $y_i$, pierderea este:
+
+$$
+L = -\frac{1}{N} \sum_{i=1}^{N} \log p_{i, y_i}
+$$
+
+</DeepDive>
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/mnist_numpy.py" symbols={['softmax', 'cross_entropy']} />
+
+O rețea care nu știe nimic dă fiecărei cifre probabilitatea 1/10, deci pierderea ei este $-\log(1/10) = \ln 10 \approx 2{,}30$. Rețeaua noastră, abia inițializată, are pe imaginile de testare pierderea 2,40 și ghicește corect 9,87% din cifre, cam cât ar ghici la întâmplare.
+
+<Python
+  packages={['numpy']}
+  setup={labSetup}
+  code={String.raw`
+import numpy as np
+from mnist_numpy import softmax, cross_entropy
+
+logits = np.array([
+    [2.0, 1.0, 0.1],     # scorul cel mai mare pentru clasa 0
+    [0.0, 0.0, 0.0],     # scoruri egale: probabilități egale
+    [1000.0, 0.0, 0.0],  # exp(1000) ar depăși valorile reprezentabile fără scăderea maximului
+])
+probs = softmax(logits)
+print(probs.round(4))
+print("sumele pe rânduri:", probs.sum(axis=1))
+print()
+labels = np.array([0, 0, 1])
+for i in range(3):
+    print(f"rândul {i}: probabilitatea clasei corecte {probs[i, labels[i]]:.4f}, "
+          f"pierderea {cross_entropy(probs[i:i + 1], labels[i:i + 1]):.4f}")
+print()
+print("10 scoruri egale, pierderea:", cross_entropy(softmax(np.zeros((1, 10))), np.array([3])))
+print("ln 10 =", np.log(10))
+`}
+/>
+
+Pe ultimul rând, rețeaua este foarte sigură pe clasa greșită, iar probabilitatea clasei corecte este practic zero. Constanta `1e-12` din `cross_entropy` împiedică logaritmul lui zero, așa că pierderea ajunge la $-\ln 10^{-12} \approx 27{,}6$, nu la infinit.
+
+## Retropropagarea scrisă de mână
+
+Motorul pentru scalari aplica regula lanțului nod cu nod. Pentru matrice, aceleași reguli se scriu o singură dată pentru fiecare strat. Pornim de la pierdere și mergem înapoi:
+
+- Pentru softmax urmat de entropie încrucișată, gradientul în raport cu scorurile are o formă foarte simplă: probabilitățile, din care se scade 1 la cifra corectă, împărțite la numărul de imagini din lot. Dacă rețeaua a dat cifrei corecte probabilitatea 0,7, gradientul este −0,3, iar scorul ei va fi împins în sus.
+- Pentru un strat liniar, gradientul ponderilor este produsul dintre intrările stratului, transpuse, și gradientul ieșirilor lui. Gradientul _bias_-ului este suma gradienților ieșirilor pe tot lotul. Gradientul trimis stratului anterior este produsul dintre gradientul ieșirilor și ponderile transpuse.
+- ReLU lasă gradientul să treacă doar acolo unde suma ponderată a fost pozitivă, ca în `Value.relu`.
+
+<DeepDive title="Gradienții rețelei, pentru matrice">
+
+Cu $Z_1 = X W_1 + b_1$, $H = \operatorname{ReLU}(Z_1)$ și $Z_2 = H W_2 + b_2$, notăm cu $Y$ matricea etichetelor în codificarea _one-hot_ (1 la cifra corectă, 0 în rest) și cu $P = \operatorname{softmax}(Z_2)$ probabilitățile. Atunci:
+
+$$
+\frac{\partial L}{\partial Z_2} = \frac{1}{N}(P - Y)
+$$
+
+$$
+\frac{\partial L}{\partial W_2} = H^\top \frac{\partial L}{\partial Z_2}, \qquad \frac{\partial L}{\partial b_2} = \sum_{i=1}^{N} \left(\frac{\partial L}{\partial Z_2}\right)_i, \qquad \frac{\partial L}{\partial H} = \frac{\partial L}{\partial Z_2} W_2^\top
+$$
+
+$$
+\frac{\partial L}{\partial Z_1} = \frac{\partial L}{\partial H} \odot [Z_1 > 0], \qquad \frac{\partial L}{\partial W_1} = X^\top \frac{\partial L}{\partial Z_1}, \qquad \frac{\partial L}{\partial b_1} = \sum_{i=1}^{N} \left(\frac{\partial L}{\partial Z_1}\right)_i
+$$
+
+unde $\odot$ este înmulțirea element cu element, iar $[Z_1 > 0]$ este 1 unde suma ponderată a fost pozitivă și 0 în rest. Fiecare formulă este regula lanțului de pe [pagina despre motor](/laboratoare/retele-neuronale-de-la-zero/motorul-de-diferentiere/#operațiile-și-derivatele-lor-locale), aplicată tuturor elementelor unei matrice deodată: în $\frac{\partial L}{\partial W_2}$, de exemplu, fiecare pondere primește suma, pe tot lotul, a gradienților ieșirii ei înmulțiți cu intrarea ei.
+
+</DeepDive>
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/mnist_numpy.py" symbols={['backward']} />
+
+Funcția are doar câteva rânduri, dar o greșeală în oricare dintre ele nu ar produce nicio eroare, doar o rețea care învață prost. De aceea, o verificăm cu diferențe finite, pe o rețea mică, cu 6 intrări, 5 neuroni ascunși și 4 ieșiri, în care fiecare parametru poate fi modificat pe rând.
+
+<Python
+  packages={['numpy']}
+  setup={labSetup}
+  code={String.raw`
+import numpy as np
+from mnist_numpy import init_params, forward, softmax, cross_entropy, backward
+
+# O rețea mică, în precizie dublă, ca diferențele finite să fie exacte.
+params = {k: v.astype(np.float64) for k, v in init_params(n_in=6, n_hidden=5, n_out=4, seed=1).items()}
+rng = np.random.default_rng(1)
+x = rng.random((3, 6))
+y = np.array([0, 2, 3])
+
+def loss():
+    logits, _ = forward(params, x)
+    return cross_entropy(softmax(logits), y)
+
+logits, cache = forward(params, x)
+grads = backward(params, cache, softmax(logits), y)
+
+eps = 1e-6
+for name, p in params.items():
+    numeric = np.zeros_like(p)
+    for i in np.ndindex(p.shape):
+        old = p[i]
+        p[i] = old + eps
+        up = loss()
+        p[i] = old - eps
+        down = loss()
+        p[i] = old
+        numeric[i] = (up - down) / (2 * eps)
+    print(f"{name}: forma {p.shape}, diferența maximă {np.abs(grads[name] - numeric).max():.1e}")
+`}
+/>
+
+Diferențele sunt de ordinul $10^{-10}$ sau mai mici, cât permite precizia calculului numeric. Gradienții scriși de mână sunt corecți.
+
+## Antrenarea
+
+Antrenarea folosește **coborârea pe gradient stocastică** (_stochastic gradient descent_, SGD). Gradientul nu se calculează pe toate cele 60.000 de imagini odată, ci pe **loturi** (_batches_) mici, de câte 64 de imagini, alese în ordine aleatoare. Fiecare lot dă o estimare puțin zgomotoasă a gradientului, dar parametrii se actualizează de 938 de ori la fiecare trecere prin setul de antrenare, numită **epocă** (_epoch_), nu o singură dată.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/mnist_numpy.py" symbols={['predict', 'train']} />
+
+Pașii sunt aceiași ca pentru rețeaua mică: propagarea directă, pierderea, retropropagarea și actualizarea `params[name] -= lr * grads[name]`. Gradienții nu trebuie readuși la zero, pentru că `backward` îi calculează de fiecare dată de la început. După fiecare epocă, codul măsoară acuratețea pe cele 10.000 de imagini de testare, pe care rețeaua nu le vede niciodată la antrenare.
+
+Pe calculatorul local, antrenarea se pornește cu o singură comandă.
+
+```bash
+python mnist_numpy.py
+```
+
+Pe un laptop modern, fiecare epocă a durat 0,2–0,3 secunde, iar toate cele 10 epoci, 2,2 secunde. Rezultatul arată astfel.
+
+```text
+Imagini de antrenare: 60000, de testare: 10000, parametri: 101,770
+epoca  1   pierdere 0.3617   acuratețe la testare 93.99%   0.2 s
+epoca  2   pierdere 0.1899   acuratețe la testare 94.99%   0.2 s
+epoca  3   pierdere 0.1436   acuratețe la testare 96.36%   0.3 s
+epoca  4   pierdere 0.1172   acuratețe la testare 96.58%   0.3 s
+epoca  5   pierdere 0.0988   acuratețe la testare 97.19%   0.2 s
+epoca  6   pierdere 0.0858   acuratețe la testare 97.29%   0.2 s
+epoca  7   pierdere 0.0756   acuratețe la testare 97.33%   0.2 s
+epoca  8   pierdere 0.0678   acuratețe la testare 97.47%   0.2 s
+epoca  9   pierdere 0.0610   acuratețe la testare 97.57%   0.2 s
+epoca 10   pierdere 0.0552   acuratețe la testare 97.62%   0.2 s
+Durata antrenării: 2.2 s
+Imagini de testare clasificate greșit: 238 din 10000
+  3 citit ca 5: de 15 ori
+  2 citit ca 8: de 11 ori
+  4 citit ca 9: de 11 ori
+  9 citit ca 4: de 11 ori
+  7 citit ca 2: de 10 ori
+Exemplele au fost salvate în imagini/predictii.png și imagini/greseli.png
+```
+
+Pierderea medie din prima epocă, 0,36, este deja mult sub 2,30, pentru că rețeaua învață chiar din primele loturi. După 10 epoci, rețeaua recunoaște corect 97,62% din cifrele de testare, adică greșește 238 din 10.000. Datorită semințelor fixe, pierderile și acuratețile sunt aceleași la fiecare rulare, pe același calculator. Durata variază de la o rulare la alta, iar pe calculatoarele mai vechi sau în Google Colab poate fi de câteva ori mai mare, dar rămâne de ordinul secundelor.
+
+Imaginea de mai jos arată primele 12 cifre din setul de testare, cu cifra prezisă de rețea deasupra fiecăreia. Toate sunt clasificate corect.
+
+![Primele 12 cifre din setul de testare MNIST, albe pe fundal negru: 7, 2, 1, 0, 4, 1, 4, 9, 5, 9, 0, 6. Deasupra fiecăreia este cifra prezisă de rețea, aceeași cu cifra din imagine.](/laboratoare/retele-neuronale-de-la-zero/imagini/predictii.png)
+
+Mai interesante sunt greșelile. Imaginea următoare arată primele 12 cifre de testare clasificate greșit, cu cifra prezisă și, între paranteze, cifra corectă.
+
+![Primele 12 cifre de testare clasificate greșit, cu cifra prezisă și cea corectă: 2 (4), 0 (6), 7 (2), 7 (3), 0 (6), 5 (3), 5 (3), 2 (8), 8 (2), 8 (1), 8 (2), 3 (7). Multe sunt scrise neobișnuit.](/laboratoare/retele-neuronale-de-la-zero/imagini/greseli.png)
+
+Unele greșeli sunt de înțeles, pentru că cifrele sunt scrise neobișnuit, iar altele, ca 6-urile citite ca 0, arată limitele rețelei. Ea vede doar 784 de numere separate, fără să știe care pixeli sunt vecini. Rețelele convoluționale, construite pentru imagini, folosesc tocmai această vecinătate și ajung la peste 99% pe MNIST.
+
+## Aceeași rețea în PyTorch
+
+În PyTorch, rețeaua se scrie din straturi gata făcute. `nn.Linear` este stratul cu ponderi și _bias_, iar `nn.ReLU`, activarea.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/mnist_torch.py" symbols={['make_model', 'train']} />
+
+Nu mai scriem nici `backward`, nici softmax. Funcția `cross_entropy` primește direct scorurile nenormalizate și aplică ea softmax, `loss.backward()` face retropropagarea cu `autograd`, iar `optimizer.step()` face actualizarea `p -= lr * p.grad` pentru fiecare parametru. `optimizer.zero_grad()` are același rol ca `zero_grad()` din `nn.py`: gradienții se adună și aici de la un `backward()` la altul.
+
+Înainte de antrenare, scriptul verifică retropropagarea noastră încă o dată: copiază aceleași ponderi în rețeaua PyTorch, calculează gradienții pe același lot de 64 de imagini în ambele feluri și îi compară.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/mnist_torch.py" symbols={['compare_gradients']} />
+
+PyTorch nu face parte din `requirements.txt`, pentru că are câteva sute de megaocteți. Pentru a-l instala și a rula scriptul, folosiți comenzile de mai jos.
+
+```bash
+pip install torch
+python mnist_torch.py
+```
+
+Rezultatul arată astfel.
+
+```text
+Gradienții NumPy față de autograd, pe un lot de 64 de imagini:
+  W1: diferența maximă 5.6e-09
+  b1: diferența maximă 1.5e-08
+  W2: diferența maximă 1.5e-08
+  b2: diferența maximă 3.0e-08
+
+epoca  1   pierdere 0.4382   acuratețe la testare 92.70%   0.5 s
+epoca  2   pierdere 0.2264   acuratețe la testare 94.38%   0.4 s
+epoca  3   pierdere 0.1695   acuratețe la testare 95.72%   0.4 s
+epoca  4   pierdere 0.1353   acuratețe la testare 96.05%   0.4 s
+epoca  5   pierdere 0.1127   acuratețe la testare 96.76%   0.3 s
+epoca  6   pierdere 0.0961   acuratețe la testare 97.02%   0.4 s
+epoca  7   pierdere 0.0837   acuratețe la testare 97.23%   0.4 s
+epoca  8   pierdere 0.0745   acuratețe la testare 97.27%   0.4 s
+epoca  9   pierdere 0.0662   acuratețe la testare 97.55%   0.4 s
+epoca 10   pierdere 0.0597   acuratețe la testare 97.57%   0.4 s
+Durata antrenării: 4.3 s
+```
+
+Gradienții calculați de mână și cei calculați de PyTorch diferă cu cel mult $3 \cdot 10^{-8}$, cât permit numerele zecimale de 32 de biți. Antrenarea ajunge la 97,57%, aproape cât varianta NumPy. Diferențele mici vin din punctul de pornire: `nn.Linear` își inițializează ponderile cu altă distribuție decât inițializarea He din `init_params`, iar loturile sunt amestecate de alt generator de numere aleatoare.
+
+Același cod rulează și pe o placă grafică, după ce rețeaua și datele sunt mutate pe ea cu `.to("cuda")` sau `.to("mps")`. Pentru o rețea atât de mică, procesorul este însă suficient. Laboratorul [Un model de limbaj de la zero](/laboratoare/model-lingvistic-de-la-zero/prezentare/) continuă de aici, cu un Transformer de 14,6 milioane de parametri, scris tot în PyTorch.
+
+## Bibliografie
+
+- Harris, C. R. et al. (2020). [Array programming with NumPy](https://doi.org/10.1038/s41586-020-2649-2). _Nature_, 585(7825), 357–362.
+- He, K. et al. (2015). [Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification](https://arxiv.org/abs/1502.01852). _ICCV 2015_.
+- LeCun, Y. et al. (1998). [Gradient-based learning applied to document recognition](https://doi.org/10.1109/5.726791). _Proceedings of the IEEE_, 86(11), 2278–2324.
+- Paszke, A. et al. (2019). [PyTorch: An Imperative Style, High-Performance Deep Learning Library](https://arxiv.org/abs/1912.01703). _NeurIPS 2019_.
+- Rumelhart, D. E., Hinton, G. E. și Williams, R. J. (1986). [Learning representations by back-propagating errors](https://doi.org/10.1038/323533a0). _Nature_, 323(6088), 533–536.

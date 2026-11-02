@@ -1,0 +1,245 @@
+---
+title: Un motor de diferențiere automată
+description: Clasa Value ține un număr, gradientul lui și operația din care a rezultat. Scriem derivatele locale ale fiecărei operații și metoda backward(), care aplică regula lanțului în ordine topologică inversă.
+sidebar:
+  order: 2
+level: incepator
+tags:
+  - Rețele neuronale
+---
+
+import DeepDive from '@components/DeepDive.astro';
+import Python from '@components/Python.astro';
+import SourceFile from '@components/SourceFile.astro';
+
+export const labSetup = String.raw`
+import os, sys
+from js import location
+from pyodide.http import open_url
+
+# Fișierele laboratorului, copiate în sistemul de fișiere din browser.
+LAB = location.origin + "/laboratoare/retele-neuronale-de-la-zero/cod/"
+for name in ["engine.py", "graph.py", "nn.py", "moons.py"]:
+    if not os.path.exists(name):
+        with open(name, "w", encoding="utf-8") as f:
+            f.write(open_url(LAB + name).read())
+sys.path.insert(0, ".")
+`;
+
+Pe pagina despre [retropropagare](/retele-neuronale/retropropagare/), gradienții unei rețele cu un singur neuron ascuns sunt calculați de mână, verigă cu verigă. Pentru o rețea cu mii de ponderi, calculul de mână nu mai este o opțiune. Bibliotecile precum PyTorch fac acest lucru automat: în timpul calculului, ele construiesc un **graf computațional** (_computational graph_), apoi îl parcurg invers și aplică regula lanțului la fiecare nod.
+
+Pe această pagină construim un astfel de mecanism, la scară mică. Lucrăm cu numere obișnuite (scalari), nu cu matrice, ca fiecare pas să poată fi urmărit. Tot codul se află în fișierul `engine.py`.
+
+## Clasa Value
+
+Un obiect `Value` învelește un număr. Pe lângă valoarea propriu-zisă, `data`, păstrează gradientul `grad`, adică derivata rezultatului final în raport cu acest număr, și ține minte din ce valori și prin ce operație a fost calculat.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/engine.py" symbols={['Value.__init__', 'Value.__repr__']} />
+
+Atributul `_prev` păstrează valorile din care a rezultat numărul, iar `_op`, operația. Împreună, ele formează muchiile grafului computațional. Funcția `_backward` este, la început, una care nu face nimic. Fiecare operație o va înlocui cu propria regulă de derivare.
+
+Exemplul de mai jos folosește chiar fișierul `engine.py` al laboratorului.
+
+<Python
+  setup={labSetup}
+  code={String.raw`
+from engine import Value
+
+a = Value(2.0)
+b = Value(-3.0)
+c = a * b + 1
+
+print(c)
+print("operația:", c._op)
+print("calculat din:", c._prev)
+`}
+/>
+
+Rezultatul `c` știe că a fost obținut prin adunare, din produsul `a * b` și din constanta 1, pe care operația a transformat-o și ea într-un obiect `Value`.
+
+## Operațiile și derivatele lor locale
+
+Fiecare operație face două lucruri: calculează rezultatul și scrie o funcție `_backward`, care știe să trimită gradientul rezultatului înapoi, spre operanzi. Pentru asta, operația are nevoie doar de **derivata ei locală**, adică de cât de mult se schimbă rezultatul când se schimbă puțin un operand.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/engine.py" symbols={['Value.__add__', 'Value.__mul__']} />
+
+La adunare, derivata locală este 1 pentru ambii termeni, așa că gradientul trece neschimbat. La înmulțire, derivata în raport cu un factor este celălalt factor. În ambele cazuri, derivata locală este înmulțită cu `out.grad`, gradientul rezultatului. Aceasta este [regula lanțului](/retele-neuronale/retropropagare/#regula-lanțului): gradientul unui operand este gradientul rezultatului înmulțit cu derivata locală.
+
+<DeepDive title="Regula lanțului pentru adunare și înmulțire">
+
+Fie $L$ rezultatul final și $out = x + y$. Derivatele locale sunt $\frac{\partial out}{\partial x} = \frac{\partial out}{\partial y} = 1$, deci:
+
+$$
+\frac{\partial L}{\partial x} = \frac{\partial L}{\partial out} \cdot 1, \qquad \frac{\partial L}{\partial y} = \frac{\partial L}{\partial out} \cdot 1
+$$
+
+Pentru $out = x \cdot y$, derivatele locale sunt $\frac{\partial out}{\partial x} = y$ și $\frac{\partial out}{\partial y} = x$:
+
+$$
+\frac{\partial L}{\partial x} = \frac{\partial L}{\partial out} \cdot y, \qquad \frac{\partial L}{\partial y} = \frac{\partial L}{\partial out} \cdot x
+$$
+
+În cod, $\frac{\partial L}{\partial out}$ este `out.grad`.
+
+</DeepDive>
+
+Funcțiile de activare urmează același tipar. Derivatele lor sunt cele din [tabelul de pe pagina despre retropropagare](/retele-neuronale/retropropagare/#derivatele-funcțiilor-de-activare).
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/engine.py" symbols={['Value.tanh', 'Value.relu']} />
+
+Ridicarea la putere și funcția exponențială au și ele câte o derivată proprie. Celelalte operații nu mai au nevoie de una: scăderea este adunarea cu un număr negativ, iar împărțirea este înmulțirea cu puterea −1.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/engine.py" symbols={['Value.__pow__', 'Value.exp', 'Value.__neg__', 'Value.__sub__', 'Value.__truediv__']} />
+
+Metodele `__radd__`, `__rmul__`, `__rsub__` și `__rtruediv__` tratează cazul în care numărul obișnuit este primul termen, de exemplu `2 * x`. Python încearcă întâi `int.__mul__(2, x)`, care nu știe ce este un `Value`, apoi `x.__rmul__(2)`.
+
+## De ce gradienții se adună
+
+În toate funcțiile `_backward`, gradientul se adaugă cu `+=`, nu se atribuie cu `=`. Motivul este că o valoare poate fi folosită de mai multe ori. În $y = x \cdot x + x$, valoarea $x$ apare de trei ori, iar fiecare apariție contribuie la gradient. Derivata corectă este $2x + 1$, deci 7 pentru $x = 3$.
+
+<Python
+  setup={labSetup}
+  code={String.raw`
+from engine import Value
+
+x = Value(3.0)
+y = x * x + x
+y.backward()
+print("dy/dx =", x.grad)
+
+# Un al doilea backward(), fără ștergerea gradienților.
+y.backward()
+print("după încă un backward():", x.grad)
+`}
+/>
+
+Cu `=`, fiecare contribuție ar suprascrie-o pe cea de dinainte, iar rezultatul ar fi greșit. Partea a doua a exemplului arată ce se întâmplă când gradienții se adună și de la un apel `backward()` la altul. Al doilea apel pornește de la gradienții rămași după primul, inclusiv pe valorile intermediare, așa că rezultatul, 20, nu mai este derivata lui $y$. De aceea, la antrenare, gradienții sunt readuși la zero înaintea fiecărui pas, la fel ca `optimizer.zero_grad()` în PyTorch.
+
+## Retropropagarea în ordine topologică
+
+Pentru ca `_backward` să trimită un gradient corect mai departe, gradientul rezultatului trebuie să fie deja complet, cu toate contribuțiile adunate. Valorile trebuie deci parcurse într-o ordine în care fiecare valoare vine înaintea celor din care a fost calculată. Aceasta este inversul unei **ordini topologice** (_topological order_), în care fiecare nod al grafului apare după toate nodurile de care depinde.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/engine.py" symbols={['Value.backward']} />
+
+Funcția `build` face o parcurgere în adâncime a grafului: o valoare este adăugată în listă abia după ce au fost adăugate toate valorile din care a fost calculată. Apoi, gradientul rezultatului final primește valoarea 1, pentru că derivata unei mărimi în raport cu ea însăși este 1, iar lista este parcursă de la coadă la cap.
+
+Să considerăm expresia $L = (a \cdot b + c) \cdot f$, cu $a = 2$, $b = -3$, $c = 7$ și $f = -2$. Codul de mai jos refolosește funcția `build` ca să afișeze ordinea topologică, apoi calculează gradienții.
+
+<Python
+  setup={labSetup}
+  code={String.raw`
+from engine import Value
+
+a = Value(2.0, label="a")
+b = Value(-3.0, label="b")
+c = Value(7.0, label="c")
+f = Value(-2.0, label="f")
+e = a * b
+e.label = "e"
+d = e + c
+d.label = "d"
+L = d * f
+L.label = "L"
+
+# Aceeași parcurgere ca în backward().
+topo, visited = [], set()
+def build(v):
+    if v not in visited:
+        visited.add(v)
+        for child in v._prev:
+            build(child)
+        topo.append(v)
+build(L)
+print("ordinea topologică:", [v.label for v in topo])
+
+L.backward()
+for v in [a, b, c, f]:
+    print(f"dL/d{v.label} = {v.grad}")
+`}
+/>
+
+Retropropagarea începe cu $L$, trece prin $d$ și $f$, apoi prin $c$ și $e$ și se termină cu $a$ și $b$. Același calcul, făcut de mână, dă exact aceleași numere.
+
+<DeepDive title="Gradienții expresiei, calculați de mână">
+
+Valorile intermediare sunt $e = a \cdot b = -6$ și $d = e + c = 1$, iar $L = d \cdot f = -2$. Pornind de la $\frac{\partial L}{\partial L} = 1$:
+
+$$
+\frac{\partial L}{\partial d} = f = -2, \qquad \frac{\partial L}{\partial f} = d = 1
+$$
+
+$$
+\frac{\partial L}{\partial c} = \frac{\partial L}{\partial e} = \frac{\partial L}{\partial d} \cdot 1 = -2
+$$
+
+$$
+\frac{\partial L}{\partial a} = \frac{\partial L}{\partial e} \cdot b = 6, \qquad \frac{\partial L}{\partial b} = \frac{\partial L}{\partial e} \cdot a = -4
+$$
+
+</DeepDive>
+
+Gradientul lui $a$, egal cu 6, spune că dacă $a$ crește cu o cantitate mică, $L$ crește de aproximativ 6 ori mai mult. Pe pagina următoare, aceleași numere apar în diagrama grafului.
+
+## Verificarea cu diferențe finite
+
+O greșeală într-o derivată locală nu produce nicio eroare la rulare, doar gradienți greșiți. Ca pe pagina despre retropropagare, putem compara rezultatul cu o [aproximare prin diferențe finite](/retele-neuronale/retropropagare/#verificarea-gradienților): modificăm puțin o intrare în sus și în jos și vedem cât se schimbă rezultatul.
+
+Exemplul de mai jos verifică un neuron cu două intrări și activare tanh. Pentru a încerca și operațiile derivate, a doua variantă a neuronului calculează tanh din formula ei cu exponențiale, cu `exp`, scădere și împărțire.
+
+<Python
+  setup={labSetup}
+  code={String.raw`
+from engine import Value
+
+def neuron(x1, x2, w1, w2, b, tanh_from_exp=False):
+    n = x1 * w1 + x2 * w2 + b
+    if tanh_from_exp:
+        e = (2 * n).exp()
+        return (e - 1) / (e + 1)  # tanh(n), scris cu exponențiale
+    return n.tanh()
+
+inputs = {"x1": 1.0, "x2": -2.0, "w1": 0.5, "w2": 0.25, "b": 0.8}
+eps = 1e-6
+
+for tanh_from_exp in [False, True]:
+    values = {k: Value(v) for k, v in inputs.items()}
+    o = neuron(**values, tanh_from_exp=tanh_from_exp)
+    o.backward()
+    print("tanh din exponențiale" if tanh_from_exp else "tanh direct", f"o = {o.data:.6f}")
+    for k in inputs:
+        up = {n: Value(v + eps * (n == k)) for n, v in inputs.items()}
+        down = {n: Value(v - eps * (n == k)) for n, v in inputs.items()}
+        numeric = (neuron(**up).data - neuron(**down).data) / (2 * eps)
+        print(f"  do/d{k}: backward {values[k].grad:+.6f}, diferențe finite {numeric:+.6f}")
+`}
+/>
+
+Cele două variante dau aceiași gradienți, deși graful celei de-a doua are mai multe noduri. Motorul nu are nevoie să știe că expresia este tanh: îi este suficient să cunoască derivata fiecărei operații mici.
+
+## Aceeași expresie în PyTorch
+
+În PyTorch, același calcul se scrie aproape la fel. Tensorii cu `requires_grad=True` joacă rolul obiectelor `Value`, iar `backward()` face aceeași parcurgere a grafului. PyTorch nu rulează în browser, așa că rezultatele sunt trecute în comentarii.
+
+```python
+import torch
+
+# Aceeași expresie, L = (a * b + c) * f, cu tensori PyTorch de un singur număr
+a = torch.tensor(2.0, requires_grad=True)
+b = torch.tensor(-3.0, requires_grad=True)
+c = torch.tensor(7.0, requires_grad=True)
+f = torch.tensor(-2.0, requires_grad=True)
+L = (a * b + c) * f
+L.backward()
+
+print(L.item())  # -2.0
+print(a.grad.item(), b.grad.item(), c.grad.item(), f.grad.item())  # 6.0 -4.0 -2.0 1.0
+```
+
+Diferența este de scară, nu de principiu. Un tensor PyTorch ține mii sau milioane de numere, iar fiecare operație are derivata scrisă pentru matrice întregi, cu cod optimizat pentru procesor și placa grafică. Pe ultima pagină a laboratorului facem același pas, de la numere la matrice, cu NumPy.
+
+## Bibliografie
+
+- Baydin, A. G. et al. (2018). [Automatic differentiation in machine learning: a survey](https://arxiv.org/abs/1502.05767). _Journal of Machine Learning Research_, 18(153), 1–43.
+- Karpathy, A. (2020). [micrograd](https://github.com/karpathy/micrograd). Cod sursă, GitHub.
+- Paszke, A. et al. (2019). [PyTorch: An Imperative Style, High-Performance Deep Learning Library](https://arxiv.org/abs/1912.01703). _NeurIPS 2019_.
+- Rumelhart, D. E., Hinton, G. E. și Williams, R. J. (1986). [Learning representations by back-propagating errors](https://doi.org/10.1038/323533a0). _Nature_, 323(6088), 533–536.

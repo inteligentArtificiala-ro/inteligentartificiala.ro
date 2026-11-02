@@ -1,0 +1,208 @@
+---
+title: O rețea neuronală mică
+description: Construim neuroni, straturi și o rețea cu mai multe straturi (MLP) din obiecte Value și o antrenăm cu cod scris de mână, pas cu pas, să separe două semilune de puncte.
+sidebar:
+  order: 4
+level: incepator
+tags:
+  - Rețele neuronale
+---
+
+import DeepDive from '@components/DeepDive.astro';
+import Python from '@components/Python.astro';
+import SourceFile from '@components/SourceFile.astro';
+import { Steps } from '@astrojs/starlight/components';
+
+export const labSetup = String.raw`
+import os, sys
+from js import location
+from pyodide.http import open_url
+
+# Fișierele laboratorului, copiate în sistemul de fișiere din browser.
+LAB = location.origin + "/laboratoare/retele-neuronale-de-la-zero/cod/"
+for name in ["engine.py", "graph.py", "nn.py", "moons.py"]:
+    if not os.path.exists(name):
+        with open(name, "w", encoding="utf-8") as f:
+            f.write(open_url(LAB + name).read())
+sys.path.insert(0, ".")
+`;
+
+Motorul de diferențiere automată știe să calculeze gradienții oricărei expresii. O rețea neuronală este doar o expresie mai mare: sume ponderate, funcții de activare și, la final, o pierdere. Pe această pagină o construim din obiecte `Value`, în fișierul `nn.py`, și o antrenăm pe o problemă mică, în fișierul `moons.py`.
+
+## Neuronul
+
+Un [neuron artificial](/retele-neuronale/ce-sunt-retelele-neuronale/#definiție) are câte o pondere pentru fiecare intrare și un _bias_. Calculează suma ponderată a intrărilor, adaugă _bias_-ul și aplică funcția de activare.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/nn.py" symbols={['Module', 'Neuron']} />
+
+Ponderile pornesc de la valori aleatoare între −1 și 1. Dacă ar porni toate de la aceeași valoare, neuronii unui strat ar calcula același lucru și ar primi aceiași gradienți, deci ar rămâne identici. Funcția `sum` primește _bias_-ul ca valoare de pornire, așa că rezultatul este un singur obiect `Value`, cu tot calculul în graful lui.
+
+Clasa de bază `Module` adaugă metoda `zero_grad`, care readuce gradienții la zero. Pe [pagina despre motor](/laboratoare/retele-neuronale-de-la-zero/motorul-de-diferentiere/#de-ce-gradienții-se-adună) am văzut de ce este nevoie de ea: fiecare `backward()` adaugă la gradienții existenți.
+
+## Straturi și rețea
+
+Un strat este o listă de neuroni care primesc aceleași intrări. O **rețea cu mai multe straturi** (_multilayer perceptron_, MLP) este o listă de straturi, în care ieșirile unui strat devin intrările stratului următor.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/nn.py" symbols={['Layer', 'MLP']} />
+
+Straturile ascunse au funcția de activare aleasă, implicit tanh, iar ultimul strat nu are activare, ca ieșirea să poată lua orice valoare. Metoda `parameters` adună ponderile și _bias_-urile tuturor neuronilor, pentru că pe acestea le va modifica antrenarea.
+
+Rețeaua folosită mai jos are 2 intrări, două straturi ascunse de câte 8 neuroni și o ieșire. Fiecare neuron are câte o pondere pentru fiecare intrare și un _bias_, deci rețeaua are 105 parametri.
+
+<Python
+  setup={labSetup}
+  code={String.raw`
+import random
+from nn import MLP
+
+random.seed(1)
+model = MLP(2, [8, 8, 1])
+for i, layer in enumerate(model.layers, start=1):
+    n_in = len(layer.neurons[0].w)
+    print(f"stratul {i}: {len(layer.neurons)} × ({n_in} ponderi + 1 bias) = {len(layer.parameters())} parametri")
+print("în total:", len(model.parameters()))
+print()
+print("ieșirea pentru intrarea [1.0, -0.5]:", model([1.0, -0.5]))
+`}
+/>
+
+## Datele: două semilune
+
+Problema este una de **clasificare** (_classification_): punctele din plan aparțin uneia din două clase, iar rețeaua trebuie să spună, pentru fiecare punct, clasa lui. Punctele sunt așezate pe două semilune întrepătrunse, așa că nicio linie dreaptă nu le poate separa. Rețeaua are nevoie de straturile ascunse și de neliniaritatea lor.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/moons.py" symbols={['make_moons']} />
+
+Punctele de pe semiluna de sus au eticheta +1, iar cele de pe semiluna de jos, −1. Zgomotul gaussian, cu deviația standard 0,1, le împrăștie puțin în jurul curbelor, ca problema să semene cu datele reale.
+
+<Python
+  setup={labSetup}
+  code={String.raw`
+from moons import make_moons
+
+points, labels = make_moons(100)
+for p, y in zip(points[:6], labels[:6]):
+    print(f"punctul ({p[0]:+.2f}, {p[1]:+.2f}) are eticheta {y:+.0f}")
+print("puncte cu eticheta +1:", sum(y > 0 for y in labels), "din", len(labels))
+`}
+/>
+
+## Pierderea și acuratețea
+
+Ieșirea rețelei este un număr, numit **scor**. Vrem un scor apropiat de +1 pentru semiluna de sus și de −1 pentru cea de jos. Pierderea măsoară cât de departe sunt scorurile de aceste ținte, prin **eroarea pătratică medie** (_mean squared error_): diferența dintre scor și etichetă, ridicată la pătrat, apoi mediată pe toate punctele. Clasa prezisă este dată de semnul scorului, iar **acuratețea** (_accuracy_) este proporția de puncte clasificate corect.
+
+<DeepDive title="Eroarea pătratică medie">
+
+Pentru $N$ puncte, cu scorurile $s_i$ și etichetele $y_i \in \{-1, +1\}$, pierderea este:
+
+$$
+L = \frac{1}{N} \sum_{i=1}^{N} (s_i - y_i)^2
+$$
+
+</DeepDive>
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/moons.py" symbols={['loss_and_accuracy']} />
+
+Pierderea este un singur obiect `Value`, calculat din scorurile tuturor celor 100 de puncte. Graful ei conține deci toate calculele rețelei, pentru toate punctele, iar un singur `backward()` dă gradientul pierderii în raport cu fiecare dintre cei 105 parametri.
+
+## Antrenarea
+
+Antrenarea repetă același pas de mai multe ori.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/moons.py" symbols={['train']} />
+
+<Steps>
+1. **Propagarea directă**: rețeaua calculează scorurile tuturor punctelor, iar din ele se calculează pierderea.
+2. **Ștergerea gradienților**: `zero_grad()` readuce la zero gradienții de la pasul anterior.
+3. **Retropropagarea**: `loss.backward()` calculează gradientul pierderii în raport cu fiecare parametru.
+4. **Actualizarea**: fiecare parametru face un pas mic în sens opus gradientului său, adică în sensul în care pierderea scade. Mărimea pasului este dată de rata de învățare, `lr = 0.1`.
+</Steps>
+
+Pasul 4 este [coborârea pe gradient](/retele-neuronale/ce-sunt-retelele-neuronale/#cum-învață-o-rețea-neuronală), scrisă direct, fără un optimizator. Aici se modifică `p.data`, nu `p`: parametrul rămâne același obiect, iar rețeaua îl va folosi, cu noua valoare, la următoarea propagare directă.
+
+Exemplul de mai jos rulează în browser primii 30 de pași ai antrenării. Durează câteva secunde, pentru că fiecare pas construiește și parcurge un graf cu zeci de mii de noduri.
+
+<Python
+  setup={labSetup}
+  code={String.raw`
+import random
+from moons import make_moons, train
+from nn import MLP
+
+random.seed(1)
+points, labels = make_moons(100)
+model = MLP(2, [8, 8, 1])
+train(model, points, labels, steps=30, lr=0.1, log_every=5)
+`}
+/>
+
+La început, rețeaua clasifică greșit majoritatea punctelor, iar pierderea este mare, pentru că ponderile aleatoare dau scoruri departe de ±1. După câțiva pași, scorurile ajung în jurul țintelor, iar acuratețea trece de 85%.
+
+## Rularea locală
+
+Pe calculatorul local, antrenarea completă, de 200 de pași, se pornește cu o singură comandă.
+
+```bash
+python moons.py
+```
+
+Pe un laptop modern, antrenarea a durat circa 30 de secunde. Rezultatul arată astfel.
+
+```text
+Puncte: 100, parametri: 105
+pasul   0   pierdere 3.5031   acuratețe 19%
+pasul  20   pierdere 0.3162   acuratețe 88%
+pasul  40   pierdere 0.2869   acuratețe 89%
+pasul  60   pierdere 0.2495   acuratețe 92%
+pasul  80   pierdere 0.2030   acuratețe 94%
+pasul 100   pierdere 0.1569   acuratețe 96%
+pasul 120   pierdere 0.1227   acuratețe 96%
+pasul 140   pierdere 0.1034   acuratețe 97%
+pasul 160   pierdere 0.0934   acuratețe 98%
+pasul 180   pierdere 0.0876   acuratețe 98%
+pasul 199   pierdere 0.0836   acuratețe 98%
+Durata antrenării: 30.8 s
+Frontiera de decizie a fost salvată în imagini/frontiera.svg
+```
+
+La final, scriptul calculează scorul rețelei pe o grilă de puncte și desenează, cu Matplotlib, **frontiera de decizie** (_decision boundary_), adică linia pe care scorul trece prin zero. Rețeaua a învățat o curbă care urmează forma celor două semilune.
+
+<SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/moons.py" symbols={['save_boundary']} />
+
+![Cele 100 de puncte de antrenare, albastre pe semiluna de sus și portocalii pe semiluna de jos, cu frontiera de decizie a rețelei: o curbă în formă de S care trece printre cele două semilune și lasă de partea greșită doar două puncte portocalii.](/laboratoare/retele-neuronale-de-la-zero/imagini/frontiera.svg)
+
+Câteva puncte, aflate chiar în zona în care semilunile se apropie, rămân de partea greșită. Cu mai mulți pași de antrenare, rețeaua le-ar putea învăța și pe acestea, dar ar risca să urmeze zgomotul, nu forma semilunilor. Pentru a ști cât de bine generalizează, am avea nevoie de un [set de testare separat](/retele-neuronale/ce-sunt-retelele-neuronale/#cum-învață-o-rețea-neuronală), ca pe pagina următoare.
+
+## Limita unui motor pentru scalari
+
+Motorul nostru este ușor de urmărit, dar lent. Fiecare număr este un obiect Python, iar fiecare operație creează un obiect nou și o funcție nouă. Rețeaua cu 105 parametri, pe 100 de puncte, a avut nevoie de circa 30 de secunde pentru 200 de pași.
+
+Rețeaua pentru cifrele MNIST, de pe pagina următoare, are 101.770 de parametri. Exemplul de mai jos construiește această rețea din obiecte `Value` și măsoară o singură propagare directă și retropropagare, pentru o singură imagine, aici cu pixeli aleatori.
+
+<Python
+  setup={labSetup}
+  code={String.raw`
+import random
+import time
+from nn import MLP
+
+random.seed(0)
+model = MLP(784, [128, 10], activation="relu")
+print("parametri:", len(model.parameters()))
+
+image = [random.random() for _ in range(784)]
+start = time.time()
+scores = model(image)
+loss = sum((s - (1.0 if i == 3 else 0.0)) ** 2 for i, s in enumerate(scores))
+model.zero_grad()
+loss.backward()
+print(f"o imagine: {time.time() - start:.1f} s")
+`}
+/>
+
+Pe un laptop modern, o singură imagine durează în jur de o secundă, atât local, cât și în browser. Setul de antrenare MNIST are 60.000 de imagini, așa că o singură trecere prin el ar dura cel puțin 16 ore. Pe pagina următoare, aceeași rețea, scrisă cu matrice NumPy, face o trecere completă în mai puțin de o secundă.
+
+## Bibliografie
+
+- Karpathy, A. (2020). [micrograd](https://github.com/karpathy/micrograd). Cod sursă, GitHub.
+- Rosenblatt, F. (1958). [The perceptron: A probabilistic model for information storage and organization in the brain](https://doi.org/10.1037/h0042519). _Psychological Review_, 65(6), 386–408.
+- Rumelhart, D. E., Hinton, G. E. și Williams, R. J. (1986). [Learning representations by back-propagating errors](https://doi.org/10.1038/323533a0). _Nature_, 323(6088), 533–536.
