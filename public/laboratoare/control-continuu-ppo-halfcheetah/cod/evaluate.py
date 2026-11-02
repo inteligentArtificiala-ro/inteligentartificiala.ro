@@ -14,7 +14,7 @@ from model import ActorCritic
 def evaluate(checkpoint_path: str, num_episodes: int = 5, record_video: bool = False) -> None:
     """Încarcă un model salvat și evaluează performanța deterministă a strategiei."""
     device = torch.device("cpu")
-    checkpoint = torch.load(checkpoint_path, map_location=device)
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
 
     obs_dim = checkpoint["obs_dim"]
     act_dim = checkpoint["act_dim"]
@@ -24,10 +24,16 @@ def evaluate(checkpoint_path: str, num_episodes: int = 5, record_video: bool = F
     agent.load_state_dict(checkpoint["model_state_dict"])
     agent.eval()
 
+    # Aceeași normalizare a observațiilor ca la antrenare, cu statisticile salvate în checkpoint
+    obs_mean = checkpoint["obs_mean"]
+    obs_std = np.sqrt(checkpoint["obs_var"] + 1e-8)
+
     # Crearea mediului de evaluare
     render_mode = "rgb_array" if record_video else "human"
+    # În videoclip, camera „track” din modelul MuJoCo urmărește robotul, care altfel iese repede din cadru
+    camera = {"camera_name": "track"} if record_video else {}
     try:
-        env = gym.make(env_id, render_mode=render_mode)
+        env = gym.make(env_id, render_mode=render_mode, **camera)
     except Exception:
         # Dacă mediul grafic nu este disponibil, se continuă fără randare
         render_mode = None
@@ -54,7 +60,8 @@ def evaluate(checkpoint_path: str, num_episodes: int = 5, record_video: bool = F
 
         while not done:
             with torch.no_grad():
-                obs_tensor = torch.Tensor(obs).unsqueeze(0)
+                obs_norm = np.clip((obs - obs_mean) / obs_std, -10.0, 10.0)
+                obs_tensor = torch.Tensor(obs_norm).unsqueeze(0)
                 action = agent.predict(obs_tensor, deterministic=True)
                 action_np = action.squeeze(0).numpy()
 

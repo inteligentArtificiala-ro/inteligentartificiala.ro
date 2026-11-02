@@ -61,31 +61,39 @@ Pentru a porni antrenarea pe calculator, rulați comanda de mai jos:
 python train.py
 ```
 
-În consolă apar rezultatele fiecărui episod încheiat și viteza de eșantionare:
+În consolă apar rezultatele fiecărui episod încheiat și viteza de eșantionare. Mai jos este un extras dintr-o rulare reală, cu setările implicite, pe procesorul unui calculator cu cip Apple Silicon (antrenarea întreagă a durat circa 7 minute):
 
 ```text
-Începem antrenarea: HalfCheetah-v4__ppo_halfcheetah__42__1745000000
+Începem antrenarea: HalfCheetah-v4__ppo_halfcheetah__42__1793619313
 Total pași: 1,000,000 | Lot: 8192 | Mini-lot: 256
 Dispozitiv de calcul: cpu
-Pasul    4000: recompensă episod =   -85.3, durată = 1000
-Pasul   32000: recompensă episod =   120.4, durată = 1000
-Iterația   5/122 | Pierdere actor: -0.0084 | Pierdere critic: 0.1420 | Viteza: 2150 pași/s
+Pasul    4000: recompensă episod =  -414.3, durată = 1000
 ...
-Pasul  500000: recompensă episod =  2840.1, durată = 1000
+Iterația   5/122 | Pierdere actor: -0.0211 | Pierdere critic: 0.0844 | Viteza: 9101 pași/s
 ...
-Pasul 1000000: recompensă episod =  4620.8, durată = 1000
+Pasul  200000: recompensă episod =   -49.3, durată = 1000
+...
+Pasul  500000: recompensă episod =   841.5, durată = 1000
+...
+Pasul  996000: recompensă episod =  1193.7, durată = 1000
 Model salvat cu succes în: checkpoints/ppo_halfcheetah.pt
 ```
 
+Recompensa afișată este cea a mediului, înainte de normalizare. Cele 4 medii încheie câte un episod la fiecare 4.000 de pași, pentru că un episod are 1.000 de pași.
+
 ## Cum învață robotul să alerge
 
-Pe parcursul antrenării, de 1 milion de pași, robotul trece prin trei etape distincte:
+În rularea de mai sus, media recompenselor pe episod a trecut prin trei etape:
 
 <Steps>
-1. **Faza inițială (0–100.000 de pași)**: recompensele sunt negative sau apropiate de zero (între -100 și +100). Robotul nu își poate menține echilibrul, cade și se zbate dezordonat.
-2. **Descoperirea locomoției (100.000–400.000 de pași)**: criticul învață să deosebească stările bune de cele proaste, iar avantajele GAE îl împing pe actor să folosească piciorul din spate ca pârghie de propulsie. Recompensa pe episod urcă constant, spre 2.000–3.000 de puncte.
-3. **Galopul stabil (500.000–1.000.000 de pași)**: cele două picioare se sincronizează într-un ciclu periodic de alergare, lin și rapid. Recompensa pe episod trece de pragul de 4.000–5.000 de puncte, iar penalizarea pentru acțiuni rămâne mică.
+1. **Faza inițială (0–200.000 de pași)**: recompensele sunt negative, în medie între -300 și -100. Robotul se zbate, cade și aproape nu înaintează, iar penalizarea pentru efortul motoarelor depășește câștigul din viteză.
+2. **Descoperirea locomoției (200.000–500.000 de pași)**: criticul învață să deosebească stările bune de cele proaste, iar avantajele GAE împing actorul spre mișcările care îl duc înainte. Media urcă repede, de la circa 170 la circa 900 de puncte.
+3. **Rafinarea (500.000–1.000.000 de pași)**: mișcarea devine un ciclu periodic, tot mai lin. Rata de învățare scade spre zero, iar media crește tot mai încet, până la circa 1.150 de puncte.
 </Steps>
+
+:::caution[Un robot care aleargă pe spate]
+Cu aceste setări, robotul se răstoarnă și învață să alerge pe spate. Am obținut același rezultat în toate cele șapte antrenări încercate, cu valori inițiale aleatoare (_seed_) diferite. Recompensa din HalfCheetah conține doar viteza spre înainte și o mică penalizare pentru efortul motoarelor, iar alergarea pe spate le satisface pe amândouă. Clipurile de pe [pagina de introducere](/laboratoare/control-continuu-ppo-halfcheetah/prezentare/) arată această strategie. Un agent optimizează recompensa pe care o primește, nu intenția celui care a scris-o.
+:::
 
 ## Monitorizarea cu TensorBoard
 
@@ -105,6 +113,8 @@ După ce modelul a fost salvat în `checkpoints/ppo_halfcheetah.pt`, scriptul `e
 
 <SourceFile path="laboratoare/control-continuu-ppo-halfcheetah/cod/evaluate.py" symbols={['evaluate']} />
 
+În timpul antrenării, observațiile trec prin `NormalizeObservation`, iar strategia a învățat doar pe valori normalizate. De aceea `train.py` salvează în checkpoint media și varianța folosite la normalizare, iar `evaluate.py` aplică aceeași transformare înainte de fiecare decizie. Fără ea, rețeaua ar primi valori pe o altă scară decât cele din antrenare și s-ar comporta imprevizibil. În videoclip, camera `track` din modelul MuJoCo urmărește robotul, care altfel ar ieși repede din cadru.
+
 Pentru 5 episoade de test și un videoclip al alergării, salvat în directorul `videoclipuri/`, rulați comanda de mai jos:
 
 ```bash
@@ -113,13 +123,13 @@ python evaluate.py --checkpoint checkpoints/ppo_halfcheetah.pt --episoade 5 --vi
 
 ```text
 Evaluăm modelul din checkpoints/ppo_halfcheetah.pt pe 5 episoade...
-Episodul 1: recompensă =  4820.3, durată = 1000 pași
-Episodul 2: recompensă =  4795.1, durată = 1000 pași
-Episodul 3: recompensă =  4910.4, durată = 1000 pași
-Episodul 4: recompensă =  4850.7, durată = 1000 pași
-Episodul 5: recompensă =  4885.2, durată = 1000 pași
+Episodul 1: recompensă =  1110.5, durată = 1000 pași
+Episodul 2: recompensă =  1121.3, durată = 1000 pași
+Episodul 3: recompensă =  1073.0, durată = 1000 pași
+Episodul 4: recompensă =  1115.6, durată = 1000 pași
+Episodul 5: recompensă =  1150.8, durată = 1000 pași
 --------------------------------------------------
-Recompensă medie:  4852.3 ± 41.2
+Recompensă medie:  1114.3 ± 24.9
 Durată medie:      1000.0 pași
 Videoclipurile au fost salvate în directorul 'videoclipuri/'.
 ```

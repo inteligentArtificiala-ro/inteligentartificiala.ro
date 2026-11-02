@@ -51,7 +51,7 @@ def make_env(env_id: str, seed: int, idx: int, gamma: float):
         env = gym.wrappers.RecordEpisodeStatistics(env)
         env = gym.wrappers.ClipAction(env)
         env = gym.wrappers.NormalizeObservation(env)
-        env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10.0, 10.0))
+        env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10.0, 10.0), env.observation_space)
         env = gym.wrappers.NormalizeReward(env, gamma=gamma)
         env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10.0, 10.0))
         env.action_space.seed(seed + idx)
@@ -74,14 +74,16 @@ def train(cfg: PPOConfig) -> None:
     # Fixarea semințelor pentru reproductibilitate
     np.random.seed(cfg.seed)
     torch.manual_seed(cfg.seed)
+    # Rețeaua este mică, iar acțiunile merg la fiecare pas spre simulator, deci fără CUDA procesorul este cel mai rapid.
+    # Pe Apple Silicon, MPS este de câteva ori mai lent aici decât CPU.
     device = torch.device("cuda" if torch.cuda.is_available() and cfg.cuda else "cpu")
-    if not torch.cuda.is_available() and torch.backends.mps.is_available():
-        device = torch.device("mps")
     print(f"Dispozitiv de calcul: {device}")
 
     # Crearea mediilor vectorizate
+    # SAME_STEP: un mediu care își încheie episodul este resetat chiar în pasul respectiv
     envs = gym.vector.SyncVectorEnv(
-        [make_env(cfg.env_id, cfg.seed, i, cfg.gamma) for i in range(cfg.num_envs)]
+        [make_env(cfg.env_id, cfg.seed, i, cfg.gamma) for i in range(cfg.num_envs)],
+        autoreset_mode=gym.vector.AutoresetMode.SAME_STEP,
     )
     obs_dim = np.prod(envs.single_observation_space.shape)
     act_dim = np.prod(envs.single_action_space.shape)
@@ -120,7 +122,7 @@ def train(cfg: PPOConfig) -> None:
                 obs=next_obs,
                 action=action,
                 logprob=logprob,
-                reward=torch.tensor(step_reward).to(device).view(-1),
+                reward=torch.tensor(step_reward, dtype=torch.float32).to(device).view(-1),
                 done=next_done,
                 value=value,
             )
@@ -128,16 +130,15 @@ def train(cfg: PPOConfig) -> None:
             next_obs = torch.Tensor(step_obs).to(device)
             next_done = torch.Tensor(step_done).to(device)
 
-            if "final_info" in infos:
-                for item in infos["final_info"]:
-                    if item and "episode" in item:
-                        ep_return = item["episode"]["r"]
-                        ep_length = item["episode"]["l"]
-                        print(
-                            f"Pasul {global_step:>7}: recompensă episod = {ep_return:7.1f}, durată = {ep_length}"
-                        )
-                        writer.add_scalar("charts/episodic_return", ep_return, global_step)
-                        writer.add_scalar("charts/episodic_length", ep_length, global_step)
+            # Statisticile episoadelor încheiate la acest pas, câte una pentru fiecare mediu care s-a oprit
+            final_info = infos.get("final_info", {})
+            if "episode" in final_info:
+                for i in np.flatnonzero(final_info["_episode"]):
+                    ep_return = float(final_info["episode"]["r"][i])
+                    ep_length = int(final_info["episode"]["l"][i])
+                    print(f"Pasul {global_step:>7}: recompensă episod = {ep_return:7.1f}, durată = {ep_length}")
+                    writer.add_scalar("charts/episodic_return", ep_return, global_step)
+                    writer.add_scalar("charts/episodic_length", ep_length, global_step)
 
         # 2. Calculul avantajelor GAE
         with torch.no_grad():
@@ -198,6 +199,9 @@ def train(cfg: PPOConfig) -> None:
         writer.add_scalar("charts/SPS", sps, global_step)
 
     # Salvarea modelului final
+    # Strategia a învățat pe observații normalizate, așa că salvăm și media și varianța folosite la normalizare.
+    # Mediile au fiecare propriul normalizator, dar statisticile lor sunt aproape identice, așa că îl păstrăm pe primul.
+    obs_rms = envs.envs[0].get_wrapper_attr("obs_rms")
     os.makedirs("checkpoints", exist_ok=True)
     checkpoint_path = f"checkpoints/{cfg.exp_name}.pt"
     torch.save(
@@ -205,6 +209,8 @@ def train(cfg: PPOConfig) -> None:
             "model_state_dict": agent.state_dict(),
             "obs_dim": obs_dim,
             "act_dim": act_dim,
+            "obs_mean": obs_rms.mean,
+            "obs_var": obs_rms.var,
             "config": cfg.__dict__,
         },
         checkpoint_path,

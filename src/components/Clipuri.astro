@@ -1,0 +1,125 @@
+---
+/**
+ * Clipuri scurte, fără sunet, puse unul lângă altul, de exemplu rezultatul unui laborator în mai multe etape.
+ *
+ * ```mdx
+ * import Clipuri from '@components/Clipuri.astro';
+ *
+ * <Clipuri
+ *   clipuri={[
+ *     { src: '/laboratoare/x/video/inainte.mp4', poster: '/laboratoare/x/video/inainte.jpg', titlu: 'Înainte' },
+ *     { src: '/laboratoare/x/video/dupa.mp4', poster: '/laboratoare/x/video/dupa.jpg', titlu: 'După' },
+ *   ]}
+ *   descriere='Ce arată clipurile.'
+ * />
+ * ```
+ *
+ * Clipurile rulează în buclă doar cât sunt pe ecran. Cu `prefers-reduced-motion`, nu pornesc singure: se vede prima
+ * imagine (`poster`), iar redarea se face din butoanele playerului.
+ */
+
+interface Clip {
+  /** Fișierul MP4 (H.264), din public/. */
+  src: string;
+  /** Imaginea afișată până la redare. */
+  poster: string;
+  titlu: string;
+}
+
+interface Props {
+  clipuri: Clip[];
+  /** Textul de sub clipuri. */
+  descriere?: string;
+  /** Lățimea și înălțimea cadrelor, pentru a rezerva spațiul înainte de încărcare. */
+  latime?: number;
+  inaltime?: number;
+}
+
+const { clipuri, descriere, latime = 640, inaltime = 360 } = Astro.props;
+---
+
+<figure class='clipuri not-content' data-clipuri style={`--coloane: ${clipuri.length}`}>
+  <div class='grila'>
+    {
+      clipuri.map(({ src, poster, titlu }) => (
+        <div class='clip'>
+          <video
+            src={src}
+            poster={poster}
+            width={latime}
+            height={inaltime}
+            muted
+            loop
+            playsinline
+            preload='none'
+            aria-label={titlu}
+          />
+          <span class='titlu'>{titlu}</span>
+        </div>
+      ))
+    }
+  </div>
+  {descriere && <figcaption>{descriere}</figcaption>}
+</figure>
+
+<script>
+  const redusa = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  for (const figura of document.querySelectorAll<HTMLElement>('[data-clipuri]')) {
+    const videouri = [...figura.querySelectorAll('video')];
+    let vizibil = false;
+
+    const actualizeaza = () => {
+      for (const video of videouri) {
+        video.controls = redusa.matches;
+        if (redusa.matches) continue;
+        if (vizibil) video.play().catch(() => {});
+        else video.pause();
+      }
+    };
+
+    new IntersectionObserver(([intrare]) => {
+      vizibil = intrare.isIntersecting;
+      actualizeaza();
+    }).observe(figura);
+    redusa.addEventListener('change', actualizeaza);
+    actualizeaza();
+  }
+</script>
+
+<style>
+  .clipuri {
+    margin-block: 1.5rem;
+  }
+  .grila {
+    display: grid;
+    grid-template-columns: repeat(var(--coloane), minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+  .clip {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  video {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 0.25rem;
+    background: var(--sl-color-gray-6);
+  }
+  .titlu {
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-2);
+  }
+  figcaption {
+    margin-top: 0.6rem;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+  @media (max-width: 40rem) {
+    .grila {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

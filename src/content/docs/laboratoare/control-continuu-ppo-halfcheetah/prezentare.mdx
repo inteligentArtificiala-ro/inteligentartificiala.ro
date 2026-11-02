@@ -10,6 +10,7 @@ tags:
   - Control continuu
 ---
 
+import Clipuri from '@components/Clipuri.astro';
 import Colab from '@components/Colab.astro';
 import SourceFile from '@components/SourceFile.astro';
 
@@ -21,11 +22,24 @@ Paginile introductive despre [învățarea prin consolidare](/invatare-prin-cons
 
 În acest laborator construim o soluție completă de control continuu. Antrenăm robotul **HalfCheetah** să învețe de la zero să alerge înainte într-un simulator fizic foarte precis, **MuJoCo**, cu **PPO** (_Proximal Policy Optimization_), un algoritm de referință în domeniu. Codul complet se găsește pe GitHub, în repozitoriul [**inteligentArtificiala-ro/control-continuu-ppo**](https://github.com/inteligentArtificiala-ro/control-continuu-ppo).
 
+export const video = '/laboratoare/control-continuu-ppo-halfcheetah/video';
+
+<Clipuri
+  clipuri={[
+    { src: `${video}/inainte-de-antrenare.mp4`, poster: `${video}/inainte-de-antrenare.jpg`, titlu: 'Înainte de antrenare' },
+    { src: `${video}/300000-de-pasi.mp4`, poster: `${video}/300000-de-pasi.jpg`, titlu: 'După 300.000 de pași' },
+    { src: `${video}/1000000-de-pasi.mp4`, poster: `${video}/1000000-de-pasi.jpg`, titlu: 'După 1.000.000 de pași' },
+  ]}
+  descriere='Rezultatul laboratorului, cu codul și setările lui: robotul HalfCheetah înainte de antrenare, cu o strategie aleatoare, apoi după 300.000 și după 1.000.000 de pași de antrenare cu PPO. Fiecare clip arată primele 10 secunde dintr-un episod de 50 de secunde, în timp real. În episodul întreg, strategia finală parcurge aproximativ 89 de metri.'
+/>
+
+Robotul învață să alerge, dar pe spate. Recompensa din HalfCheetah răsplătește doar viteza spre înainte și penalizează puțin efortul motoarelor. Nu cere nicăieri ca robotul să stea pe picioare, așa că, pentru algoritm, alergarea pe spate este o soluție la fel de bună ca oricare alta. Cu aceleași setări, alte șase antrenări, pornite de la alte valori inițiale aleatoare (_seed_), au ajuns tot la alergarea pe spate. Agentul optimizează exact recompensa primită, nu intenția celui care a scris-o, iar aceasta este una dintre cele mai importante lecții ale învățării prin consolidare.
+
 ## Ce este HalfCheetah în MuJoCo?
 
 **MuJoCo** (_Multi-Joint dynamics with Contact_) este un simulator fizic dezvoltat de Emo Todorov și achiziționat apoi de DeepMind (astăzi Google DeepMind). A devenit standardul în cercetarea de învățare prin consolidare pentru robotică, pentru că este foarte rapid și simulează fidel contactele dintre corpurile rigide.
 
-**HalfCheetah** este un robot bidimensional cu două picioare, inspirat de ghepard, format din 7 segmente rigide articulate: un trunchi și două picioare, unul în față și unul în spate. Fiecare picior are trei articulații acționate de motoare (șold/coapsă, genunchi/tibie, gleznă/laba piciorului). La începutul antrenării acțiunile sunt complet aleatoare, iar robotul cade pe burtă sau pe spate. Cu PPO, agentul învață să coordoneze comenzile date motoarelor, ca să galopeze eficient și să atingă viteze mari.
+**HalfCheetah** este un robot bidimensional cu două picioare, inspirat de ghepard, format din 7 segmente rigide articulate: un trunchi și două picioare, unul în față și unul în spate. Fiecare picior are trei articulații acționate de motoare (șold/coapsă, genunchi/tibie, gleznă/laba piciorului). La începutul antrenării acțiunile sunt complet aleatoare, iar robotul se zbate și cade. Cu PPO, agentul învață să coordoneze comenzile date motoarelor, ca să înainteze cât mai repede.
 
 import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 
@@ -43,7 +57,7 @@ import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 :::note[Python în pagină, simulare pe calculator]
 Pe paginile laboratorului, exemplele cu distribuții de probabilitate continue, entropie și forma obiectivului tăiat din PPO rulează direct în pagină, cu Python în WebAssembly (PyScript și NumPy).
 
-Simularea fizică în MuJoCo și antrenarea rețelelor neuronale cu PyTorch rulează local, pe calculatorul propriu sau pe un server. Pentru că MuJoCo este rapid, o antrenare completă, de 1 milion de pași, durează cam 15–25 de minute pe un procesor (CPU) modern obișnuit, pe un cip Apple Silicon (MPS) sau pe o placă grafică NVIDIA (CUDA).
+Simularea fizică în MuJoCo și antrenarea rețelelor neuronale cu PyTorch rulează local, pe calculatorul propriu sau pe un server. Pentru că MuJoCo este rapid, o antrenare completă, de 1 milion de pași, durează doar câteva minute pe un procesor (CPU) modern. Pe un calculator cu cip Apple Silicon, cu 12 nuclee, antrenarea folosită pentru clipurile de mai sus a durat circa 7 minute. Rețeaua este mică, așa că placa grafică nu ajută: codul folosește CUDA dacă există, iar altfel procesorul. Pe un cip Apple Silicon, MPS a fost de aproximativ 15 ori mai lent decât procesorul.
 :::
 
 ## Cerințe de sistem
@@ -51,7 +65,7 @@ Simularea fizică în MuJoCo și antrenarea rețelelor neuronale cu PyTorch rule
 - **Python** 3.10 sau mai nou.
 - **Pachete Python**: `torch`, `gymnasium` cu suport MuJoCo (`gymnasium[mujoco]`), `numpy` și `tensorboard`.
 - **Simulatorul MuJoCo**: MuJoCo este astăzi gratuit și cu sursă deschisă. Vine ca pachet Python (`mujoco`) și se instalează automat, fără licențe externe și fără setări de sistem făcute manual.
-- **Hardware**: un CPU cu 4–8 nuclee, Apple Silicon sau o placă grafică cu suport CUDA.
+- **Hardware**: un procesor cu 4–8 nuclee este suficient. O placă grafică NVIDIA (CUDA) este folosită automat dacă există, dar nu este necesară.
 
 ## Pregătirea mediului de lucru
 
