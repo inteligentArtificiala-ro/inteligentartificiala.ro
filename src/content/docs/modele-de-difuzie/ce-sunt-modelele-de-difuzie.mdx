@@ -46,7 +46,7 @@ Procesul direct are o proprietate importantă: putem sări dintr-odată la orice
 
 ## Antrenarea: rețeaua învață să recunoască zgomotul
 
-Rețeaua, notată $\varepsilon_\theta$ (unde $\theta$ sunt parametrii ei), învață să ghicească zgomotul dintr-o imagine. Un pas de antrenare arată astfel:
+Rețeaua, notată $\varepsilon_\theta$ (unde $\theta$ sunt parametrii rețelei), învață să ghicească zgomotul dintr-o imagine. Un pas de antrenare arată astfel:
 
 <Steps>
 1. Alegem o imagine $x_0$ din setul de antrenare.
@@ -78,11 +78,11 @@ $$
 
 </DeepDive>
 
-DDPM și primele versiuni Stable Diffusion folosesc o rețea de tip **U-Net**, creată în 2015 pentru segmentarea imaginilor medicale. Ea micșorează imaginea în mai multe etape, apoi o mărește la loc, cu legături directe între nivelurile care au aceeași rezoluție. Modelele mai noi folosesc un [Transformer](/modele-lingvistice/arhitectura-transformer/), așa cum arată pagina despre [generarea imaginilor](/modele-de-difuzie/generarea-imaginilor/).
+DDPM și primele versiuni Stable Diffusion folosesc o rețea de tip **U-Net**, creată în 2015 pentru segmentarea imaginilor medicale. Rețeaua U-Net micșorează imaginea în mai multe etape, apoi o mărește la loc, cu legături directe între nivelurile care au aceeași rezoluție. Modelele mai noi folosesc un [Transformer](/modele-lingvistice/arhitectura-transformer/), așa cum arată pagina despre [generarea imaginilor](/modele-de-difuzie/generarea-imaginilor/).
 
 ## Generarea: de la zgomot la imagine
 
-La generare pornim de la zgomot pur, $x_T \sim \mathcal{N}(0, I)$, și coborâm pas cu pas până la $t = 0$. La fiecare pas, rețeaua estimează zgomotul $\hat\varepsilon$, iar din el obținem o estimare a imaginii curate, $\hat x_0$. Apoi calculăm $x_{t-1}$, o imagine cu ceva mai puțin zgomot decât $x_t$, combinând cele două estimări în proporțiile potrivite pentru pasul $t - 1$.
+La generare pornim de la zgomot pur, $x_T \sim \mathcal{N}(0, I)$, și coborâm pas cu pas până la $t = 0$. La fiecare pas, rețeaua estimează zgomotul $\hat\varepsilon$, iar din zgomotul estimat obținem o estimare a imaginii curate, $\hat x_0$. Apoi calculăm $x_{t-1}$, o imagine cu ceva mai puțin zgomot decât $x_t$, combinând cele două estimări în proporțiile potrivite pentru pasul $t - 1$.
 
 <DeepDive title="Un pas al procesului invers">
 
@@ -92,15 +92,15 @@ $$
 
 </DeepDive>
 
-Aceasta este regula metodei **DDIM** (_denoising diffusion implicit models_, 2020), folosită și în exemplul de mai jos. Cu ea, generarea este deterministă: același zgomot inițial duce mereu la aceeași imagine. DDPM adaugă în plus, la fiecare pas, puțin zgomot nou, ales la întâmplare.
+Aceasta este regula metodei **DDIM** (_denoising diffusion implicit models_, 2020), folosită și în exemplul de mai jos. Cu această regulă, generarea este deterministă: același zgomot inițial duce mereu la aceeași imagine. DDPM adaugă în plus, la fiecare pas, puțin zgomot nou, ales la întâmplare.
 
 Fiecare pas înseamnă o trecere completă prin rețea, deci numărul de pași decide direct cât durează generarea. DDPM avea nevoie de 1.000 de pași, iar DDIM obține imagini bune în aproximativ 50. Modelele **distilate** (_distilled_), antrenate să imite în câțiva pași rezultatul obținut în zeci de pași, generează o imagine în 1–4 pași. Un exemplu este SDXL Turbo (Stability AI, 2023).
 
-Ordinea în care apar detaliile are o explicație simplă. Când zgomotul este mare, rețeaua nu poate ști care dintre multele imagini posibile se află sub el, așa că cea mai bună estimare a ei este o medie a lor, adică o imagine încețoșată. Pe măsură ce zgomotul scade, estimarea se poate fixa pe o singură variantă. Generarea trece astfel de la ansamblu la detalii, cam cum lucrează un pictor care face întâi schița.
+Ordinea în care apar detaliile are o explicație simplă. Când zgomotul este mare, rețeaua nu poate ști care dintre multele imagini posibile se află sub zgomot, așa că cea mai bună estimare este o medie a acestor imagini, adică o imagine încețoșată. Pe măsură ce zgomotul scade, estimarea se poate fixa pe o singură variantă. Generarea trece astfel de la ansamblu la detalii, cam cum lucrează un pictor care face întâi schița.
 
 ## Un exemplu care rulează în browser
 
-Exemplul de mai jos rulează procesul direct și procesul invers pe un set de antrenare minuscul: patru desene de 7 × 7 pixeli, cu literele A, I, O și X. Pentru un set atât de mic nu avem nevoie de o rețea antrenată, pentru că putem calcula exact cea mai bună estimare a imaginii curate. Pentru o imagine cu zgomot $x_t$, calculăm cât de probabil este ca ea să provină din fiecare desen $x^{(i)}$, apoi facem media desenelor, ponderată cu aceste probabilități.
+Exemplul de mai jos rulează procesul direct și procesul invers pe un set de antrenare minuscul: patru desene de 7 × 7 pixeli, cu literele A, I, O și X. Pentru un set atât de mic nu avem nevoie de o rețea antrenată, pentru că putem calcula exact cea mai bună estimare a imaginii curate. Pentru o imagine cu zgomot $x_t$, calculăm cât de probabil este ca imaginea să provină din fiecare desen $x^{(i)}$, apoi facem media desenelor, ponderată cu aceste probabilități.
 
 <DeepDive title="Estimarea exactă pentru cele patru desene">
 
@@ -175,13 +175,13 @@ afiseaza(estimari + [x], titluri + ["final"])
 `}
 />
 
-La $t = 50$, imaginea este aproape numai zgomot, cele patru desene sunt aproape la fel de probabile, iar estimarea imaginii curate este media lor, o suprapunere a celor patru litere. În câțiva pași, probabilitățile se concentrează pe un singur desen, iar procesul invers îl reconstruiește. Valoarea `seed` alege zgomotul de pornire, iar o altă valoare poate duce la alt desen.
+La $t = 50$, imaginea este aproape numai zgomot, cele patru desene sunt aproape la fel de probabile, iar estimarea imaginii curate este media desenelor, o suprapunere a celor patru litere. În câțiva pași, probabilitățile se concentrează pe un singur desen, iar procesul invers îl reconstruiește. Valoarea `seed` alege zgomotul de pornire, iar o altă valoare poate duce la alt desen.
 
 Exemplul arată și o limită. O estimare perfectă pentru un set de antrenare finit poate produce doar copii ale imaginilor din acel set. Fenomenul se numește **memorare** (_memorization_). O rețea reală, antrenată pe sute de milioane sau miliarde de imagini, nu ajunge la această estimare perfectă. În schimb, învață regulile generale ale imaginilor (margini, texturi, forme, lumină) și le poate combina în imagini noi. De ce se întâmplă asta atât de bine este încă un subiect de cercetare. Memorarea nu dispare însă complet. În 2023, Nicholas Carlini și colegii săi au extras din Stable Diffusion imagini aproape identice cu unele din setul de antrenare, mai ales imagini care apăreau de multe ori în date.
 
 ## Potrivirea fluxului
 
-Multe modele recente, precum Stable Diffusion 3 și FLUX.1, folosesc o metodă înrudită, numită **potrivirea fluxului** (_flow matching_), în varianta ei cea mai simplă, **fluxul rectificat** (_rectified flow_). Aici imaginea și zgomotul sunt legate printr-o linie dreaptă.
+Multe modele recente, precum Stable Diffusion 3 și FLUX.1, folosesc o metodă înrudită, numită **potrivirea fluxului** (_flow matching_), în varianta cea mai simplă, **fluxul rectificat** (_rectified flow_). Aici imaginea și zgomotul sunt legate printr-o linie dreaptă.
 
 <DeepDive title="Linia dreaptă dintre imagine și zgomot">
 

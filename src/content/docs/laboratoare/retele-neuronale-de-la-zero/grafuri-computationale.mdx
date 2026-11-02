@@ -26,11 +26,11 @@ for name in ["engine.py", "graph.py", "nn.py", "moons.py"]:
 sys.path.insert(0, ".")
 `;
 
-Pe [pagina anterioară](/laboratoare/retele-neuronale-de-la-zero/motorul-de-diferentiere/), fiecare obiect `Value` a ținut minte din ce valori a fost calculat. Aceste legături formează un graf, iar metoda `backward()` îl parcurge de la rezultat spre intrări. Pe această pagină îl desenăm, ca să vedem exact ce parcurge retropropagarea și cum apar gradienții pe nodurile lui.
+Pe [pagina anterioară](/laboratoare/retele-neuronale-de-la-zero/motorul-de-diferentiere/), fiecare obiect `Value` a ținut minte din ce valori a fost calculat. Aceste legături formează un graf, iar metoda `backward()` îl parcurge de la rezultat spre intrări. Pe această pagină îl desenăm, ca să vedem exact ce parcurge retropropagarea și cum apar gradienții pe nodurile grafului.
 
 ## Limbajul DOT
 
-[Graphviz](https://graphviz.org) este un set de programe pentru desenarea grafurilor, dezvoltat inițial la AT&T Bell Labs. Graful se descrie ca text, în limbajul **DOT**: o listă de noduri, fiecare cu atributele lui, și o listă de muchii, scrise cu săgeți. Programul `dot` așază singur nodurile, pe niveluri, și desenează muchiile.
+[Graphviz](https://graphviz.org) este un set de programe pentru desenarea grafurilor, dezvoltat inițial la AT&T Bell Labs. Graful se descrie ca text, în limbajul **DOT**: o listă de noduri, fiecare cu propriile atribute, și o listă de muchii, scrise cu săgeți. Programul `dot` așază singur nodurile, pe niveluri, și desenează muchiile.
 
 ```text
 digraph {
@@ -43,11 +43,11 @@ digraph {
 }
 ```
 
-`digraph` înseamnă graf orientat, cu săgeți. `rankdir=LR` așază graful de la stânga la dreapta. Forma `record` împarte un dreptunghi în câmpuri, cu bara verticală `|` între ele, iar acoladele schimbă direcția în care sunt așezate câmpurile: numele valorii stă în stânga, iar valoarea și gradientul, unul sub altul, în dreapta.
+`digraph` înseamnă graf orientat, cu săgeți. `rankdir=LR` așază graful de la stânga la dreapta. Forma `record` împarte un dreptunghi în câmpuri, cu bara verticală `|` între câmpuri, iar acoladele schimbă direcția în care sunt așezate câmpurile: numele valorii stă în stânga, iar valoarea și gradientul, unul sub altul, în dreapta.
 
 ## De la valori la text DOT
 
-Fișierul `graph.py` are trei funcții. Prima, `trace`, adună toate valorile și legăturile dintre ele, pornind de la rezultat, la fel ca funcția `build` din `backward()`.
+Fișierul `graph.py` are trei funcții. Prima, `trace`, adună toate valorile și legăturile dintre valori, pornind de la rezultat, la fel ca funcția `build` din `backward()`.
 
 <SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/graph.py" symbols={['trace', 'to_dot']} />
 
@@ -89,7 +89,7 @@ A treia funcție, `draw_graph`, dă textul DOT pachetului Python `graphviz`, car
 
 ## Înainte și după backward()
 
-Imediat după calculul expresiei, fiecare nod are valoarea lui, dar toți gradienții sunt zero. Propagarea directă a calculat doar valorile.
+Imediat după calculul expresiei, fiecare nod are valoarea calculată, dar toți gradienții sunt zero. Propagarea directă a calculat doar valorile.
 
 <GraphvizSvg
   path='laboratoare/retele-neuronale-de-la-zero/imagini/expresie-inainte.svg'
@@ -97,7 +97,7 @@ Imediat după calculul expresiei, fiecare nod are valoarea lui, dar toți gradie
   caption='Graful expresiei L = (a · b + c) · f, înainte de retropropagare: toți gradienții sunt 0.'
 />
 
-După `L.backward()`, gradienții au fost completați de la dreapta la stânga. $L$ are gradientul 1, iar fiecare operație a trimis gradientul spre operanzii ei, după regula ei.
+După `L.backward()`, gradienții au fost completați de la dreapta la stânga. $L$ are gradientul 1, iar fiecare operație a trimis gradientul spre operanzi, după propria regulă.
 
 <GraphvizSvg
   path='laboratoare/retele-neuronale-de-la-zero/imagini/expresie-dupa.svg'
@@ -117,9 +117,9 @@ Același mecanism funcționează pentru un neuron cu două intrări și activare
   caption='Un neuron, o = tanh(x1 · w1 + x2 · w2 + b), după retropropagare.'
 />
 
-Suma ponderată este $n = 0{,}8$, iar ieșirea este $o = \tanh(0{,}8) \approx 0{,}664$. Prin tanh, gradientul se înmulțește cu derivata ei, $1 - o^2 \approx 0{,}5591$. De aici, adunările îl trimit neschimbat spre _bias_ și spre cele două produse, iar înmulțirile îl înmulțesc cu celălalt factor. Gradientul ponderii $w_2$, de exemplu, este $0{,}5591 \cdot x_2 \approx -1{,}118$: dacă $w_2$ ar crește puțin, ieșirea ar scădea.
+Suma ponderată este $n = 0{,}8$, iar ieșirea este $o = \tanh(0{,}8) \approx 0{,}664$. Prin tanh, gradientul se înmulțește cu derivata lui tanh, $1 - o^2 \approx 0{,}5591$. De aici, adunările îl trimit neschimbat spre _bias_ și spre cele două produse, iar înmulțirile îl înmulțesc cu celălalt factor. Gradientul ponderii $w_2$, de exemplu, este $0{,}5591 \cdot x_2 \approx -1{,}118$: dacă $w_2$ ar crește puțin, ieșirea ar scădea.
 
-Pentru antrenare contează doar gradienții ponderilor și ai _bias_-ului, pentru că pe ei îi putem modifica. Gradienții intrărilor $x_1$ și $x_2$ sunt calculați și ei, dar nu sunt folosiți.
+Pentru antrenare contează doar gradienții ponderilor și ai _bias_-ului, pentru că doar ponderile și _bias_-ul pot fi modificate. Gradienții intrărilor $x_1$ și $x_2$ sunt calculați la fel, dar nu sunt folosiți.
 
 ## O rețea mică
 
@@ -127,16 +127,16 @@ Graful crește repede. Rețeaua de mai jos are 2 intrări, un strat ascuns cu 2 
 
 <GraphvizSvg
   path='laboratoare/retele-neuronale-de-la-zero/imagini/retea-mica.svg'
-  alt='Graful unei rețele cu intrările x1 = 1 și x2 = -1, doi neuroni ascunși cu ReLU și o ieșire y = 1,32, urmată de pierderea (y - 1)^2 = 0,1024. Primul neuron ascuns are suma 0,85 și este activ, iar ponderile lui au gradienți nenuli (w11 0,768, w12 -0,768, b1 0,768). Al doilea are suma -0,5, iese 0 prin ReLU, iar ponderile lui au gradientul 0.'
+  alt='Graful unei rețele cu intrările x1 = 1 și x2 = -1, doi neuroni ascunși cu ReLU și o ieșire y = 1,32, urmată de pierderea (y - 1)^2 = 0,1024. Primul neuron ascuns are suma 0,85, este activ și are ponderi cu gradienți nenuli (w11 0,768, w12 -0,768, b1 0,768). Al doilea are suma -0,5, iese 0 prin ReLU și are ponderi cu gradientul 0.'
   caption='O rețea cu 2 intrări, 2 neuroni ascunși cu ReLU și o ieșire, plus pierderea pe un exemplu, după retropropagare.'
 />
 
 Câteva lucruri se văd direct pe diagramă:
 
-- Pierderea este $(1{,}32 - 1)^2 = 0{,}1024$, iar gradientul ei în raport cu $y$ este $2 \cdot (1{,}32 - 1) = 0{,}64$.
+- Pierderea este $(1{,}32 - 1)^2 = 0{,}1024$, iar gradientul pierderii în raport cu $y$ este $2 \cdot (1{,}32 - 1) = 0{,}64$.
 - Scăderea $y - 1$ apare ca o adunare cu $-1$, pentru că așa este scrisă în `engine.py`. La fel, constanta $-1$ apare ca un nod separat, cu propriul gradient, pe care nu îl folosește nimeni.
-- Primul neuron ascuns are suma ponderată 0,85, deci ReLU îl lasă să treacă, iar ponderile lui primesc gradienți. Al doilea are suma $-0{,}5$, ReLU îl transformă în 0, iar gradientul se oprește aici: ponderile lui $w_{21}$, $w_{22}$ și $b_2$ au gradientul 0 și nu se vor schimba la acest pas.
-- Ponderea $v_2$ are și ea gradientul 0, pentru că înmulțește ieșirea 0 a neuronului inactiv.
+- Primul neuron ascuns are suma ponderată 0,85, deci ReLU îl lasă să treacă, iar ponderile neuronului primesc gradienți. Al doilea are suma $-0{,}5$, ReLU îl transformă în 0, iar gradientul se oprește aici: $w_{21}$, $w_{22}$ și $b_2$ au gradientul 0 și nu se vor schimba la acest pas.
+- Și ponderea $v_2$ are gradientul 0, pentru că înmulțește ieșirea 0 a neuronului inactiv.
 
 Rețeaua are doar 9 parametri, iar graful are deja câteva zeci de noduri. O rețea pentru recunoașterea cifrelor, cu peste 100.000 de parametri, ar avea sute de mii de noduri pentru o singură imagine. Diagramele sunt utile pentru înțelegere, dar următoarele pagini lucrează doar cu numere.
 

@@ -43,7 +43,7 @@ Fiecare bloc începe cu [atenția cu capete multiple](/modele-lingvistice/avem-n
 
 Intrarea `x` are forma `(B, T, C)`, cu `B` secvențe dintr-un lot, câte `T` tokenuri, fiecare cu un vector de `C = 384` de valori. Atenția are patru straturi liniare: trei calculează interogările, cheile și valorile, iar al patrulea, `o_proj`, face proiecția de ieșire de la final. Vectorii de 384 de valori sunt împărțiți în 6 capete de câte 64, prin `view` și `transpose`, iar fiecare cap calculează atenția separat.
 
-Calculul propriu-zis este făcut de `F.scaled_dot_product_attention`, care aplică formula atenției prin produs scalar scalat. Parametrul `is_causal=True` adaugă masca cauzală, astfel încât fiecare poziție vede doar tokenurile de până la ea. PyTorch alege pentru această funcție cea mai rapidă implementare disponibilă pe dispozitiv.
+Calculul propriu-zis este făcut de `F.scaled_dot_product_attention`, care aplică formula atenției prin produs scalar scalat. Parametrul `is_causal=True` adaugă masca cauzală, astfel încât fiecare poziție vede doar tokenurile de până la poziția respectivă. PyTorch alege pentru această funcție cea mai rapidă implementare disponibilă pe dispozitiv.
 
 Mai jos, același calcul este scris pas cu pas în NumPy, pentru 4 tokenuri, vectori de 8 valori și 2 capete.
 
@@ -81,7 +81,7 @@ print("Forma ieșirii:", out.shape)
 `}
 />
 
-Deasupra diagonalei, ponderile sunt zero, deci niciun token nu vede tokenurile de după el. Cele două capete împart altfel atenția, pentru că au proiecții diferite.
+Deasupra diagonalei, ponderile sunt zero, deci niciun token nu vede tokenurile următoare. Cele două capete împart altfel atenția, pentru că au proiecții diferite.
 
 ## Rețeaua feed-forward și GELU
 
@@ -121,7 +121,7 @@ Un bloc leagă cele două componente prin conexiuni reziduale, cu normalizarea p
 
 <SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/model.py" symbols={['Block']} />
 
-Este vorba de schema de **pre-normalizare** (_pre-norm_), descrisă în secțiunea despre [fluxul rezidual](/modele-lingvistice/arhitectura-transformer/#fluxul-rezidual). Atenția și rețeaua feed-forward citesc o versiune normalizată a vectorului `x` și adaugă rezultatul la el, fără să-l înlocuiască.
+Este vorba de schema de **pre-normalizare** (_pre-norm_), descrisă în secțiunea despre [fluxul rezidual](/modele-lingvistice/arhitectura-transformer/#fluxul-rezidual). Atenția și rețeaua feed-forward citesc o versiune normalizată a vectorului `x` și adaugă rezultatul la vectorul original, fără să-l înlocuiască.
 
 ## Modelul complet
 
@@ -130,7 +130,7 @@ Este vorba de schema de **pre-normalizare** (_pre-norm_), descrisă în secțiun
 Metoda `forward` urmează pașii obișnuiți ai unui decodor Transformer.
 
 <Steps>
-1. **Reprezentarea vectorială** (_embedding_) înlocuiește fiecare ID de token cu vectorul lui (`embed_tokens`), la care se adună vectorul poziției (`embed_positions`). Spre deosebire de codificarea pozițională fixă din Transformerul original, din 2017, aici fiecare dintre cele 256 de poziții are o reprezentare învățată. De aceea, modelul nu poate citi mai mult de 256 de tokenuri.
+1. **Reprezentarea vectorială** (_embedding_) înlocuiește fiecare ID de token cu vectorul corespunzător (`embed_tokens`), la care se adună vectorul poziției (`embed_positions`). Spre deosebire de codificarea pozițională fixă din Transformerul original, din 2017, aici fiecare dintre cele 256 de poziții are o reprezentare învățată. De aceea, modelul nu poate citi mai mult de 256 de tokenuri.
 2. **Trecerea prin blocuri** duce vectorii, pe rând, prin cele 6 blocuri Transformer, fiecare cu auto-atenție și o rețea feed-forward (MLP).
 3. **Normalizarea finală și proiecția** pregătesc ieșirea. După o ultimă normalizare pe strat, `lm_head` produce, pentru fiecare poziție, câte un scor nenormalizat (_logit_) pentru fiecare dintre cele 10.000 de tokenuri.
 4. **Calculul pierderii** prin entropie încrucișată are loc doar dacă modelul primește și ținte. Țintele egale cu -1 sunt ignorate, lucru pe care îl folosim la [ajustarea fină](/laboratoare/model-lingvistic-de-la-zero/ajustare-fina-supervizata/).
@@ -175,7 +175,7 @@ Rezultatul, 14.585.856 de parametri, este numărul afișat și de `model.num_par
 
 ## Verificarea locală
 
-Un model abia creat poate fi verificat înainte de antrenare. Rulați codul de mai jos în directorul laboratorului: el trece prin model un lot de tokenuri aleatoare.
+Un model abia creat poate fi verificat înainte de antrenare. Codul de mai jos trece prin model un lot de tokenuri aleatoare. Rulați-l în directorul laboratorului.
 
 ```python
 import math

@@ -1,6 +1,6 @@
 ---
 title: Un motor de diferențiere automată
-description: Clasa Value ține un număr, gradientul lui și operația din care a rezultat. Scriem derivatele locale ale fiecărei operații și metoda backward(), care aplică regula lanțului în ordine topologică inversă.
+description: Clasa Value ține un număr, împreună cu gradientul și operația din care a rezultat. Scriem derivatele locale ale fiecărei operații și metoda backward(), care aplică regula lanțului în ordine topologică inversă.
 sidebar:
   order: 2
 level: incepator
@@ -26,7 +26,7 @@ for name in ["engine.py", "graph.py", "nn.py", "moons.py"]:
 sys.path.insert(0, ".")
 `;
 
-Pe pagina despre [retropropagare](/retele-neuronale/retropropagare/), gradienții unei rețele cu un singur neuron ascuns sunt calculați de mână, verigă cu verigă. Pentru o rețea cu mii de ponderi, calculul de mână nu mai este o opțiune. Bibliotecile precum PyTorch fac acest lucru automat: în timpul calculului, ele construiesc un **graf computațional** (_computational graph_), apoi îl parcurg invers și aplică regula lanțului la fiecare nod.
+Pe pagina despre [retropropagare](/retele-neuronale/retropropagare/), gradienții unei rețele cu un singur neuron ascuns sunt calculați de mână, verigă cu verigă. Pentru o rețea cu mii de ponderi, calculul de mână nu mai este o opțiune. Bibliotecile precum PyTorch fac acest lucru automat: în timpul calculului, construiesc un **graf computațional** (_computational graph_), apoi îl parcurg invers și aplică regula lanțului la fiecare nod.
 
 Pe această pagină construim un astfel de mecanism, la scară mică. Lucrăm cu numere obișnuite (scalari), nu cu matrice, ca fiecare pas să poată fi urmărit. Tot codul se află în fișierul `engine.py`.
 
@@ -36,7 +36,7 @@ Un obiect `Value` învelește un număr. Pe lângă valoarea propriu-zisă, `dat
 
 <SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/engine.py" symbols={['Value.__init__', 'Value.__repr__']} />
 
-Atributul `_prev` păstrează valorile din care a rezultat numărul, iar `_op`, operația. Împreună, ele formează muchiile grafului computațional. Funcția `_backward` este, la început, una care nu face nimic. Fiecare operație o va înlocui cu propria regulă de derivare.
+Atributul `_prev` păstrează valorile din care a rezultat numărul, iar `_op`, operația. Împreună, cele două atribute formează muchiile grafului computațional. Funcția `_backward` este, la început, una care nu face nimic. Fiecare operație o va înlocui cu propria regulă de derivare.
 
 Exemplul de mai jos folosește chiar fișierul `engine.py` al laboratorului.
 
@@ -55,11 +55,11 @@ print("calculat din:", c._prev)
 `}
 />
 
-Rezultatul `c` știe că a fost obținut prin adunare, din produsul `a * b` și din constanta 1, pe care operația a transformat-o și ea într-un obiect `Value`.
+Rezultatul `c` știe că a fost obținut prin adunare, din produsul `a * b` și din constanta 1, transformată de operație tot într-un obiect `Value`.
 
-## Operațiile și derivatele lor locale
+## Derivatele locale ale operațiilor
 
-Fiecare operație face două lucruri: calculează rezultatul și scrie o funcție `_backward`, care știe să trimită gradientul rezultatului înapoi, spre operanzi. Pentru asta, operația are nevoie doar de **derivata ei locală**, adică de cât de mult se schimbă rezultatul când se schimbă puțin un operand.
+Fiecare operație face două lucruri: calculează rezultatul și scrie o funcție `_backward`, care știe să trimită gradientul rezultatului înapoi, spre operanzi. Pentru asta, operația are nevoie doar de propria **derivată locală**, adică de cât de mult se schimbă rezultatul când se schimbă puțin un operand.
 
 <SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/engine.py" symbols={['Value.__add__', 'Value.__mul__']} />
 
@@ -83,11 +83,11 @@ $$
 
 </DeepDive>
 
-Funcțiile de activare urmează același tipar. Derivatele lor sunt cele din [tabelul de pe pagina despre retropropagare](/retele-neuronale/retropropagare/#derivatele-funcțiilor-de-activare).
+Funcțiile de activare urmează același tipar. Derivatele acestor funcții sunt cele din [tabelul de pe pagina despre retropropagare](/retele-neuronale/retropropagare/#derivatele-funcțiilor-de-activare).
 
 <SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/engine.py" symbols={['Value.tanh', 'Value.relu']} />
 
-Ridicarea la putere și funcția exponențială au și ele câte o derivată proprie. Celelalte operații nu mai au nevoie de una: scăderea este adunarea cu un număr negativ, iar împărțirea este înmulțirea cu puterea −1.
+Și ridicarea la putere, și funcția exponențială au câte o derivată proprie. Celelalte operații nu mai au nevoie de una: scăderea este adunarea cu un număr negativ, iar împărțirea este înmulțirea cu puterea −1.
 
 <SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/engine.py" symbols={['Value.__pow__', 'Value.exp', 'Value.__neg__', 'Value.__sub__', 'Value.__truediv__']} />
 
@@ -121,7 +121,7 @@ Pentru ca `_backward` să trimită un gradient corect mai departe, gradientul re
 
 <SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/engine.py" symbols={['Value.backward']} />
 
-Funcția `build` face o parcurgere în adâncime a grafului: o valoare este adăugată în listă abia după ce au fost adăugate toate valorile din care a fost calculată. Apoi, gradientul rezultatului final primește valoarea 1, pentru că derivata unei mărimi în raport cu ea însăși este 1, iar lista este parcursă de la coadă la cap.
+Funcția `build` face o parcurgere în adâncime a grafului: o valoare este adăugată în listă abia după ce au fost adăugate toate valorile din care a fost calculată. Apoi, gradientul rezultatului final primește valoarea 1, pentru că derivata unei mărimi în raport cu aceeași mărime este 1, iar lista este parcursă de la coadă la cap.
 
 Să considerăm expresia $L = (a \cdot b + c) \cdot f$, cu $a = 2$, $b = -3$, $c = 7$ și $f = -2$. Codul de mai jos refolosește funcția `build` ca să afișeze ordinea topologică, apoi calculează gradienții.
 
@@ -184,7 +184,7 @@ Gradientul lui $a$, egal cu 6, spune că dacă $a$ crește cu o cantitate mică,
 
 O greșeală într-o derivată locală nu produce nicio eroare la rulare, doar gradienți greșiți. Ca pe pagina despre retropropagare, putem compara rezultatul cu o [aproximare prin diferențe finite](/retele-neuronale/retropropagare/#verificarea-gradienților): modificăm puțin o intrare în sus și în jos și vedem cât se schimbă rezultatul.
 
-Exemplul de mai jos verifică un neuron cu două intrări și activare tanh. Pentru a încerca și operațiile derivate, a doua variantă a neuronului calculează tanh din formula ei cu exponențiale, cu `exp`, scădere și împărțire.
+Exemplul de mai jos verifică un neuron cu două intrări și activare tanh. Pentru a încerca și operațiile derivate, a doua variantă a neuronului calculează tanh din formula cu exponențiale, cu `exp`, scădere și împărțire.
 
 <Python
   setup={labSetup}

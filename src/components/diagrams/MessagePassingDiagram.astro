@@ -43,7 +43,7 @@ const BOX_WIDTH = 136;
     <svg viewBox='20 8 700 272' role='img' aria-labelledby='message-passing-title message-passing-desc'>
       <title id='message-passing-title'>Un strat de transmitere a mesajelor</title>
       <desc id='message-passing-desc'>
-        Nodul v are patru vecini, a, b, c și d. Fiecare vecin îi trimite vectorul lui, ca mesaj. Nodul v adună mesajele
+        Nodul v are patru vecini, a, b, c și d. Fiecare vecin îi trimite propriul vector, ca mesaj. Nodul v adună mesajele
         printr-o agregare care nu depinde de ordinea vecinilor, de exemplu o sumă, o medie sau o medie ponderată prin
         atenție. Apoi actualizarea, o rețea mică ale cărei ponderi sunt aceleași pentru toate nodurile, combină
         rezultatul cu vectorul vechi al lui v și produce vectorul nou al lui v.
@@ -96,7 +96,7 @@ const BOX_WIDTH = 136;
         v
       </text>
       <text class='label' x='40' y='272'>
-        Vecinii lui v îi trimit vectorii lor.
+        Vecinii lui v îi trimit vectorii.
       </text>
 
       <g class='arrow' marker-end='url(#message-passing-arrow)'>

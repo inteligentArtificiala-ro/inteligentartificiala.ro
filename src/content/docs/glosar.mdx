@@ -21,8 +21,8 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Atenție | Attention | Mecanism care permite modelului să se concentreze pe anumite părți ale intrării atunci când produce ieșirea. |
 | Atenție încrucișată | Cross-Attention | Atenție în care interogările vin dintr-o secvență, iar cheile și valorile din alta, de exemplu din tokenurile textului care ghidează generarea unei imagini. |
 | Atenție cu capete multiple (multi-head) | Multi-head Attention | Mecanism care rulează în paralel mai multe capete de atenție, fiecare cu propriile proiecții, pentru a surprinde tipuri diferite de dependențe. |
-| Auto-atenție | Self-Attention | Atenție în care tokenurile unei secvențe se raportează unele la altele, folosită în Transformer pentru a surprinde dependențele dintre ele. |
-| Autoencoder | Autoencoder | Rețea formată dintr-un codificator, care comprimă datele într-o reprezentare mai mică, și un decodor, care le reconstruiește din ea. |
+| Auto-atenție | Self-Attention | Atenție în care tokenurile unei secvențe se raportează unele la altele, folosită în Transformer pentru a surprinde dependențele dintre tokenuri. |
+| Autoencoder | Autoencoder | Rețea formată dintr-un codificator, care comprimă datele într-o reprezentare mai mică, și un decodor, care reconstruiește datele din această reprezentare. |
 | Autoencoder variațional (VAE) | Variational Autoencoder | Autoencoder care învață o reprezentare latentă continuă, folosit pentru a comprima imaginile și clipurile video înaintea difuziei latente. |
 | Autoconsecvență | Self-Consistency | Metodă care generează mai multe lanțuri de gânduri pentru aceeași întrebare și păstrează răspunsul final cel mai frecvent (vot majoritar). |
 
@@ -41,11 +41,11 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Câmp receptiv | Receptive Field | Partea din date de care depinde rezultatul unui neuron sau al unui nod. Într-o rețea pe grafuri cu k straturi, sunt nodurile aflate la cel mult k muchii distanță. |
 | Clonarea vocii | Voice Cloning | Generarea vorbirii cu vocea unei persoane anume, pornind de la o înregistrare scurtă a acelei voci. |
 | Coborâre pe gradient | Gradient Descent | Metoda de optimizare care ajustează parametrii modelului în direcția opusă gradientului funcției de pierdere. |
-| Codec audio neuronal | Neural Audio Codec | Autoencoder care comprimă sunetul într-un șir de tokenuri dintr-un vocabular fix și îl poate reconstrui din ele, de exemplu EnCodec. |
+| Codec audio neuronal | Neural Audio Codec | Autoencoder care comprimă sunetul într-un șir de tokenuri dintr-un vocabular fix și poate reconstrui sunetul din aceste tokenuri, de exemplu EnCodec. |
 | Codificare pozițională | Positional Encoding | Informația despre poziția tokenurilor într-o secvență, adăugată la reprezentările vectoriale sau aplicată direct în calculul atenției. |
 | Codificator de text | Text Encoder | Model care transformă un text într-un șir de vectori, folosit pentru a ghida generarea unei imagini, de exemplu CLIP sau T5. |
 | Comprimare excesivă | Over-squashing | Limită a rețelelor pe grafuri în care informația de la multe noduri îndepărtate trebuie să treacă prin puține muchii și să încapă într-un vector de mărime fixă. |
-| Conexiune reziduală | Residual Connection | Legătură care adună intrarea unui bloc la ieșirea lui, astfel încât informația și gradienții să treacă direct peste straturi, ca în rețelele reziduale. |
+| Conexiune reziduală | Residual Connection | Legătură care adună intrarea unui bloc la ieșirea blocului, astfel încât informația și gradienții să treacă direct peste straturi, ca în rețelele reziduale. |
 | Convoluție | Convolution | Operație care aplică filtre pe date spațiale sau secvențiale (folosită în rețelele convoluționale, CNN). |
 | Cuantizare | Quantization | Tehnică de reducere a mărimii modelului prin stocarea ponderilor cu mai puțini biți. |
 | CUDA | CUDA | Platformă de calcul paralel dezvoltată de NVIDIA pentru plăcile sale grafice. |
@@ -84,7 +84,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Formă de undă | Waveform | Șirul de eșantioane care descrie un sunet în timp. |
 | Funcția liniară rectificată (ReLU) | Rectified Linear Unit (ReLU) | Funcție de activare care întoarce 0 pentru valorile negative și valoarea însăși pentru cele pozitive, adică max(0, x). |
 | Funcție de activare | Activation Function | Funcție neliniară aplicată la ieșirea unui neuron, care îi permite rețelei să învețe relații neliniare. |
-| Funcție de pierdere | Loss Function | Funcția care măsoară cât de departe sunt predicțiile modelului de valorile corecte, iar valoarea ei se numește pierdere sau eroare. |
+| Funcție de pierdere | Loss Function | Funcția care măsoară cât de departe sunt predicțiile modelului de valorile corecte, iar valoarea funcției se numește pierdere sau eroare. |
 
 ## G
 
@@ -123,7 +123,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 |-------------|-------------|------------|
 | Lanț de gânduri | Chain of Thought (CoT) | Textul intermediar, scris pas cu pas, pe care modelul îl generează înainte de răspunsul final. |
 | Limitarea gradientului | Gradient Clipping | Tehnică ce limitează norma gradientului la o valoare maximă, pentru a preveni explozia gradienților. |
-| LoRA | LoRA (Low-Rank Adaptation) | Tehnică de ajustare fină care îngheață ponderile modelului și antrenează doar perechi de matrice mici, de rang mic, adăugate peste ele. |
+| LoRA | LoRA (Low-Rank Adaptation) | Tehnică de ajustare fină care îngheață ponderile modelului și antrenează doar perechi de matrice mici, de rang mic, adăugate peste ponderile înghețate. |
 | Lot | Batch | Subsetul de exemple folosit la un singur pas de antrenare. |
 
 ## M
@@ -133,7 +133,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Mască | Mask | Vector sau matrice care indică ce tokenuri sunt vizibile și care trebuie ignorate. |
 | Matrice de adiacență | Adjacency Matrix | Matrice cu câte un rând și o coloană pentru fiecare nod al unui graf, în care valoarea de pe poziția (i, j) arată dacă nodurile i și j sunt legate. |
 | Memorare | Memorization | Reproducerea aproape identică, de către un model generativ, a unor exemple din datele de antrenare. |
-| Memoria agentului | Agent Memory | Mecanismele prin care un agent păstrează informații între pași sau sesiuni și le aduce înapoi în context când are nevoie de ele. |
+| Memoria agentului | Agent Memory | Mecanismele prin care un agent păstrează informații între pași sau sesiuni și le aduce înapoi în context când are nevoie de aceste informații. |
 | Memoria cache pentru chei și valori | KV Cache | Păstrarea cheilor și valorilor de atenție ale tokenurilor deja procesate, ca să nu fie recalculate la generarea fiecărui token nou. |
 | Metrici | Metrics | Măsuri pentru evaluarea performanței unui model (precizie, sensibilitate, perplexitate etc.). |
 | Model | Model | Funcția matematică, cu parametri învățați din date, care face predicții. |
@@ -150,7 +150,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
-| Netezire excesivă | Over-smoothing | Fenomenul prin care, după multe straturi ale unei rețele pe grafuri, vectorii tuturor nodurilor ajung să semene între ei. |
+| Netezire excesivă | Over-smoothing | Fenomenul prin care, după multe straturi ale unei rețele pe grafuri, vectorii tuturor nodurilor ajung să semene unii cu alții. |
 | Neuron artificial | Artificial Neuron | Unitatea de bază a unei rețele neuronale, care primește intrări și produce o ieșire. |
 | Nod | Node | Element al unui graf, de exemplu un atom dintr-o moleculă sau o persoană dintr-o rețea socială. |
 | Normalizare pe lot | Batch Normalization | Tehnică de normalizare a activărilor pe fiecare lot, pentru a stabiliza și accelera antrenarea. |
@@ -191,7 +191,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Reprezentare vectorială | Embedding | Vector dens care reprezintă un token, un cuvânt sau un text, astfel încât sensurile asemănătoare să aibă vectori apropiați. |
 | Retropropagare | Backpropagation | Algoritmul care calculează eficient gradienții tuturor parametrilor, aplicând regula lanțului de la ieșire spre intrare. |
 | Retropropagare în timp (BPTT) | Backpropagation Through Time | Retropropagarea aplicată unei rețele recurente desfășurate în timp, în care gradienții trec înapoi prin toți pașii secvenței. |
-| Rețea convoluțională pe grafuri (GCN) | Graph Convolutional Network | Rețea pe grafuri în care fiecare strat face o medie ponderată a vectorilor unui nod și ai vecinilor lui, cu ponderi care țin cont de grade. |
+| Rețea convoluțională pe grafuri (GCN) | Graph Convolutional Network | Rețea pe grafuri în care fiecare strat face o medie ponderată între vectorul fiecărui nod și vectorii vecinilor, cu ponderi care țin cont de grade. |
 | Rețea feed-forward | Feed-forward Network | Componentă a unui bloc Transformer care aplică aceeași transformare neliniară fiecărei poziții, independent. |
 | Rețea generativă adversarială (GAN) | Generative Adversarial Network | Pereche de rețele antrenate una împotriva celeilalte: una generează exemple, iar cealaltă încearcă să le deosebească de cele reale. |
 | Rețea neuronală | Neural Network | Structură de neuroni artificiali interconectați, organizați în straturi, care învață reprezentări din date. |

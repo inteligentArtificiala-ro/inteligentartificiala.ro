@@ -12,7 +12,7 @@ tags:
 import DeepDive from '@components/DeepDive.astro';
 import Python from '@components/Python.astro';
 
-Aproape toate modelele moderne de inteligență artificială, de la recunoașterea imaginilor până la [modelele de limbaj mari](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) (LLM), sunt antrenate și rulate pe un tip de procesor creat inițial pentru jocurile video, **placa grafică** (_graphics processing unit_, GPU). Accesul la plăci grafice a ajuns să decidă cât de mari pot fi modelele, cât costă antrenarea lor și cât de repede răspund. Pentru a înțelege de ce, trebuie să ne uităm la tipul de calcul pe care îl face o rețea neuronală.
+Aproape toate modelele moderne de inteligență artificială, de la recunoașterea imaginilor până la [modelele de limbaj mari](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) (LLM), sunt antrenate și rulate pe un tip de procesor creat inițial pentru jocurile video, **placa grafică** (_graphics processing unit_, GPU). Accesul la plăci grafice a ajuns să decidă cât de mari pot fi modelele, cât costă să fie antrenate și cât de repede răspund. Pentru a înțelege de ce, trebuie să ne uităm la tipul de calcul pe care îl face o rețea neuronală.
 
 ## De la pixeli la rețele neuronale
 
@@ -49,7 +49,7 @@ Când rețeaua prelucrează un lot de exemple deodată, vectorii devin matrice, 
 
 ## Nuclee specializate și precizie redusă
 
-Pe măsură ce inteligența artificială a devenit principala lor utilizare, plăcile grafice au fost adaptate pentru ea. Din 2017, plăcile NVIDIA pentru centre de date au **nuclee tensoriale** (_Tensor Cores_), circuite dedicate înmulțirii de matrice mici într-un singur pas.
+Pe măsură ce inteligența artificială a devenit principala utilizare a plăcilor grafice, plăcile au fost adaptate pentru acest tip de calcul. Din 2017, plăcile NVIDIA pentru centre de date au **nuclee tensoriale** (_Tensor Cores_), circuite dedicate înmulțirii de matrice mici într-un singur pas.
 
 A doua schimbare ține de **precizia numerelor**. Calculele științifice folosesc de obicei numere pe 32 sau 64 de biți, însă rețelele neuronale tolerează bine numere mai puțin precise. Antrenarea se face astăzi frecvent pe 16 biți (formatele FP16 și BF16), iar generațiile recente de plăci pot calcula și pe 8 sau chiar 4 biți. Un număr pe 16 biți ocupă jumătate din memoria unuia pe 32 de biți, iar nucleele tensoriale procesează de câteva ori mai multe operații pe secundă la precizie redusă.
 
@@ -81,7 +81,7 @@ for nume_model, parametri in modele.items():
 `}
 />
 
-Estimarea ignoră calculul propriu-zis și [memoria cache pentru chei și valori](/modele-lingvistice/arhitectura-transformer/#memoria-cache-pentru-chei-și-valori-kv-cache), deci vitezele reale sunt mai mici. Ea arată totuși de ce un model de 70 de miliarde de parametri nu încape pe o singură placă fără compresie și de ce aceeași placă poate genera de zeci de ori mai repede decât un procesor obișnuit. Serviciile comerciale prelucrează simultan cererile mai multor utilizatori în loturi, astfel încât o singură citire a ponderilor produce câte un token pentru fiecare cerere din lot.
+Estimarea ignoră calculul propriu-zis și [memoria cache pentru chei și valori](/modele-lingvistice/arhitectura-transformer/#memoria-cache-pentru-chei-și-valori-kv-cache), deci vitezele reale sunt mai mici. Chiar și așa, estimarea arată de ce un model de 70 de miliarde de parametri nu încape pe o singură placă fără compresie și de ce aceeași placă poate genera de zeci de ori mai repede decât un procesor obișnuit. Serviciile comerciale prelucrează simultan cererile mai multor utilizatori în loturi, astfel încât o singură citire a ponderilor produce câte un token pentru fiecare cerere din lot.
 
 ## De la o placă la mii de plăci
 
@@ -95,7 +95,7 @@ De aceea, modelele mari sunt antrenate pe clustere cu mii sau zeci de mii de pl�
 
 ## De ce contează și economic
 
-Pentru că plăcile grafice limitează direct ce modele pot fi construite, ele au devenit una dintre cele mai căutate resurse din industria tehnologică. Costul computațional este cheltuiala principală la antrenarea unui model mare, iar accesul la plăci grafice influențează competiția dintre companii și chiar politicile de export ale unor state.
+Pentru că limitează direct ce modele pot fi construite, plăcile grafice au devenit una dintre cele mai căutate resurse din industria tehnologică. Costul computațional este cheltuiala principală la antrenarea unui model mare, iar accesul la plăci grafice influențează competiția dintre companii și chiar politicile de export ale unor state.
 
 Dominația NVIDIA vine nu doar din hardware, ci și din ecosistemul CUDA, pe care se sprijină bibliotecile folosite în practică, precum PyTorch. Există însă și alternative.
 

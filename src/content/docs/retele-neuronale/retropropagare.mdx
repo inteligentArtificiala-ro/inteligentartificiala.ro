@@ -19,7 +19,7 @@ Pentru a antrena o [rețea neuronală](/retele-neuronale/ce-sunt-retelele-neuron
 
 ## De ce avem nevoie de retropropagare
 
-O rețea neuronală este o compoziție de funcții. Fiecare strat transformă intrarea și trece rezultatul mai departe. Pentru a ști cum să ajustăm o pondere din stratul 1, trebuie să înțelegem cum afectează ea ieșirea finală și, prin urmare, eroarea.
+O rețea neuronală este o compoziție de funcții. Fiecare strat transformă intrarea și trece rezultatul mai departe. Pentru a ști cum să ajustăm o pondere din stratul 1, trebuie să înțelegem cum afectează ponderea ieșirea finală și, prin urmare, eroarea.
 
 Fără un calcul eficient, am trebui să modificăm fiecare pondere pe rând, să măsurăm eroarea și să repetăm. Ar fi extrem de lent. Retropropagarea rezolvă această problemă calculând **toți gradienții** o singură dată, într-un singur pas înapoi prin rețea.
 
@@ -45,7 +45,7 @@ Să considerăm o rețea simplă, cu o intrare $x$ și un strat ascuns. Fiecare 
 
 1. Pentru fiecare neuron $j$ din stratul ascuns, calculăm suma ponderată $z_j = w_j x + b_j$.
 2. Apoi aplicăm funcția de activare $a_j = f(z_j)$.
-3. La stratul de ieșire, calculăm predicția $\hat{y} = \sum_j v_j a_j + c$, unde $v_j$ sunt ponderile stratului de ieșire, iar $c$ este *bias*-ul lui.
+3. La stratul de ieșire, calculăm predicția $\hat{y} = \sum_j v_j a_j + c$, unde $v_j$ și $c$ sunt ponderile și *bias*-ul stratului de ieșire.
 4. Eroarea este $L = \frac{1}{2}(\hat{y} - y)^2$, unde $y$ este valoarea corectă. Factorul $\frac{1}{2}$ face derivata mai simplă.
 
 ### Retropropagare (backward pass)
@@ -115,7 +115,7 @@ Un pas de antrenare are două faze:
 2. **Retropropagare**: pornim de la gradientul erorii în raport cu ieșirea ($\frac{\partial L}{\partial \hat{y}}$) și trimitem gradienții înapoi prin rețea, strat cu strat.
 </Steps>
 
-Fiecare strat primește de la stratul următor gradientul în raport cu ieșirea sa și calculează din el:
+Fiecare strat primește de la stratul următor gradientul în raport cu ieșirea sa și calculează din acest gradient:
 
 - gradienții parametrilor proprii ($\frac{\partial L}{\partial w}$, $\frac{\partial L}{\partial b}$)
 - gradientul în raport cu intrarea sa, pe care îl trimite stratului anterior
@@ -146,7 +146,7 @@ Retropropagarea este eficientă deoarece:
 
 - **Partajează calculul**: fiecare gradient intermediar este calculat o singură dată și refolosit pentru mai mulți parametri.
 - **Se poate paraleliza**: gradienții parametrilor din același strat se calculează în paralel, ca înmulțiri de matrice.
-- **Costul ei este de același ordin cu al propagării directe**: în practică, de aproximativ două ori mai mare. Metoda naivă de mai sus ar avea nevoie de câte o propagare directă pentru fiecare parametru.
+- **Costul este de același ordin cu al propagării directe**: în practică, de aproximativ două ori mai mare. Metoda naivă de mai sus ar avea nevoie de câte o propagare directă pentru fiecare parametru.
 
 ## Probleme practice
 
@@ -156,7 +156,7 @@ Retropropagarea este eficientă deoarece:
 
 **Soluții**:
 
-- Funcții de activare ReLU sau variante ale ei, a căror derivată este 1 pentru valorile pozitive
+- Funcții de activare de tip ReLU, a căror derivată este 1 pentru valorile pozitive
 - Inițializarea potrivită a ponderilor (de exemplu, inițializarea Xavier sau He, descrise mai jos)
 - Rețele reziduale (_residual networks_), cu conexiuni directe între straturi, pe care gradientul trece fără să fie atenuat
 
@@ -259,7 +259,7 @@ Bibliotecile moderne precum PyTorch și TensorFlow construiesc automat un **graf
 
 ### Cum funcționează `autograd`
 
-1. **Propagarea directă**: pe măsură ce se calculează ieșirea, fiecare operație este înregistrată în graf, împreună cu valorile de care va avea nevoie derivata ei.
+1. **Propagarea directă**: pe măsură ce se calculează ieșirea, fiecare operație este înregistrată în graf, împreună cu valorile de care va avea nevoie derivata operației.
 2. **Calculul erorii**: eroarea devine ultimul nod al grafului.
 3. **Retropropagarea**: apelul `loss.backward()` parcurge graful invers, aplică regula lanțului la fiecare nod și adaugă gradienții în atributul `.grad` al fiecărui parametru.
 
@@ -310,7 +310,7 @@ Același mecanism funcționează și pentru **rețelele neuronale recurente** (_
 Valorile inițiale ale ponderilor influențează direct mărimea gradienților care se propagă înapoi. Două scheme des folosite aleg varianța ponderilor după numărul de intrări ($n_{\text{in}}$) și de ieșiri ($n_{\text{out}}$) ale stratului:
 
 - **Inițializarea Xavier (Glorot)**, potrivită pentru sigmoidă și tangenta hiperbolică: $w \sim \mathcal{N}\left(0, \frac{2}{n_{\text{in}} + n_{\text{out}}}\right)$
-- **Inițializarea He**, potrivită pentru ReLU și variantele ei: $w \sim \mathcal{N}\left(0, \frac{2}{n_{\text{in}}}\right)$
+- **Inițializarea He**, potrivită pentru ReLU și funcțiile înrudite: $w \sim \mathcal{N}\left(0, \frac{2}{n_{\text{in}}}\right)$
 
 În ambele formule, al doilea parametru al distribuției normale $\mathcal{N}$ este varianța.
 

@@ -17,7 +17,7 @@ Multe detalii interne ale acestor sisteme, de exemplu datele exacte de antrenare
 
 ## Definiție
 
-Numele unui asistent se referă de obicei la un **produs**: aplicația web sau mobilă, cu interfața ei, istoricul conversațiilor și instrumentele integrate. În spatele produsului se află unul sau mai multe **modele**, adică rețelele neuronale care generează efectiv textul. De exemplu, ChatGPT este produsul, iar modelele pe care rulează fac parte din familia GPT, dezvoltată de OpenAI. La Gemini, Claude, Grok și DeepSeek, același nume se folosește de obicei și pentru produs, și pentru familia de modele.
+Numele unui asistent se referă de obicei la un **produs**: aplicația web sau mobilă, cu interfața, istoricul conversațiilor și instrumentele integrate. În spatele produsului se află unul sau mai multe **modele**, adică rețelele neuronale care generează efectiv textul. De exemplu, ChatGPT este produsul, iar modelele pe care rulează fac parte din familia GPT, dezvoltată de OpenAI. La Gemini, Claude, Grok și DeepSeek, același nume se folosește de obicei și pentru produs, și pentru familia de modele.
 
 Aceleași modele sunt oferite și dezvoltatorilor, printr-o **interfață de programare** (_application programming interface_, API). Astfel, un model poate fi integrat și în produsele și aplicațiile altor companii.
 
@@ -50,7 +50,7 @@ Gemini este dezvoltat de **Google**, prin divizia Google DeepMind. Asistentul a 
 
 ### Claude
 
-Claude este dezvoltat de **Anthropic**, o companie din San Francisco fondată în 2021 de foști cercetători de la OpenAI. Primele versiuni Claude au fost lansate în martie 2023. Anthropic este cunoscută pentru accentul pe care îl pune pe siguranța AI și pentru tehnici precum Constitutional AI. Modelele Claude sunt închise: ponderile lor nu sunt publice.
+Claude este dezvoltat de **Anthropic**, o companie din San Francisco fondată în 2021 de foști cercetători de la OpenAI. Primele versiuni Claude au fost lansate în martie 2023. Anthropic este cunoscută pentru accentul pe care îl pune pe siguranța AI și pentru tehnici precum Constitutional AI. Modelele Claude sunt închise: ponderile nu sunt publice.
 
 ### Grok
 
@@ -74,7 +74,7 @@ DeepSeek este dezvoltat de compania cu același nume, **DeepSeek**, cu sediul î
 
 :::note[Diferența în practică]
 - **Ponderi deschise** (_open weights_): parametrii obținuți la antrenare pot fi descărcați liber, iar modelul poate rula local, pe hardware potrivit. Asta înseamnă că îl putem folosi în privat (fără conexiune la serverele furnizorului), îl putem adapta prin ajustare fină pe date proprii și îi putem studia în detaliu comportamentul. Faptul că ponderile sunt publice nu înseamnă neapărat că sunt publice și codul complet sau datele folosite la preantrenare.
-- **Model închis** (_closed_ / proprietar): poate fi folosit doar prin platforma sau API-ul furnizorului. Cererile sunt procesate pe serverele companiei, după regulile ei de confidențialitate, iar furnizorul poate oricând să actualizeze sau să retragă versiunile disponibile.
+- **Model închis** (_closed_ / proprietar): poate fi folosit doar prin platforma sau API-ul furnizorului. Cererile sunt procesate pe serverele companiei, după regulile de confidențialitate ale furnizorului, iar furnizorul poate oricând să actualizeze sau să retragă versiunile disponibile.
 :::
 
 Diferența se vede chiar în această documentație. Demo-ul de pe pagina despre [modele de limbaj](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#un-model-compact-în-browser) rulează un model mic, cu ponderi deschise, direct în browser, iar datele nu părăsesc deloc dispozitivul.

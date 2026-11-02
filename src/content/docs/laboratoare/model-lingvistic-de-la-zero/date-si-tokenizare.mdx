@@ -146,7 +146,7 @@ print(tokenizer.decode(tokenizer.encode("The dog ran.<|endoftext|>The end."), sk
 Cu vocabularul de 1.000 de tokenuri din eșantion, un cuvânt care lipsește devine `[UNK]` și se pierde la decodificare. Tot la decodificare se pierde și forma exactă a textului, pentru că spațiile multiple și trecerile la rând nou nu mai pot fi refăcute.
 
 :::note[De ce folosesc modelele moderne BPE în loc de cuvinte întregi?]
-Tokenizatoarele modelelor mari evită aceste probleme. Ele lucrează cu bucăți mai mici decât cuvintele, obținute de obicei prin metoda **BPE** (_byte pair encoding_). Cuvintele frecvente rămân întregi, iar cele rare se descompun în fragmente, la nevoie până la octeți individuali, cum se vede pe pagina despre [tokenuri](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#tokenuri). Un astfel de tokenizator nu are nevoie de `[UNK]`. Pentru poveștile simple din TinyStories, tokenizatorul la nivel de cuvânt este suficient și mult mai ușor de urmărit.
+Tokenizatoarele modelelor mari evită aceste probleme: lucrează cu bucăți mai mici decât cuvintele, obținute de obicei prin metoda **BPE** (_byte pair encoding_). Cuvintele frecvente rămân întregi, iar cele rare se descompun în fragmente, la nevoie până la octeți individuali, cum se vede pe pagina despre [tokenuri](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#tokenuri). Un astfel de tokenizator nu are nevoie de `[UNK]`. Pentru poveștile simple din TinyStories, tokenizatorul la nivel de cuvânt este suficient și mult mai ușor de urmărit.
 :::
 
 ## Fișierele cu tokenuri
@@ -216,7 +216,7 @@ Once upon a time, a cat said "Hello!"
   - valid.bin
 </FileTree>
 
-Pe pagina următoare construim modelul care va învăța din ele.
+Pe pagina următoare construim modelul care va învăța din aceste date.
 
 ## Bibliografie
 

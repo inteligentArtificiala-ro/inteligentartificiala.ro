@@ -38,7 +38,7 @@ Tokenizatorul CLIP marchează sfârșitul fiecărui cuvânt cu `</w>`, adaugă l
 
 ## Generarea, cu ghidarea fără clasificator
 
-Codul de mai jos generează o imagine cu toate componentele, fără pipeline. Reprezentarea latentă are 4 × 64 × 64 de valori, de 48 de ori mai puține decât cele 3 × 512 × 512 ale imaginii. La fiecare pas, U-Net-ul estimează zgomotul de două ori, o dată cu descrierea și o dată cu textul gol, iar cele două estimări se combină după formula **ghidării fără clasificator** (_classifier-free guidance_). Diferența dintre ele arată ce schimbă textul în imagine, iar ghidarea o înmulțește cu scala de ghidare $w$.
+Codul de mai jos generează o imagine cu toate componentele, fără pipeline. Reprezentarea latentă are 4 × 64 × 64 de valori, de 48 de ori mai puține decât cele 3 × 512 × 512 ale imaginii. La fiecare pas, U-Net-ul estimează zgomotul de două ori, o dată cu descrierea și o dată cu textul gol, iar cele două estimări se combină după formula **ghidării fără clasificator** (_classifier-free guidance_). Diferența dintre cele două estimări arată ce schimbă textul în imagine, iar ghidarea o înmulțește cu scala de ghidare $w$.
 
 <DeepDive title="Formula ghidării fără clasificator">
 

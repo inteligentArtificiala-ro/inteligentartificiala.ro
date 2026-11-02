@@ -19,7 +19,7 @@ Asistenții conversaționali și modelele de limbaj mari dau adesea răspunsuri 
 
 Termenul este o metaforă care îi atribuie modelului o trăsătură umană. Modelul nu are conștiință și nici o percepție a realității pe care să o deformeze. La nivel fizic, este un sistem statistic care calculează distribuții de probabilitate peste secvențe de tokenuri.
 
-Cercetătorul Andrej Karpathy a observat că modelele de limbaj sunt, prin chiar felul în care sunt construite, „mașini de visat” (_dream machines_). Halucinația nu este un defect de fabricație și nici o problemă de hardware. Este felul firesc în care funcționează orice model autoregresiv lăsat fără constrângeri. Când modelul spune lucruri adevărate despre lume, o face pentru că distribuția lui statistică este ținută strâns în frâu de datele de antrenare, de context și de algoritmii care îi ghidează generarea.
+Cercetătorul Andrej Karpathy a observat că modelele de limbaj sunt, prin chiar felul în care sunt construite, „mașini de visat” (_dream machines_). Halucinația nu este un defect de fabricație și nici o problemă de hardware. Este felul firesc în care funcționează orice model autoregresiv lăsat fără constrângeri. Când modelul spune lucruri adevărate despre lume, o face pentru că distribuția statistică a modelului este ținută strâns în frâu de datele de antrenare, de context și de algoritmii care îi ghidează generarea.
 
 <HallucinationDiagram />
 
@@ -49,7 +49,7 @@ Diferența dintre halucinațiile factuale și cele de fidelitate contează mult 
 
 ## De ce halucinează modelele de limbaj
 
-Halucinațiile nu sunt simple „scăpări de memorie”. Ele vin direct din matematica pe care se sprijină arhitectura Transformer și din felul în care sunt adunate și prelucrate datele.
+Halucinațiile nu sunt simple „scăpări de memorie”, ci vin direct din matematica pe care se sprijină arhitectura Transformer și din felul în care sunt adunate și prelucrate datele.
 
 ### 1. Obiectivul de predicție a următorului token
 
@@ -61,7 +61,7 @@ $$
 \mathcal{L}(\theta) = - \sum_{t=1}^n \log P_\theta(x_t \mid x_1, \ldots, x_{t-1})
 $$
 
-unde $x_t$ este tokenul curent, iar $x_1, \ldots, x_{t-1}$ sunt tokenurile dinaintea lui.
+unde $x_t$ este tokenul curent, iar $x_1, \ldots, x_{t-1}$ sunt tokenurile anterioare.
 
 </DeepDive>
 
@@ -103,7 +103,7 @@ Textele adunate de pe internet conțin foarte multe mituri, parodii, opinii cont
 
 La [ajustarea fină supervizată (SFT)](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/), modelele sunt antrenate pe exemple de conversații scrise de adnotatori umani. În majoritatea acestor seturi de date, răspunsul ideal este complet, direct și politicos.
 
-Modelele sunt rareori antrenate să refuze sau să spună simplu „Nu știu, datele mele nu conțin această informație”. De aceea, asistentul este împins să dea mereu un răspuns complet, chiar și atunci când certitudinea lui internă este foarte mică.
+Modelele sunt rareori antrenate să refuze sau să spună simplu „Nu știu, datele mele nu conțin această informație”. De aceea, asistentul este împins să dea mereu un răspuns complet, chiar și atunci când certitudinea internă a modelului este foarte mică.
 
 ## Riscuri și impact în aplicațiile reale
 
@@ -111,9 +111,9 @@ Modelele sunt rareori antrenate să refuze sau să spună simplu „Nu știu, da
 Halucinațiile devin periculoase atunci când modelele de limbaj sunt folosite în procese care iau decizii singure sau în domenii sensibile.
 
 1. **Domeniul juridic**: un caz cunoscut este procesul _Mata v. Avianca_ din Statele Unite (2023). Avocații au depus un memoriu scris cu ajutorul unui asistent conversațional. Documentul cita mai multe decizii ale unor instanțe federale americane care erau complet inventate, cu tot cu extrase de text și numere de dosar fictive. Judecătorul i-a sancționat pe avocați pentru inducerea în eroare a instanței.
-2. **Securitatea software și slopsquatting**: modelele antrenate pe cod sursă inventează adesea nume de pachete externe care sună logic (de exemplu, un pachet imaginar `react-auth-token-validator`). Atacatorii urmăresc numele inventate care apar des, le înregistrează în repozitorii publice precum npm sau PyPI și publică sub ele module cu malware. Când un dezvoltator copiază codul generat de AI și rulează instalarea, sistemul lui este infectat. Tehnica este cunoscută ca **halucinare de pachete** (_package hallucination_) sau _slopsquatting_.
+2. **Securitatea software și slopsquatting**: modelele antrenate pe cod sursă inventează adesea nume de pachete externe care sună logic (de exemplu, un pachet imaginar `react-auth-token-validator`). Atacatorii urmăresc numele inventate care apar des, le înregistrează în repozitorii publice precum npm sau PyPI și publică sub aceste nume module cu malware. Când un dezvoltator copiază codul generat de AI și rulează instalarea, sistemul lui este infectat. Tehnica este cunoscută ca **halucinare de pachete** (_package hallucination_) sau _slopsquatting_.
 3. **Sănătatea și medicina**: într-o consultație medicală, un model poate recomanda doze toxice sau combinații letale de medicamente, dacă a preluat asocierile statistice din discuții nevalidate.
-4. **Educația și informarea publică**: modelul poate prezenta relatări istorice deformate sau citate false. Tonul lui neutru și convingător îi descurajează adesea pe oameni să verifice în sursele primare.
+4. **Educația și informarea publică**: modelul poate prezenta relatări istorice deformate sau citate false. Tonul neutru și convingător al modelului îi descurajează adesea pe oameni să verifice în sursele primare.
 :::
 
 ## Măsurarea și evaluarea halucinațiilor
@@ -145,7 +145,7 @@ Fiecare fapt este verificat separat, într-o sursă de încredere, precum Wikipe
 
 - **TruthfulQA** este un set de 817 întrebări din 38 de domenii (sănătate, finanțe, conspirații, istorie), construit special ca să verifice dacă modelele repetă mituri populare sau dau răspunsuri adevărate.
 - **HaluEval** este o colecție de 35.000 de perechi de texte adnotate, folosită pentru a măsura cât de bine recunosc și evită sistemele halucinațiile în răspunsuri la întrebări, dialoguri și rezumate.
-- **RAGAS / ARES** sunt cadre automate de evaluare pentru sistemele RAG. Ele măsoară două lucruri: fidelitatea față de context (_faithfulness_) și cât de relevant este răspunsul pentru întrebarea inițială.
+- **RAGAS / ARES** sunt cadre automate de evaluare pentru sistemele RAG. Aceste cadre măsoară două lucruri: fidelitatea față de context (_faithfulness_) și cât de relevant este răspunsul pentru întrebarea inițială.
 
 ## Metode de reducere și prevenire
 

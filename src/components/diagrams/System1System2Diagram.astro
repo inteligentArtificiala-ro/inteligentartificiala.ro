@@ -11,7 +11,7 @@ import Box from './Box.astro';
       <title id='system1-system2-title'>Sistemul 1 decide repede, Sistemul 2 preia cazurile incerte</title>
       <desc id='system1-system2-desc'>
         Starea programului ajunge la un model de tip Sistem 1, care întoarce în zeci sau sute de milisecunde o decizie
-        tipizată și probabilitatea ei. Dacă încrederea este mare, decizia se aplică direct. Dacă este mică, decizia
+        tipizată și probabilitatea asociată. Dacă încrederea este mare, decizia se aplică direct. Dacă este mică, decizia
         ajunge la un LLM folosit ca Sistem 2, care raționează pas cu pas, în secunde sau minute.
       </desc>
       <defs>
@@ -59,7 +59,7 @@ import Box from './Box.astro';
   </div>
   <figcaption>
     Deciziile mărunte și frecvente merg la un model rapid de tip Sistem 1, apelat ca orice alt instrument. Când
-    încrederea lui este mică, decizia ajunge la LLM, care raționează pas cu pas, ca un Sistem 2.
+    încrederea acestui model este mică, decizia ajunge la LLM, care raționează pas cu pas, ca un Sistem 2.
   </figcaption>
 </figure>
 

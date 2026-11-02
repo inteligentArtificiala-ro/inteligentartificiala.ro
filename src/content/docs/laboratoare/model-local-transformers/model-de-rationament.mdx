@@ -123,7 +123,7 @@ buget maxim 2048: 1477 tokenuri de gândire, răspuns: '\n---\n\n### Final Answe
 
 Rezultatul ultimului apel nu este afișat, pentru că nu are o valoare fixă. Modelul primește „Wait” ori de câte ori vrea să se oprească înainte de 3.000 de tokenuri, așa că scrie între 3.000 și 4.096 de tokenuri de gândire, limita maximă a apelului. Numărul exact se schimbă de la o rulare la alta, pentru că tokenurile sunt eșantionate aleatoriu.
 
-Argumentul `stop_strings` oprește generarea imediat ce apare `</think>`, ca să putem decide ce urmează. Restul este manipulare de text obișnuită: modelul nu știe că raționamentul lui a fost tăiat sau prelungit, pentru că vede doar textul din context.
+Argumentul `stop_strings` oprește generarea imediat ce apare `</think>`, ca să putem decide ce urmează. Restul este manipulare de text obișnuită: modelul nu știe că propriul raționament a fost tăiat sau prelungit, pentru că vede doar textul din context.
 
 Pe această problemă, bugetul nu schimbă rezultatul. Chiar și cu 32 de tokenuri de gândire, modelul ajunge la 47, pentru că face calculul pas cu pas în răspuns, deși i-am cerut doar numărul. Diferențele apar pe probleme mai grele, de exemplu de la olimpiadele de matematică, unde un buget mic scade vizibil acuratețea. Merită încercată funcția pe astfel de probleme, comparând răspunsurile pentru mai multe valori ale bugetului.
 

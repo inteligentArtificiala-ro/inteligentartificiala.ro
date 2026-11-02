@@ -76,7 +76,7 @@ O sortare topologică a grafului stabilește ordinea calculelor, astfel încât,
 
 Într-un sistem construit pe LLM-uri, una dintre metodele de a reduce [halucinațiile](/modele-lingvistice/halucinatii/) este ca răspunsurile să se sprijine pe surse verificate. Pe lângă căutarea fragmentelor de text după sens, unele sisteme folosesc și **grafuri de cunoștințe** (_knowledge graphs_).
 
-Într-un astfel de graf, entitățile (persoane, concepte, documente, servere) sunt noduri, iar relațiile dintre ele sunt muchii cu etichete. Parcurgând graful, un algoritm poate lega informații aflate la mai mulți pași distanță, prin relații succesive (_multi-hop reasoning_).
+Într-un astfel de graf, entitățile (persoane, concepte, documente, servere) sunt noduri, iar relațiile dintre entități sunt muchii cu etichete. Parcurgând graful, un algoritm poate lega informații aflate la mai mulți pași distanță, prin relații succesive (_multi-hop reasoning_).
 
 ```python
 # Exemplu conceptual: regăsire pe căi în graf pentru un sistem GraphRAG
@@ -102,7 +102,7 @@ Modelul de limbaj primește apoi drumul găsit, un șir de fapte care pot fi ver
 
 ## Căutarea în arbori (tree search) și raționamentul
 
-Un arbore este un tip particular de graf, organizat ierarhic, potrivit pentru a modela decizii luate una după alta. Fiecare nod este o stare a jocului sau a raționamentului, iar ramurile care pleacă din el sunt alegerile posibile.
+Un arbore este un tip particular de graf, organizat ierarhic, potrivit pentru a modela decizii luate una după alta. Fiecare nod este o stare a jocului sau a raționamentului, iar ramurile care pleacă din nod sunt alegerile posibile.
 
 ### Minimax și retezarea alfa-beta
 
@@ -116,7 +116,7 @@ $$
 \beta \le \alpha \implies \text{retezare ramură}
 $$
 
-unde $\alpha$ este cel mai bun scor pe care și-l poate garanta deja jucătorul care maximizează, iar $\beta$ este cel mai bun scor pe care și-l poate garanta adversarul, care minimizează. Când $\beta \le \alpha$, niciunul dintre jucători nu ar lăsa partida să ajungă pe ramura curentă, așa că restul ei nu mai este explorat.
+unde $\alpha$ este cel mai bun scor pe care și-l poate garanta deja jucătorul care maximizează, iar $\beta$ este cel mai bun scor pe care și-l poate garanta adversarul, care minimizează. Când $\beta \le \alpha$, niciunul dintre jucători nu ar lăsa partida să ajungă pe ramura curentă, așa că restul ramurii nu mai este explorat.
 
 </DeepDive>
 
@@ -158,7 +158,7 @@ De multe ori, problema unui sistem AI nu este că modelul nu ar fi destul de cap
 **Programarea dinamică** (_dynamic programming_) este o metodă pentru probleme care se descompun în subprobleme suprapuse și au substructură optimă (soluția optimă se construiește din soluțiile optime ale subproblemelor). Principiul este simplu: fiecare subproblemă se rezolvă o singură dată, iar rezultatul se păstrează într-un tabel, ca să poată fi refolosit.
 
 În inteligența artificială, principiul apare în multe locuri.
-- **Ecuația lui Bellman** din [învățarea prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/) exprimă valoarea unei stări, $V(s)$, prin valorile stărilor în care se poate ajunge din ea. Calculul se face iterativ, refolosind de fiecare dată valorile deja obținute.
+- **Ecuația lui Bellman** din [învățarea prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/) exprimă valoarea unei stări, $V(s)$, prin valorile stărilor în care se poate ajunge din $s$. Calculul se face iterativ, refolosind de fiecare dată valorile deja obținute.
 
   <DeepDive title="Ecuația lui Bellman">
 
@@ -180,7 +180,7 @@ Pentru fiecare token, auto-atenția calculează trei vectori.
 - **Cheia** ($K$, _key_) descrie ce conține fiecare token anterior.
 - **Valoarea** ($V$, _value_) este informația pe care fiecare token anterior o transmite mai departe.
 
-Rezultatul atenției pentru poziția $t$ depinde de toate cheile și valorile de până la ea.
+Rezultatul atenției pentru poziția $t$ depinde de toate cheile și valorile de până la acea poziție.
 
 <DeepDive title="Formula atenției">
 
@@ -204,12 +204,12 @@ Concret, vectorii $K$ și $V$ ai fiecărui token sunt calculați o dată și sal
 La modelele mari, KV cache poate ocupa zeci de gigaocteți din memoria plăcii grafice. Ca să fie gestionată eficient, au apărut câteva soluții algoritmice.
 
 - **PagedAttention**: preia ideea memoriei virtuale cu paginare din sistemele de operare. Memoria pentru KV cache este împărțită în blocuri de dimensiune fixă, care nu trebuie să stea unul lângă altul în memoria fizică a plăcii grafice. Astfel, fragmentarea memoriei aproape dispare, iar mai multe cereri pot folosi în comun același context, fără să-l copieze.
-- **Prefix caching** (_prompt caching_): ajută când mii de utilizatori trimit cereri care încep cu același context (de exemplu, un manual tehnic sau aceleași instrucțiuni de sistem). Sistemul recunoaște începutul comun și refolosește cheile și valorile deja calculate pentru el. La prompturile lungi, timpul de răspuns scade astfel foarte mult.
+- **Prefix caching** (_prompt caching_): ajută când mii de utilizatori trimit cereri care încep cu același context (de exemplu, un manual tehnic sau aceleași instrucțiuni de sistem). Sistemul recunoaște începutul comun și refolosește cheile și valorile deja calculate pentru acest început. La prompturile lungi, timpul de răspuns scade astfel foarte mult.
 - **FlashAttention**: reorganizează calculul atenției prin împărțire pe blocuri (_tiling_). Încarcă pe rând blocuri mici de date în memoria rapidă de pe cipul plăcii grafice (SRAM) și calculează atenția fără să scrie matricele intermediare, foarte mari, în memoria video principală (HBM), care este mai lentă. Inferența devine mai rapidă, fără nicio pierdere de precizie numerică.
 
 ## Algoritmii de decodare
 
-După ce rețeaua prelucrează contextul prin straturile ei de atenție, ultimul strat produce **scoruri nenormalizate** (_logits_), câte unul pentru fiecare token din vocabular (mai jos le spunem, pentru simplitate, cuvinte). Trecute prin funcția $\operatorname{softmax}$, aceste scoruri devin o distribuție de probabilitate.
+După ce rețeaua prelucrează contextul prin straturile de atenție, ultimul strat produce **scoruri nenormalizate** (_logits_), câte unul pentru fiecare token din vocabular (mai jos le spunem, pentru simplitate, cuvinte). Trecute prin funcția $\operatorname{softmax}$, aceste scoruri devin o distribuție de probabilitate.
 
 <DeepDive title="Funcția softmax">
 
@@ -221,7 +221,7 @@ unde $z_i$ este scorul nenormalizat al cuvântului $w_i$, iar suma de la numitor
 
 </DeepDive>
 
-Aici se oprește rețeaua: ea nu a ales încă niciun cuvânt. Alegerea efectivă a următorului token este treaba unui algoritm de decodare.
+Aici se oprește rețeaua, care nu a ales încă niciun cuvânt. Alegerea efectivă a următorului token este treaba unui algoritm de decodare.
 
 ```
 Scoruri nenormalizate (logits), ieșirea modelului

@@ -55,7 +55,7 @@ Decoratorul `@torch.no_grad()` oprește calculul gradienților, de care nu avem 
 - **Top-k** taie coada lungă a distribuției. Tokenurile foarte puțin probabile nu mai pot fi alese deloc, așa că propozițiile deraiază mai rar.
 :::
 
-Exemplul de mai jos înlocuiește rețeaua cu un model mult mai simplu, construit din eșantionul de povești: un **model de bigrame** (_bigram model_). În el, scorul următorului token depinde doar de tokenul curent și este logaritmul numărului de apariții ale perechii. Procesul de generare este același ca în `generate`.
+Exemplul de mai jos înlocuiește rețeaua cu un model mult mai simplu, construit din eșantionul de povești: un **model de bigrame** (_bigram model_). În acest model, scorul următorului token depinde doar de tokenul curent și este logaritmul numărului de apariții ale perechii. Procesul de generare este același ca în `generate`.
 
 <Python
   packages={['numpy']}
@@ -118,7 +118,7 @@ Fișierul `sample.py` încarcă un model salvat și scrie povești pornind de la
 
 <SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/sample.py" />
 
-Funcția `write` este folosită și în timpul antrenării, pentru poveștile afișate la fiecare evaluare. Ea trece modelul în modul de evaluare, ca _dropout_-ul să fie oprit, apoi îl readuce în modul în care l-a găsit.
+Funcția `write` este folosită și în timpul antrenării, pentru poveștile afișate la fiecare evaluare. Funcția trece modelul în modul de evaluare, ca _dropout_-ul să fie oprit, apoi îl readuce în modul în care l-a găsit.
 
 ## Povești generate local
 

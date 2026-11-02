@@ -8,12 +8,12 @@ import Box from './Box.astro';
 <figure class='diagram orchestration-diagram'>
   <div class='diagram-scroll'>
     <svg viewBox='0 4 760 304' role='img' aria-labelledby='orchestration-title orchestration-desc'>
-      <title id='orchestration-title'>Un coordonator și subagenții lui</title>
+      <title id='orchestration-title'>Un coordonator cu doi subagenți</title>
       <desc id='orchestration-desc'>
         Agentul coordonator scrie planul și îl împarte în sarcini. Sarcina 1, citirea documentației, și sarcina 2,
         căutarea utilizărilor în cod, nu depind una de alta și pornesc deodată, la doi subagenți care lucrează în
-        paralel. Rezumatele lor se întorc la coordonator, care le combină și pornește abia apoi sarcina 3: modificarea
-        codului și rularea testelor. Rezultatul ei ajunge tot la coordonator, care scrie răspunsul final.
+        paralel. Rezumatele subagenților se întorc la coordonator, care le combină și pornește abia apoi sarcina 3: modificarea
+        codului și rularea testelor. Rezultatul acestei sarcini ajunge tot la coordonator, care scrie răspunsul final.
       </desc>
       <defs>
         <marker
@@ -82,7 +82,7 @@ import Box from './Box.astro';
   </div>
   <figcaption>
     Sarcinile independente rulează în paralel, la subagenți care lucrează fiecare în propriul context. Sarcina care are
-    nevoie de rezultatele lor așteaptă până când coordonatorul le primește.
+    nevoie de rezultatele celorlalte așteaptă până când coordonatorul le primește.
   </figcaption>
 </figure>
 

@@ -24,7 +24,7 @@ Codul este scris pentru Diffusers 0.41, Transformers 5.20 și PyTorch 2.14.
 
 <Steps>
 1. **Introducere** (această pagină): instalarea, rularea în Google Colab și prima imagine, generată cu un pipeline.
-2. [**Procesul de difuzie, pas cu pas**](/laboratoare/difuzie-imagini-si-sunete/procesul-de-difuzie/): procesul invers scris de mână, pe un model care generează pisici, comparația dintre DDPM și DDIM și procesul direct, verificat pe formula lui.
+2. [**Procesul de difuzie, pas cu pas**](/laboratoare/difuzie-imagini-si-sunete/procesul-de-difuzie/): procesul invers scris de mână, pe un model care generează pisici, comparația dintre DDPM și DDIM și procesul direct, verificat pe formula din teorie.
 3. [**De la text la imagine**](/laboratoare/difuzie-imagini-si-sunete/imagini-din-text/): Stable Diffusion desfăcut în componente, cu ghidarea fără clasificator scrisă de mână, apoi scala de ghidare și generarea de la imagine la imagine.
 4. [**Sunete din text**](/laboratoare/difuzie-imagini-si-sunete/sunete-din-text/): sunete generate dintr-o descriere cu AudioLDM 2 și drumul de la reprezentarea latentă la spectrograma mel și apoi, prin vocoder, la sunet.
 </Steps>
@@ -53,7 +53,7 @@ Pe Linux și Windows, varianta de PyTorch potrivită pentru placa grafică se al
 
 Laboratorul poate rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser, fără nicio instalare pe calculatorul propriu.
 
-Laboratorul are un singur **notebook** Jupyter, cu codul tuturor paginilor, în ordine, care se deschide în Colab cu butonul de la începutul paginii. Prima celulă instalează pachetele, iar celulele următoare se rulează de sus în jos. Imaginile și sunetele generate apar direct în notebook. Modelele se descarcă în mașina virtuală a Colab, nu pe calculatorul propriu, și se șterg odată cu ea, la sfârșitul sesiunii.
+Laboratorul are un singur **notebook** Jupyter, cu codul tuturor paginilor, în ordine, care se deschide în Colab cu butonul de la începutul paginii. Prima celulă instalează pachetele, iar celulele următoare se rulează de sus în jos. Imaginile și sunetele generate apar direct în notebook. Modelele se descarcă în mașina virtuală a Colab, nu pe calculatorul propriu, și se șterg odată cu mașina, la sfârșitul sesiunii.
 
 ## Prima imagine
 
@@ -85,7 +85,7 @@ python prima_imagine.py
 
 Bara de progres din terminal numără 50 de pași, valoarea implicită pentru acest model. Fiecare pas este o trecere completă prin rețeaua care estimează zgomotul, iar rezultatul este o imagine de 512 × 512 pixeli, salvată în `prima_imagine.png`.
 
-[Stable Diffusion 1.5](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5) este un model de [difuzie latentă](/modele-de-difuzie/generarea-imaginilor/#difuzia-în-spațiul-latent) publicat în 2022, cu un U-Net de aproximativ 860 de milioane de parametri. Calitatea imaginilor este sub cea a modelelor de azi, dar arhitectura lui este exact cea descrisă pe pagina despre [generarea imaginilor](/modele-de-difuzie/generarea-imaginilor/), iar modelul încape ușor în memoria unei plăci grafice obișnuite. Codificatorul de text a fost antrenat în principal pe descrieri în engleză, așa că îi scriem în engleză. Câteva lucruri merită observate în cod.
+[Stable Diffusion 1.5](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5) este un model de [difuzie latentă](/modele-de-difuzie/generarea-imaginilor/#difuzia-în-spațiul-latent) publicat în 2022, cu un U-Net de aproximativ 860 de milioane de parametri. Calitatea imaginilor este sub cea a modelelor de azi, dar arhitectura modelului este exact cea descrisă pe pagina despre [generarea imaginilor](/modele-de-difuzie/generarea-imaginilor/), iar modelul încape ușor în memoria unei plăci grafice obișnuite. Codificatorul de text a fost antrenat în principal pe descrieri în engleză, așa că îi scriem în engleză. Câteva lucruri merită observate în cod.
 
 - **`DiffusionPipeline`** citește fișierul `model_index.json` al modelului și alege singur clasa potrivită, aici `StableDiffusionPipeline`. Pipeline-ul încarcă toate componentele: tokenizatorul și codificatorul de text, U-Net-ul, autoencoderul VAE și metoda de eșantionare. Pagina [De la text la imagine](/laboratoare/difuzie-imagini-si-sunete/imagini-din-text/) le folosește pe rând, de mână.
 - **`dtype=torch.float16`** încarcă ponderile pe 16 biți, cu jumătate din memoria necesară pe 32 de biți, iar **`variant="fp16"`** descarcă fișierele salvate deja pe 16 biți, deci și descărcarea este de două ori mai mică. Pe procesor, calculele rămân pe 32 de biți, pentru că pe 16 biți sunt lente sau nu sunt suportate. Pagina despre [memorie și cuantizare](/laboratoare/model-local-transformers/memorie-si-dispozitive/) din laboratorul despre modelele de limbaj explică pe larg tipurile de date.
@@ -95,7 +95,7 @@ Bara de progres din terminal numără 50 de pași, valoarea implicită pentru ac
 Pipeline-ul Stable Diffusion 1.5 include un **filtru de siguranță** (_safety checker_), un clasificator care verifică fiecare imagine generată. Dacă o consideră nepotrivită, pipeline-ul o înlocuiește cu o imagine neagră și afișează un avertisment. Filtrul greșește uneori și blochează imagini nevinovate. Un alt `manual_seed` sau o descriere ușor schimbată rezolvă de obicei problema.
 :::
 
-Diffusers are pipeline-uri și pentru modele mult mai noi, precum Stable Diffusion 3.5 sau FLUX. Ele se încarcă la fel, cu `DiffusionPipeline.from_pretrained`, dar au nevoie de mai multă memorie, iar unele cer acceptarea licenței pe pagina modelului. Lista lor este în [documentația Diffusers](https://huggingface.co/docs/diffusers/api/pipelines/overview).
+Diffusers are pipeline-uri și pentru modele mult mai noi, precum Stable Diffusion 3.5 sau FLUX. Aceste pipeline-uri se încarcă la fel, cu `DiffusionPipeline.from_pretrained`, dar au nevoie de mai multă memorie, iar unele cer acceptarea licenței pe pagina modelului. Lista completă este în [documentația Diffusers](https://huggingface.co/docs/diffusers/api/pipelines/overview).
 
 ## Unde ajung fișierele modelului
 
@@ -103,7 +103,7 @@ Diffusers folosește aceeași memorie cache ca Transformers, directorul `~/.cach
 
 ## Licențele modelelor
 
-Modelele din laborator nu au nevoie de autentificare pe Hugging Face Hub, dar fiecare are licența lui, descrisă pe pagina modelului.
+Modelele din laborator nu au nevoie de autentificare pe Hugging Face Hub, dar fiecare are propria licență, descrisă pe pagina modelului.
 
 - [**google/ddpm-cat-256**](https://huggingface.co/google/ddpm-cat-256), modelul care generează pisici, este publicat sub licența Apache 2.0.
 - [**Stable Diffusion 1.5**](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5) este publicat sub licența CreativeML OpenRAIL-M, care permite folosirea și redistribuirea modelului, dar interzice o listă de utilizări dăunătoare.

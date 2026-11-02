@@ -44,7 +44,7 @@ Un pipeline din Diffusers își ține componentele în dicționarul `pipe.compon
 
 | Componentă | Clasa | Ce face |
 | :--- | :--- | :--- |
-| `text_encoder` | `ClapModel` | CLAP, un model antrenat să aducă un sunet și descrierea lui în puncte apropiate ale aceluiași spațiu vectorial, ca CLIP pentru imagini. |
+| `text_encoder` | `ClapModel` | CLAP, un model antrenat să aducă un sunet și descrierea corespunzătoare în puncte apropiate ale aceluiași spațiu vectorial, ca CLIP pentru imagini. |
 | `text_encoder_2` | `T5EncoderModel` | Codificatorul unui model de limbaj T5 (Flan-T5), care înțelege mai bine descrierile lungi. |
 | `projection_model`, `language_model` | `AudioLDM2ProjectionModel`, `GPT2Model` | Un model GPT-2 primește vectorii celor două codificatoare și generează 8 vectori noi, numiți de autori „limbajul sunetului” (_language of audio_). |
 | `unet` | `AudioLDM2UNet2DConditionModel` | U-Net-ul care elimină zgomotul din reprezentarea latentă, ghidat prin atenție încrucișată de vectorii generați de GPT-2 și de vectorii T5. |
@@ -87,9 +87,9 @@ plt.savefig("spectrograma.png", bbox_inches="tight")
 scipy.io.wavfile.write("pian.wav", rate=pipe.vocoder.config.sampling_rate, data=audio)
 ```
 
-Formele afișate arată cum crește sunetul de la o etapă la alta. Ele se pot calcula și din fișierele de configurare ale modelului.
+Formele afișate arată cum crește sunetul de la o etapă la alta și se pot calcula și din fișierele de configurare ale modelului.
 
-- **Spectrograma mel** are 1.000 de cadre a câte 64 de benzi mel. Fiecare cadru acoperă 160 de eșantioane, adică 10 ms, așa că 10 secunde înseamnă 1.000 de cadre. Pe imaginea din `spectrograma.png`, un sunet cu înălțime clară, precum o notă de pian, apare de obicei ca o serie de linii orizontale, la frecvența notei și a armonicelor ei, iar un zgomot, precum ploaia, ca o pată răspândită pe multe frecvențe.
+- **Spectrograma mel** are 1.000 de cadre a câte 64 de benzi mel. Fiecare cadru acoperă 160 de eșantioane, adică 10 ms, așa că 10 secunde înseamnă 1.000 de cadre. Pe imaginea din `spectrograma.png`, un sunet cu înălțime clară, precum o notă de pian, apare de obicei ca o serie de linii orizontale, la frecvența notei și la frecvențele armonicelor, iar un zgomot, precum ploaia, ca o pată răspândită pe multe frecvențe.
 - **Reprezentarea latentă** are 8 canale de 250 × 16 valori. Autoencoderul micșorează spectrograma de 4 ori pe fiecare axă, așa că difuzia lucrează cu 32.000 de valori, nu cu cele 64.000 ale spectrogramei sau cu cele 160.000 de eșantioane ale sunetului.
 - **Vocoderul** face pasul cel mai mare: din fiecare cadru al spectrogramei produce 160 de eșantioane. Spectrograma păstrează doar energia fiecărei benzi de frecvență, iar vocoderul trebuie să completeze restul detaliilor formei de undă. HiFi-GAN face asta dintr-o singură trecere, cu o rețea generativă adversarială, nu prin difuzie.
 
@@ -101,7 +101,7 @@ Este exact [lanțul clasic](/modele-de-difuzie/generarea-vocii/#lanțul-clasic-m
 - **Mai multe variante**: cu `num_waveforms_per_prompt=3`, pipeline-ul generează trei sunete pentru aceeași descriere și le ordonează după cât de bine se potrivesc cu textul, măsurat cu CLAP. Ordonarea are nevoie de pachetul `librosa`.
 - **Numărul de pași**: `num_inference_steps` schimbă cei 200 de pași impliciți. Cu mai puțini pași, generarea este mai rapidă, dar sunetul pierde din calitate.
 
-Vorbirea inteligibilă cere modele specializate, antrenate pe înregistrări cu vorbire și pe transcrierile lor, precum cele descrise pe pagina despre [difuzia pentru vorbire](/modele-de-difuzie/generarea-vocii/#difuzia-și-potrivirea-fluxului-pentru-vorbire). Toate opțiunile pipeline-ului sunt descrise în [documentația AudioLDM 2](https://huggingface.co/docs/diffusers/api/pipelines/audioldm2).
+Vorbirea inteligibilă cere modele specializate, antrenate pe înregistrări cu vorbire, însoțite de transcrieri, precum cele descrise pe pagina despre [difuzia pentru vorbire](/modele-de-difuzie/generarea-vocii/#difuzia-și-potrivirea-fluxului-pentru-vorbire). Toate opțiunile pipeline-ului sunt descrise în [documentația AudioLDM 2](https://huggingface.co/docs/diffusers/api/pipelines/audioldm2).
 
 ## Bibliografie
 

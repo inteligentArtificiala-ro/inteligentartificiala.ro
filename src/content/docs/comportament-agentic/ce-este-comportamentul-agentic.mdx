@@ -1,6 +1,6 @@
 ---
 title: Ce este comportamentul agentic
-description: Ce deosebește un sistem agentic de un asistent conversațional obișnuit și de ce un model de limbaj are nevoie de un sistem construit în jurul lui, numit harnașament (harness), ca să poată acționa.
+description: Ce deosebește un sistem agentic de un asistent conversațional obișnuit și de ce un model de limbaj are nevoie de un sistem construit în jurul modelului, numit harnașament (harness), ca să poată acționa.
 sidebar:
   order: 1
 level: incepator
@@ -13,7 +13,7 @@ import ChatVsAgentDiagram from '@components/diagrams/ChatVsAgentDiagram.astro';
 
 Paginile anterioare au arătat cum [învățarea automată](/concepte-de-baza/ce-este-invatarea-automata/) descoperă tipare în date și cum [modelele de limbaj mari](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) (LLM) stau la baza unor [asistenți conversaționali](/concepte-de-baza/chatgpt-gemini-claude-grok-deepseek/) de tipul ChatGPT sau Claude. Într-o conversație obișnuită, modelul are un rol pasiv. Utilizatorul trimite o întrebare, iar modelul scrie un răspuns, într-un singur pas (_single-turn_). Dacă răspunsul conține o greșeală de calcul, un link inventat sau cod care nu compilează, utilizatorul trebuie să testeze singur, să găsească problema și să ceară o corectură.
 
-Cu **comportamentul agentic** (_agentic behavior_), lucrurile stau altfel. Un sistem agentic primește un obiectiv, nu doar o întrebare, și lucrează singur până îl atinge: explorează mediul de lucru, rulează comenzi, se uită la rezultate și își corectează pașii. Pentru asta, modelul singur nu ajunge. Este nevoie de un sistem construit în jurul lui, care lasă pașii să ruleze unul după altul sau în paralel și face ca un pas să aștepte rezultatul altuia atunci când depinde de el. Același sistem poate porni mai multe instanțe ale modelului deodată și îi dă acces la alte instrumente (_tools_), de la terminal la căutarea în fișiere. Ce întorc instrumentele ajunge înapoi la model, care înțelege rezultatul și decide pe baza lui pasul următor.
+Cu **comportamentul agentic** (_agentic behavior_), lucrurile stau altfel. Un sistem agentic primește un obiectiv, nu doar o întrebare, și lucrează singur până îl atinge: explorează mediul de lucru, rulează comenzi, se uită la rezultate și își corectează pașii. Pentru asta, modelul singur nu ajunge. Este nevoie de un sistem construit în jurul modelului, care lasă pașii să ruleze unul după altul sau în paralel și face ca un pas să aștepte rezultatul altuia atunci când depinde de acel rezultat. Același sistem poate porni mai multe instanțe ale modelului deodată și îi dă acces la alte instrumente (_tools_), de la terminal la căutarea în fișiere. Ce întorc instrumentele ajunge înapoi la model, care înțelege rezultatul și decide pe această bază pasul următor.
 
 <ChatVsAgentDiagram />
 
@@ -32,7 +32,7 @@ Diferența dintre un asistent conversațional și un sistem agentic ține de tre
 
 ## Modelul și harnașamentul
 
-Modelul de limbaj este doar un **motor de raționament** (_reasoning engine_), adică o rețea neuronală care calculează probabilități pentru secvențe de tokenuri. Singur, modelul nu are stare (_stateless_): nu își amintește nimic de la un apel la altul. Nu are nici „mâini”, nici memorie pe termen lung, nici acces la internet. Ce îl transformă într-un agent care poate acționa este sistemul software construit în jurul lui, numit [**harnașament**](/comportament-agentic/harnasamentul/) (_harness_ sau _scaffolding_). Pagina despre [RAG și apelul de instrumente](/modele-lingvistice/generare-augmentata-prin-regasire-rag/) explică cum primesc aceste matrice fixe de ponderi informații proaspete din lumea reală.
+Modelul de limbaj este doar un **motor de raționament** (_reasoning engine_), adică o rețea neuronală care calculează probabilități pentru secvențe de tokenuri. Singur, modelul nu are stare (_stateless_): nu își amintește nimic de la un apel la altul. Nu are nici „mâini”, nici memorie pe termen lung, nici acces la internet. Ce îl transformă într-un agent care poate acționa este sistemul software construit în jurul modelului, numit [**harnașament**](/comportament-agentic/harnasamentul/) (_harness_ sau _scaffolding_). Pagina despre [RAG și apelul de instrumente](/modele-lingvistice/generare-augmentata-prin-regasire-rag/) explică cum primesc aceste matrice fixe de ponderi informații proaspete din lumea reală.
 
 ## Bibliografie
 

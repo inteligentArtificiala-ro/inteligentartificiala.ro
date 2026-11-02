@@ -44,7 +44,7 @@ Textul trece prin model în patru etape.
 
 ## Fluxul rezidual
 
-Fiecare token are un vector $h$ de dimensiune $d$, care trece prin toate blocurile. O componentă nu înlocuiește vectorul, ci citește o versiune normalizată a lui și îi adaugă rezultatul.
+Fiecare token are un vector $h$ de dimensiune $d$, care trece prin toate blocurile. O componentă nu înlocuiește vectorul, ci citește o versiune normalizată a vectorului și îi adaugă rezultatul.
 
 <DeepDive title="Formula unui bloc">
 
@@ -68,7 +68,7 @@ Față de articolul din 2017, normalizarea s-a mutat înaintea componentei. Vari
 
 Normalizarea folosită este **RMSNorm** (_root mean square normalization_), propusă în 2019 de [Zhang și Sennrich](https://arxiv.org/abs/1910.07467).
 
-Vectorul $x$ este împărțit la rădăcina medie pătratică a componentelor lui, apoi fiecare componentă este înmulțită cu ponderea corespunzătoare din vectorul învățat $g$.
+Vectorul $x$ este împărțit la rădăcina medie pătratică a componentelor lui $x$, apoi fiecare componentă este înmulțită cu ponderea corespunzătoare din vectorul învățat $g$.
 
 <DeepDive title="Formula RMSNorm">
 
@@ -94,7 +94,7 @@ La SmolLM2, cele 9 capete de interogare formează 3 grupuri de câte 3. Matricea
 
 Modelul din 2017 aduna o codificare pozițională la reprezentările vectoriale, o singură dată, la intrare. **Codificarea pozițională rotativă** (_rotary position embedding_, RoPE), propusă de [Su și colaboratorii](https://arxiv.org/abs/2104.09864) în 2021, codifică poziția direct în fiecare strat de atenție, prin rotirea vectorilor de interogare și de cheie.
 
-Componentele unui vector sunt grupate în perechi. Pentru tokenul de pe poziția $m$, fiecare pereche $i$ este rotită în planul ei cu unghiul $m \theta_i$.
+Componentele unui vector sunt grupate în perechi. Pentru tokenul de pe poziția $m$, fiecare pereche $i$ este rotită în propriul plan cu unghiul $m \theta_i$.
 
 <DeepDive title="Formula rotirii">
 
@@ -116,7 +116,7 @@ Baza $b$ era 10.000 în articolul original. SmolLM2 folosește 100.000.
 
 Primele perechi se rotesc repede de la o poziție la alta, iar ultimele foarte încet, ca acele unui ceas. Implementările diferă prin felul în care grupează componentele în perechi, dar principiul este același.
 
-Proprietatea importantă apare în produsul scalar dintre o interogare de pe poziția $m$ și o cheie de pe poziția $n$. Rotirea cu unghiul $m\theta_i$ și rotirea cu $n\theta_i$ se combină într-o singură rotire cu $(n - m)\theta_i$, așa că scorul de atenție depinde doar de distanța dintre tokenuri, nu de pozițiile lor absolute. Valorile nu sunt rotite, deci informația transmisă rămâne neschimbată.
+Proprietatea importantă apare în produsul scalar dintre o interogare de pe poziția $m$ și o cheie de pe poziția $n$. Rotirea cu unghiul $m\theta_i$ și rotirea cu $n\theta_i$ se combină într-o singură rotire cu $(n - m)\theta_i$, așa că scorul de atenție depinde doar de distanța dintre tokenuri, nu de pozițiile absolute. Valorile nu sunt rotite, deci informația transmisă rămâne neschimbată.
 
 ## Rețeaua feed-forward SwiGLU
 
@@ -158,7 +158,7 @@ La SmolLM2, acest strat folosește chiar matricea de reprezentări vectoriale $E
 
 ## Numărul de parametri
 
-Codul de mai jos numără parametrii modelului SmolLM2 135M pornind doar de la valorile din configurația lui.
+Codul de mai jos numără parametrii modelului SmolLM2 135M pornind doar de la valorile din configurația modelului.
 
 <Python
   code={`
@@ -186,17 +186,17 @@ print(f"Partea reprezentărilor vectoriale: {embeddings / total:.1%}")
 `}
 />
 
-Rezultatul, 134.515.008 parametri, explică numele „135M”. La un model atât de mic, tabelul de reprezentări vectoriale are aproximativ o cincime din parametri. La modelele de zeci de miliarde de parametri, partea lui devine mică, pentru că vocabularul crește mult mai încet decât restul modelului.
+Rezultatul, 134.515.008 parametri, explică numele „135M”. La un model atât de mic, tabelul de reprezentări vectoriale are aproximativ o cincime din parametri. La modelele de zeci de miliarde de parametri, partea tabelului devine mică, pentru că vocabularul crește mult mai încet decât restul modelului.
 
 ## Antrenare și inferență
 
-La **antrenare**, toată secvența este prelucrată deodată. Datorită măștii cauzale, fiecare poziție vede doar tokenurile dinaintea ei, așa că o secvență de $n$ tokenuri dă $n$ predicții calculate în paralel, una pentru fiecare token următor.
+La **antrenare**, toată secvența este prelucrată deodată. Datorită măștii cauzale, fiecare poziție vede doar tokenurile anterioare, așa că o secvență de $n$ tokenuri dă $n$ predicții calculate în paralel, una pentru fiecare token următor.
 
 La **inferență**, adică la generarea textului, lucrurile se petrec în două faze. În faza de **procesare a promptului** (_prefill_), toate tokenurile primite sunt prelucrate deodată, ca la antrenare. În faza de **decodare** (_decoding_), modelul generează câte un singur token pe pas, iar fiecare token nou trece prin toate blocurile.
 
 ## Memoria cache pentru chei și valori (KV cache)
 
-La fiecare pas de decodare, tokenul nou are nevoie de cheile și valorile tuturor tokenurilor anterioare, în fiecare strat. Datorită măștii cauzale, acestea nu se schimbă când apar tokenuri noi, așa că pot fi calculate o singură dată și păstrate. Memoria în care sunt păstrate se numește **memorie cache pentru chei și valori** (_KV cache_). Fără ea, fiecare pas ar recalcula tot contextul.
+La fiecare pas de decodare, tokenul nou are nevoie de cheile și valorile tuturor tokenurilor anterioare, în fiecare strat. Datorită măștii cauzale, acestea nu se schimbă când apar tokenuri noi, așa că pot fi calculate o singură dată și păstrate. Memoria în care sunt păstrate se numește **memorie cache pentru chei și valori** (_KV cache_). Fără această memorie, fiecare pas ar recalcula tot contextul.
 
 Memoria ocupată crește cu lungimea contextului $n$.
 
@@ -236,7 +236,7 @@ O estimare folosită des, de exemplu în [studiul lui Kaplan și al colaboratori
 
 Pentru SmolLM2 135M, asta înseamnă circa 270 de milioane de operații pentru fiecare token generat. Antrenarea pe aproximativ 2.000 de miliarde de tokenuri a costat, după aceeași estimare, în jur de $1{,}6 \cdot 10^{21}$ operații.
 
-Estimarea ignoră atenția. Pentru un token nou, scorurile de atenție se calculează față de toate tokenurile anterioare, deci costul acestui pas crește liniar cu lungimea contextului. Pentru o secvență întreagă, costul atenției crește cu pătratul lungimii ei. De aceea, contextele foarte lungi sunt scumpe, iar unele modele limitează o parte din straturi la o fereastră locală de tokenuri.
+Estimarea ignoră atenția. Pentru un token nou, scorurile de atenție se calculează față de toate tokenurile anterioare, deci costul acestui pas crește liniar cu lungimea contextului. Pentru o secvență întreagă, costul atenției crește cu pătratul lungimii secvenței. De aceea, contextele foarte lungi sunt scumpe, iar unele modele limitează o parte din straturi la o fereastră locală de tokenuri.
 
 ## Bibliografie
 

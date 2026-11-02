@@ -113,7 +113,7 @@ După ce modelul a fost salvat în `checkpoints/ppo_halfcheetah.pt`, scriptul `e
 
 <SourceFile path="laboratoare/control-continuu-ppo-halfcheetah/cod/evaluate.py" symbols={['evaluate']} />
 
-În timpul antrenării, observațiile trec prin `NormalizeObservation`, iar strategia a învățat doar pe valori normalizate. De aceea `train.py` salvează în checkpoint media și varianța folosite la normalizare, iar `evaluate.py` aplică aceeași transformare înainte de fiecare decizie. Fără ea, rețeaua ar primi valori pe o altă scară decât cele din antrenare și s-ar comporta imprevizibil. În videoclip, camera `track` din modelul MuJoCo urmărește robotul, care altfel ar ieși repede din cadru.
+În timpul antrenării, observațiile trec prin `NormalizeObservation`, iar strategia a învățat doar pe valori normalizate. De aceea `train.py` salvează în checkpoint media și varianța folosite la normalizare, iar `evaluate.py` aplică aceeași transformare înainte de fiecare decizie. Fără această transformare, rețeaua ar primi valori pe o altă scară decât cele din antrenare și s-ar comporta imprevizibil. În videoclip, camera `track` din modelul MuJoCo urmărește robotul, care altfel ar ieși repede din cadru.
 
 Pentru 5 episoade de test și un videoclip al alergării, salvat în directorul `videoclipuri/`, rulați comanda de mai jos:
 

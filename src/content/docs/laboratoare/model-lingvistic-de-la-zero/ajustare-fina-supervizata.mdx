@@ -44,7 +44,7 @@ with open("instructiuni.txt", encoding="utf-8") as f:
     docs = [d for d in f.read().split(EOT) if d.strip()]
 `;
 
-Modelul preantrenat știe doar să continue texte. Dacă primește o instrucțiune, scrie mai departe ce i se pare probabil după ea, iar asta rareori este ce cerea instrucțiunea. Să luăm instrucțiunea „Words: dog, ball, happy. Story:”, care cere o poveste cu aceste trei cuvinte. Modelul de pe pagina anterioară răspunde la ea cu textele de mai jos.
+Modelul preantrenat știe doar să continue texte. Dacă primește o instrucțiune, o continuă cu ce i se pare probabil, iar asta rareori este ce cerea instrucțiunea. Să luăm instrucțiunea „Words: dog, ball, happy. Story:”, care cere o poveste cu aceste trei cuvinte. Modelul de pe pagina anterioară răspunde cu textele de mai jos.
 
 ```bash
 python sample.py checkpoints/pretrain/model.pt "Words: dog, ball, happy. Story:" -n 2
@@ -61,7 +61,7 @@ ball likes to go home and play with his ball. Lila and Ben nod. They run to the 
 slide. They are happy.
 ```
 
-Ambele texte încep la mijlocul unei povești, iar câinele cerut nu apare. **Ajustarea fină supervizată** (_supervised fine-tuning_, SFT) continuă antrenarea pe perechi formate dintr-o instrucțiune și răspunsul dorit, ca modelul să învețe să răspundă la instrucțiuni. Prin aceeași etapă trec și asistenții conversaționali. La ei, instrucțiunile sunt întrebări și cereri, iar răspunsurile sunt scrise sau verificate de oameni. Aici, instrucțiunile cer o poveste cu anumite cuvinte, trăsături sau un rezumat, iar răspunsurile sunt chiar poveștile.
+Ambele texte încep la mijlocul unei povești, iar câinele cerut nu apare. **Ajustarea fină supervizată** (_supervised fine-tuning_, SFT) continuă antrenarea pe perechi formate dintr-o instrucțiune și răspunsul dorit, ca modelul să învețe să răspundă la instrucțiuni. Prin aceeași etapă trec și asistenții conversaționali, la care instrucțiunile sunt întrebări și cereri, iar răspunsurile sunt scrise sau verificate de oameni. Aici, instrucțiunile cer o poveste cu anumite cuvinte, trăsături sau un rezumat, iar răspunsurile sunt chiar poveștile.
 
 ## Datele
 
@@ -109,11 +109,11 @@ Exemplele mai lungi decât fereastra de context sunt tăiate la 257 de tokenuri,
 La preantrenare, fiecare poziție este o țintă. La ajustarea fină, țintele din dreptul instrucțiunii primesc valoarea -1, pe care `F.cross_entropy` o ignoră (`ignore_index=-1`). Astfel, pierderea se calculează doar pe poveste. Modelul învață să scrie povești la instrucțiuni, nu să repete instrucțiunile pe care le-a primit deja. Prin această mascare, modelul nu își irosește capacitatea pe predicții triviale.
 :::
 
-Exemplele au lungimi diferite, așa că fiecare lot este completat până la lungimea celui mai lung exemplu, cu tokenul `[PAD]`. Pozițiile de **completare** (_padding_) au și ele ținta -1.
+Exemplele au lungimi diferite, așa că fiecare lot este completat până la lungimea celui mai lung exemplu, cu tokenul `[PAD]`. Și pozițiile de **completare** (_padding_) au ținta -1.
 
 <SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/sft.py" symbols={['make_batch']} />
 
-Ultima poziție a instrucțiunii (cele două puncte de după `Story`) prezice primul cuvânt al poveștii, deci acolo încep țintele. Ultimul token al poveștii prezice `<|endoftext|>`. Exemplul de mai jos construiește un lot de trei exemple din eșantion, cu o variantă NumPy a funcției `make_batch`. Pentru cel mai scurt dintre ele, afișează granița dintre instrucțiune și poveste, apoi finalul poveștii și începutul completării.
+Ultima poziție a instrucțiunii (cele două puncte de după `Story`) prezice primul cuvânt al poveștii, deci acolo încep țintele. Ultimul token al poveștii prezice `<|endoftext|>`. Exemplul de mai jos construiește un lot de trei exemple din eșantion, cu o variantă NumPy a funcției `make_batch`. Pentru cel mai scurt exemplu, afișează granița dintre instrucțiune și poveste, apoi finalul poveștii și începutul completării.
 
 <Python
   packages={['numpy']}
@@ -242,7 +242,7 @@ Ambele povești pornesc de la început, cu „Once upon a time”, și folosesc 
 | Lungimea medie a unei povești, în tokenuri | 85 | 178 |
 | Povești încheiate în cel mult 200 de tokenuri | 92% | 48% |
 
-Modelul ajustat folosește de aproape zece ori mai multe dintre cuvintele cerute. Poveștile lui sunt de două ori mai lungi, apropiate ca lungime de cele din setul cu instrucțiuni, așa că mai puține se termină în limita de 200 de tokenuri. Modelul preantrenat continuă de la mijlocul unei povești și o încheie repede, iar cel ajustat scrie o poveste întreagă. Pierderea pe poveștile simple crește puțin, pentru că modelul preia stilul poveștilor din setul cu instrucțiuni, care provin din prima versiune a TinyStories, generată parțial de GPT-3.5.
+Modelul ajustat folosește de aproape zece ori mai multe dintre cuvintele cerute. Poveștile modelului ajustat sunt de două ori mai lungi, apropiate ca lungime de cele din setul cu instrucțiuni, așa că mai puține se termină în limita de 200 de tokenuri. Modelul preantrenat continuă de la mijlocul unei povești și o încheie repede, iar cel ajustat scrie o poveste întreagă. Pierderea pe poveștile simple crește puțin, pentru că modelul preia stilul poveștilor din setul cu instrucțiuni, care provin din prima versiune a TinyStories, generată parțial de GPT-3.5.
 
 ## Mai departe
 

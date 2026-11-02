@@ -15,20 +15,20 @@ import DeepDive from '@components/DeepDive.astro';
 import RagToolCallingDiagram from '../../../components/diagrams/RagToolCallingDiagram.astro';
 import { Steps } from '@astrojs/starlight/components';
 
-Dacă privim un model de limbaj mare la nivel fizic, el nu este o entitate conștientă și nici o bază de date care se actualizează continuu. Un model precum Llama, Claude sau GPT este, în esență, un fișier uriaș pe disc: zeci sau sute de miliarde de numere în virgulă mobilă, organizate în **matrice de ponderi** ($\mathbb{R}^{d \times d}$).
+Privit la nivel fizic, un model de limbaj mare nu este o entitate conștientă și nici o bază de date care se actualizează continuu. Un model precum Llama, Claude sau GPT este, în esență, un fișier uriaș pe disc: zeci sau sute de miliarde de numere în virgulă mobilă, organizate în **matrice de ponderi** ($\mathbb{R}^{d \times d}$).
 
-Când folosim modelul (la inferență), ponderile sunt **înghețate** (_frozen_): valorile lor nu se mai schimbă.
+Când folosim modelul (la inferență), ponderile sunt **înghețate** (_frozen_): valorile nu se mai schimbă.
 
 :::caution[De ce halucinează un model izolat?]
 Pentru că ponderile nu se schimbă, modelul are trei limite importante.
-1. **Data limită a cunoștințelor** (_knowledge cutoff_) înseamnă că modelul nu știe nimic despre ce s-a întâmplat după încheierea antrenării lui.
+1. **Data limită a cunoștințelor** (_knowledge cutoff_) înseamnă că modelul nu știe nimic despre ce s-a întâmplat după încheierea antrenării.
 2. **Lipsa accesului la date private** înseamnă că modelul nu vede documentele interne ale unei organizații, fișierele locale dintr-un proiect sau starea unei baze de date tranzacționale.
 3. **Imposibilitatea de a acționa** vine din felul în care funcționează modelul: nu face decât să înmulțească vectori cu matrice de ponderi. Singur, nu poate naviga pe internet, nu poate trimite un e-mail și nu poate rula o comandă în sistemul de operare.
 
 Când modelul trebuie să răspundă doar din asocierile statistice comprimate în ponderi, produce adesea afirmații care sună plauzibil, dar sunt false ([halucinații](/modele-lingvistice/halucinatii/)).
 :::
 
-Ca să facem din această matrice statică un asistent util, conectat la realitate, folosim două mecanisme care se completează: **generarea augmentată prin regăsire** (**RAG**), care aduce date proaspete, și **apelul de instrumente** (_tool calling_), prin care modelul poate face acțiuni concrete în afara lui.
+Ca să facem din această matrice statică un asistent util, conectat la realitate, folosim două mecanisme care se completează: **generarea augmentată prin regăsire** (**RAG**), care aduce date proaspete, și **apelul de instrumente** (_tool calling_), prin care modelul poate face acțiuni concrete în lumea din afara modelului.
 
 <RagToolCallingDiagram />
 
@@ -102,7 +102,7 @@ Vectorii tuturor fragmentelor sunt salvați într-o **bază de date vectorială*
    \operatorname{sim}(\vec{q}, \vec{v}) = \frac{\vec{q} \cdot \vec{v}}{\|\vec{q}\| \|\vec{v}\|}
    $$
 
-   unde $\vec{q} \cdot \vec{v}$ este produsul scalar al vectorilor, iar $\|\vec{q}\|$ și $\|\vec{v}\|$ sunt lungimile lor.
+   unde $\vec{q} \cdot \vec{v}$ este produsul scalar al vectorilor, iar $\|\vec{q}\|$ și $\|\vec{v}\|$ sunt lungimile celor doi vectori.
 
    </DeepDive>
 3. **Selecția contextului**: sistemul păstrează cele mai relevante $k$ fragmente, de exemplu primele 3–5 pasaje cu scorul cel mai mare.
@@ -147,11 +147,11 @@ Aici intervine **apelul de instrumente** (_tool calling_ sau _function calling_)
 
 ### Cum funcționează, concret, apelul de instrumente?
 
-Modelul nu rulează el însuși niciun cod. Nu are conexiune la rețea și nu poate accesa direct discul. În schimb, sistemul software din jurul lui ([harnașamentul](/comportament-agentic/harnasamentul/)) stabilește un protocol clar.
+Modelul propriu-zis nu rulează niciun cod. Nu are conexiune la rețea și nu poate accesa direct discul. În schimb, sistemul software din jurul modelului ([harnașamentul](/comportament-agentic/harnasamentul/)) stabilește un protocol clar.
 
 <Steps>
 1. **Descrierea instrumentelor**: harnașamentul pune în promptul de sistem descrierile funcțiilor disponibile, în format JSON Schema (de exemplu, o funcție pentru prognoza meteo, una pentru interogarea unei baze de date SQL sau una pentru trimiterea unui mesaj).
-2. **Decizia modelului**: când primește o cerere precum _„Care este stocul actual pentru produsul cu codul A42 și scade o unitate?”_, modelul își dă seama că nu poate răspunde din memoria parametrică. În loc să scrie text pentru om, generează un obiect JSON cu instrumentul ales și argumentele lui.
+2. **Decizia modelului**: când primește o cerere precum _„Care este stocul actual pentru produsul cu codul A42 și scade o unitate?”_, modelul își dă seama că nu poate răspunde din memoria parametrică. În loc să scrie text pentru om, generează un obiect JSON cu instrumentul ales și argumentele apelului.
    ```json
    {
      "name": "interogare_stoc",
@@ -175,11 +175,11 @@ Modelul nu rulează el însuși niciun cod. Nu are conexiune la rețea și nu po
 6. **Confirmarea**: după ce primește confirmarea că actualizarea a reușit, modelul îi răspunde utilizatorului cu mesajul _„Stocul produsului A42 a fost redus de la 14 la 13 unități în Depozitul B.”_
 </Steps>
 
-Modelul a acționat în lumea reală și a schimbat o stare externă, deși, în interiorul lui, nu a făcut decât să genereze tokenuri de text într-un format stabilit dinainte.
+Modelul a acționat în lumea reală și a schimbat o stare externă, deși, în interior, nu a făcut decât să genereze tokenuri de text într-un format stabilit dinainte.
 
 ## RAG ca instrument într-un sistem agentic
 
-În sistemele cu [comportament agentic](/comportament-agentic/ce-este-comportamentul-agentic/), RAG și apelul de instrumente nu mai sunt tehnologii separate. Ele se îmbină: **RAG devine el însuși un instrument, pe care agentul îl apelează când are nevoie**.
+În sistemele cu [comportament agentic](/comportament-agentic/ce-este-comportamentul-agentic/), RAG și apelul de instrumente nu mai sunt tehnologii separate, ci se îmbină: **RAG devine încă un instrument, pe care agentul îl apelează când are nevoie**.
 
 Un asistent complet funcționează cam așa.
 

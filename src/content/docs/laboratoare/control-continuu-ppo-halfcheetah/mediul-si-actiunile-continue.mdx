@@ -15,11 +15,11 @@ import Python from '@components/Python.astro';
 
 În problemele clasice de [învățare prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/), agentul alege de obicei dintr-un set finit de acțiuni discrete: apasă o tastă într-un joc, trage una dintre cele trei manete ale unui automat sau, în cazul unui [model de limbaj](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/), alege un token din vocabular. În astfel de cazuri, rețeaua neuronală produce scoruri nenormalizate (_logits_), iar funcția softmax le transformă în probabilitatea fiecărei opțiuni.
 
-Un robot fizic funcționează altfel. Motoarele și actuatoarele lui primesc valori continue: tensiuni electrice, presiuni hidraulice sau **cupluri mecanice** (_torques_). Spațiul acțiunilor nu mai este o mulțime discretă, ci un interval multidimensional din $\mathbb{R}^d$.
+Un robot fizic funcționează altfel. Motoarele și actuatoarele robotului primesc valori continue: tensiuni electrice, presiuni hidraulice sau **cupluri mecanice** (_torques_). Spațiul acțiunilor nu mai este o mulțime discretă, ci un interval multidimensional din $\mathbb{R}^d$.
 
 ## Mediul HalfCheetah în MuJoCo
 
-Mediul `HalfCheetah` simulează un ghepard robotic bidimensional, care se poate mișca doar într-un plan vertical: pe axa orizontală $X$, de înaintare, și pe axa verticală $Z$. Corpul lui este format din 7 segmente rigide articulate:
+Mediul `HalfCheetah` simulează un ghepard robotic bidimensional, care se poate mișca doar într-un plan vertical: pe axa orizontală $X$, de înaintare, și pe axa verticală $Z$. Corpul robotului este format din 7 segmente rigide articulate:
 - un trunchi (_torso_),
 - un picior din spate (coapsă, tibie și laba piciorului),
 - un picior din față (coapsă, tibie și laba piciorului).
@@ -61,7 +61,7 @@ $$
 </DeepDive>
 
 :::tip[De ce penalizăm pătratul acțiunilor]
-Primul termen răsplătește viteza de înaintare, măsurată în metri pe secundă. Al doilea termen penalizează pătratul forței aplicate. Fără el, rețeaua ar putea trimite la fiecare pas impulsuri maxime, de $\pm 1$. Pe un robot real, asta ar distruge actuatoarele, iar în simulator ar produce mișcări necontrolate. Costul pătratic $\sum a_i^2$ încurajează mișcări fluide, eficiente din punct de vedere energetic.
+Primul termen răsplătește viteza de înaintare, măsurată în metri pe secundă. Al doilea termen penalizează pătratul forței aplicate. Fără această penalizare, rețeaua ar putea trimite la fiecare pas impulsuri maxime, de $\pm 1$. Pe un robot real, asta ar distruge actuatoarele, iar în simulator ar produce mișcări necontrolate. Costul pătratic $\sum a_i^2$ încurajează mișcări fluide, eficiente din punct de vedere energetic.
 :::
 
 ## Strategia gaussiană continuă

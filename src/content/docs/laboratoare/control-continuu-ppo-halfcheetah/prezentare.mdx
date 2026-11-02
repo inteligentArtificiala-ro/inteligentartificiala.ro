@@ -30,7 +30,7 @@ export const video = '/laboratoare/control-continuu-ppo-halfcheetah/video';
     { src: `${video}/300000-de-pasi.mp4`, poster: `${video}/300000-de-pasi.jpg`, titlu: 'După 300.000 de pași' },
     { src: `${video}/1000000-de-pasi.mp4`, poster: `${video}/1000000-de-pasi.jpg`, titlu: 'După 1.000.000 de pași' },
   ]}
-  descriere='Rezultatul laboratorului, cu codul și setările lui: robotul HalfCheetah înainte de antrenare, cu o strategie aleatoare, apoi după 300.000 și după 1.000.000 de pași de antrenare cu PPO. Fiecare clip arată primele 10 secunde dintr-un episod de 50 de secunde, în timp real. În episodul întreg, strategia finală parcurge aproximativ 89 de metri.'
+  descriere='Rezultatul obținut cu codul și setările laboratorului: robotul HalfCheetah înainte de antrenare, cu o strategie aleatoare, apoi după 300.000 și după 1.000.000 de pași de antrenare cu PPO. Fiecare clip arată primele 10 secunde dintr-un episod de 50 de secunde, în timp real. În episodul întreg, strategia finală parcurge aproximativ 89 de metri.'
 />
 
 Robotul învață să alerge, dar pe spate. Recompensa din HalfCheetah răsplătește doar viteza spre înainte și penalizează puțin efortul motoarelor. Nu cere nicăieri ca robotul să stea pe picioare, așa că, pentru algoritm, alergarea pe spate este o soluție la fel de bună ca oricare alta. Cu aceleași setări, alte șase antrenări, pornite de la alte valori inițiale aleatoare (_seed_), au ajuns tot la alergarea pe spate. Agentul optimizează exact recompensa primită, nu intenția celui care a scris-o, iar aceasta este una dintre cele mai importante lecții ale învățării prin consolidare.

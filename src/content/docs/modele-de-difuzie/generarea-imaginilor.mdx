@@ -15,11 +15,11 @@ Scriem „o pisică portocalie care doarme pe o bancă în Cișmigiu, pictată �
 
 ## Difuzia în spațiul latent
 
-O imagine color de 1024 × 1024 pixeli are $1024 \times 1024 \times 3 = 3.145.728$ de valori. Este foarte costisitor să rulăm o rețea mare peste toate aceste valori de zeci de ori, la fiecare pas al procesului invers. În plus, multe dintre ele descriu detalii fine, pe care ochiul abia le observă.
+O imagine color de 1024 × 1024 pixeli are $1024 \times 1024 \times 3 = 3.145.728$ de valori. Este foarte costisitor să rulăm o rețea mare peste toate aceste valori de zeci de ori, la fiecare pas al procesului invers. În plus, multe dintre aceste valori descriu detalii fine, pe care ochiul abia le observă.
 
 Soluția a fost propusă în 2022 de Robin Rombach și colegii săi, de la universitățile din München și Heidelberg, sub numele de **difuzie latentă** (_latent diffusion_). Un **autoencoder** (_autoencoder_), adică o rețea formată dintr-un codificator și un decodor, este antrenat separat să comprime imaginea într-o reprezentare mult mai mică și apoi să o reconstruiască cât mai fidel. Reprezentarea comprimată se numește **reprezentare latentă** (_latent representation_), iar spațiul în care se află, **spațiu latent** (_latent space_). Autoencoderul folosit este de obicei un **autoencoder variațional** (_variational autoencoder_, VAE).
 
-La Stable Diffusion 1.x, o imagine de $512 \times 512 \times 3 = 786.432$ de valori devine o reprezentare latentă de $64 \times 64 \times 4 = 16.384$ de valori, de 48 de ori mai mică. Modelul de difuzie lucrează doar în acest spațiu latent. La final, decodorul transformă reprezentarea latentă curată într-o imagine. Stable Diffusion a fost lansat în august 2022 de Stability AI, împreună cu grupul de cercetare al lui Rombach și cu Runway, iar ponderile lui au fost publicate pentru oricine. A fost primul generator de imagini de calitate care putea rula pe o placă grafică obișnuită, de acasă.
+La Stable Diffusion 1.x, o imagine de $512 \times 512 \times 3 = 786.432$ de valori devine o reprezentare latentă de $64 \times 64 \times 4 = 16.384$ de valori, de 48 de ori mai mică. Modelul de difuzie lucrează doar în acest spațiu latent. La final, decodorul transformă reprezentarea latentă curată într-o imagine. Stable Diffusion a fost lansat în august 2022 de Stability AI, împreună cu grupul de cercetare al lui Rombach și cu Runway, iar ponderile modelului au fost publicate pentru oricine. A fost primul generator de imagini de calitate care putea rula pe o placă grafică obișnuită, de acasă.
 
 <LatentDiffusionDiagram />
 
@@ -27,7 +27,7 @@ La Stable Diffusion 1.x, o imagine de $512 \times 512 \times 3 = 786.432$ de val
 
 Ca imaginea să urmeze descrierea, rețeaua care elimină zgomotul primește, pe lângă $x_t$ și $t$, și textul. Textul trece mai întâi printr-un **codificator de text** (_text encoder_), care îl transformă într-un șir de vectori, câte unul pentru fiecare token, la fel ca în [modelele de limbaj](/modele-lingvistice/embeddings-si-tokenizare/).
 
-Stable Diffusion 1.x folosește codificatorul de text al lui **CLIP**, un model publicat de OpenAI în 2021. CLIP a fost antrenat pe 400 de milioane de perechi de imagini și descrieri să aducă o imagine și descrierea ei în puncte apropiate ale aceluiași spațiu vectorial. Imagen (Google, 2022) a arătat că un codificator luat dintr-un model de limbaj antrenat doar pe text, T5-XXL, înțelege mai bine descrierile lungi și complicate, iar creșterea acestui codificator îmbunătățește imaginile mai mult decât creșterea modelului de difuzie. Stable Diffusion 3 folosește ambele tipuri de codificatoare.
+Stable Diffusion 1.x folosește codificatorul de text al lui **CLIP**, un model publicat de OpenAI în 2021. CLIP a fost antrenat pe 400 de milioane de perechi de imagini și descrieri să aducă o imagine și descrierea corespunzătoare în puncte apropiate ale aceluiași spațiu vectorial. Imagen (Google, 2022) a arătat că un codificator luat dintr-un model de limbaj antrenat doar pe text, T5-XXL, înțelege mai bine descrierile lungi și complicate, iar creșterea acestui codificator îmbunătățește imaginile mai mult decât creșterea modelului de difuzie. Stable Diffusion 3 folosește ambele tipuri de codificatoare.
 
 Legătura dintre text și imagine se face prin **atenție încrucișată** (_cross-attention_), o variantă a [mecanismului de atenție](/modele-lingvistice/avem-nevoie-doar-de-atentie/) în care interogările vin dintr-o secvență, iar cheile și valorile din alta. Aici, interogările vin din imagine, iar cheile și valorile din text.
 
@@ -47,11 +47,11 @@ Fiecare zonă a imaginii caută astfel în text cuvintele care o privesc. Zona �
 
 Primele versiuni Stable Diffusion folosesc un U-Net cu aproximativ 860 de milioane de parametri. În 2023, William Peebles și Saining Xie au propus **Transformerul de difuzie** (_diffusion transformer_, DiT). Reprezentarea latentă este tăiată în **petice** (_patches_) mici, de exemplu de 2 × 2, fiecare petic devine un token, iar tokenurile trec printr-un [Transformer](/modele-lingvistice/arhitectura-transformer/) asemănător cu cel al modelelor de limbaj. Ca la modelele de limbaj, calitatea crește previzibil cu dimensiunea modelului și cu puterea de calcul folosită la antrenare.
 
-Stable Diffusion 3 (Stability AI, 2024) și FLUX.1 (Black Forest Labs, 2024, 12 miliarde de parametri) folosesc astfel de transformere, antrenate prin [potrivirea fluxului](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/#potrivirea-fluxului). În ele, tokenurile textului și peticele imaginii trec împreună prin aceleași straturi de atenție, așa că textul și imaginea se influențează reciproc la fiecare strat.
+Stable Diffusion 3 (Stability AI, 2024) și FLUX.1 (Black Forest Labs, 2024, 12 miliarde de parametri) folosesc astfel de transformere, antrenate prin [potrivirea fluxului](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/#potrivirea-fluxului). În aceste transformere, tokenurile textului și peticele imaginii trec împreună prin aceleași straturi de atenție, așa că textul și imaginea se influențează reciproc la fiecare strat.
 
 ## Ghidarea fără clasificator
 
-O rețea condiționată de text urmează descrierea doar vag. Soluția folosită de aproape toate generatoarele este **ghidarea fără clasificator** (_classifier-free guidance_, CFG), propusă de Jonathan Ho și Tim Salimans în 2021. La antrenare, textul este înlocuit cu un text gol într-o mică parte din exemple (de obicei 10–20%), așa că aceeași rețea învață să elimine zgomotul și cu text, și fără. La generare, rețeaua este rulată de două ori la fiecare pas, iar cele două estimări ale zgomotului se combină. Diferența dintre ele arată ce schimbă textul în imagine, iar ghidarea o înmulțește cu **scala de ghidare** (_guidance scale_), notată $w$.
+O rețea condiționată de text urmează descrierea doar vag. Soluția folosită de aproape toate generatoarele este **ghidarea fără clasificator** (_classifier-free guidance_, CFG), propusă de Jonathan Ho și Tim Salimans în 2021. La antrenare, textul este înlocuit cu un text gol într-o mică parte din exemple (de obicei 10–20%), așa că aceeași rețea învață să elimine zgomotul și cu text, și fără. La generare, rețeaua este rulată de două ori la fiecare pas, iar cele două estimări ale zgomotului se combină. Diferența dintre cele două estimări arată ce schimbă textul în imagine, iar ghidarea o înmulțește cu **scala de ghidare** (_guidance scale_), notată $w$.
 
 <DeepDive title="Formula ghidării fără clasificator">
 
@@ -93,7 +93,7 @@ Pentru multe sisteme comerciale, de exemplu cele din familia Gemini, arhitectura
 
 Semnele vizuale cunoscute, precum mâinile cu șase degete sau textul fără sens, sunt tot mai rare. Unele pot apărea încă:
 
-- detalii care nu se potrivesc între ele, de exemplu cercei diferiți, ochelari care se contopesc cu părul, umbre în direcții diferite sau reflexii care nu corespund scenei;
+- detalii care nu se potrivesc unele cu altele, de exemplu cercei diferiți, ochelari care se contopesc cu părul, umbre în direcții diferite sau reflexii care nu corespund scenei;
 - obiecte din fundal care se topesc unele în altele sau se termină brusc și inscripții fără sens pe firme și plăcuțe;
 - o piele perfect netedă și o lumină de studio în locuri în care nu ar avea cum să existe.
 

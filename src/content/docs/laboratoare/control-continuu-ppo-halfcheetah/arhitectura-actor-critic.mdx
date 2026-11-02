@@ -46,13 +46,13 @@ self.actor_logstd = nn.Parameter(torch.zeros(1, act_dim))
 ```
 
 :::tip[De ce deviația standard nu depinde de stare?]
-Observăm că `actor_logstd` nu este prezis de rețea din observația $s$. Este un tensor de parametri învățabili, independenți de stare (_state-independent parameter_). Dacă am prezice $\sigma$ direct din starea $s$, printr-un strat liniar, deviația standard ar scădea mult prea repede în stările vizitate des. Explorarea s-ar opri prea devreme, iar agentul ar rămâne blocat într-un minim local. Ca parametru global, $\sigma$ (și odată cu ea incertitudinea) scade treptat și controlat. Inițializarea cu zerouri dă $\sigma_0 = \exp(0) = 1{,}0$, adică o explorare generoasă în primele mii de pași.
+Observăm că `actor_logstd` nu este prezis de rețea din observația $s$. Este un tensor de parametri învățabili, independenți de stare (_state-independent parameter_). Dacă am prezice $\sigma$ direct din starea $s$, printr-un strat liniar, deviația standard ar scădea mult prea repede în stările vizitate des. Explorarea s-ar opri prea devreme, iar agentul ar rămâne blocat într-un minim local. Ca parametru global, $\sigma$ scade treptat și controlat, iar odată cu acest parametru scade și incertitudinea. Inițializarea cu zerouri dă $\sigma_0 = \exp(0) = 1{,}0$, adică o explorare generoasă în primele mii de pași.
 :::
 
 ### Metodele clasei
 
 - `get_value(x)` evaluează starea $x$ cu ajutorul criticului și returnează scalarul $V(x)$.
-- `get_action_and_value(x, action=None)` este metoda principală. O folosim atât la colectarea datelor (când `action` este `None` și se eșantionează o acțiune nouă), cât și la optimizarea PPO (când primește acțiunile salvate în buffer și recalculează pentru ele log-probabilitățile și entropia cu ponderile curente).
+- `get_action_and_value(x, action=None)` este metoda principală. O folosim atât la colectarea datelor (când `action` este `None` și se eșantionează o acțiune nouă), cât și la optimizarea PPO (când primește acțiunile salvate în buffer și recalculează pentru aceste acțiuni log-probabilitățile și entropia cu ponderile curente).
 - `predict(x, deterministic=True)` servește la evaluare și la testarea finală. În modul determinist, ignoră zgomotul gaussian și returnează direct media $\mu(x)$, iar robotul se mișcă astfel cel mai stabil.
 
 ## Verificarea locală

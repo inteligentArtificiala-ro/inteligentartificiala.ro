@@ -26,7 +26,7 @@ $$
 J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\left[ R(\tau) \right]
 $$
 
-unde $\tau = (s_0, a_0, r_1, s_1, a_1, \ldots)$ este o **traiectorie** (_trajectory_), adică un episod complet generat urmând strategia, iar $R(\tau)$ este recompensa lui totală.
+unde $\tau = (s_0, a_0, r_1, s_1, a_1, \ldots)$ este o **traiectorie** (_trajectory_), adică un episod complet generat urmând strategia, iar $R(\tau)$ este recompensa totală a episodului.
 
 </DeepDive>
 
@@ -34,7 +34,7 @@ Aici nu putem aplica direct coborârea pe gradient. Recompensa vine de la un med
 
 ## Formula gradientului
 
-Gradientul recompensei așteptate se poate scrie tot ca o medie, pe care o estimăm din episoadele generate cu strategia, fără să derivăm mediul sau recompensa. În această medie, fiecare acțiune contribuie cu direcția în care trebuie mutați parametrii ca ea să devină mai probabilă, înmulțită cu recompensa cumulată obținută după ea.
+Gradientul recompensei așteptate se poate scrie tot ca o medie, pe care o estimăm din episoadele generate cu strategia, fără să derivăm mediul sau recompensa. În această medie, fiecare acțiune contribuie cu direcția în care trebuie mutați parametrii ca acțiunea să devină mai probabilă, înmulțită cu recompensa cumulată obținută din acel moment.
 
 <DeepDive title="Derivarea gradientului strategiei">
 
@@ -52,7 +52,7 @@ $$
 \nabla_\theta J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\left[ \sum_{t} \nabla_\theta \log \pi_\theta(a_t \mid s_t)\, G_t \right]
 $$
 
-unde $G_t$ este recompensa cumulată de la pasul $t$ până la sfârșitul episodului. O acțiune poate influența doar ce se întâmplă după ea, de aceea o ponderăm cu $G_t$, nu cu recompensa totală a episodului.
+unde $G_t$ este recompensa cumulată de la pasul $t$ până la sfârșitul episodului. O acțiune poate influența doar ce urmează, de aceea o ponderăm cu $G_t$, nu cu recompensa totală a episodului.
 
 </DeepDive>
 

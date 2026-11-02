@@ -78,7 +78,7 @@ print(f"4 biți (NF4): {model.get_memory_footprint() / 1e6:.0f} MB")
 Memoria a scăzut de la 724 MB la 252 MB. Nu ajunge la un sfert, pentru că unele părți ale modelului, de exemplu reprezentările vectoriale ale tokenurilor (_embeddings_), rămân în precizia inițială. Restul codului, cu `generate` și șablonul de chat, rămâne neschimbat.
 
 :::note[Unde funcționează bitsandbytes]
-Conform [documentației](https://huggingface.co/docs/transformers/quantization/bitsandbytes), bitsandbytes funcționează pe plăcile grafice NVIDIA, pe acceleratoarele Intel și pe procesor (CPU). Exemplul de mai sus a funcționat și pe un cip Apple Silicon. Transformers oferă și alte metode de cuantizare, unele cu modele deja cuantizate de autori și publicate pe Hub. Ele sunt comparate în [prezentarea generală a cuantizării](https://huggingface.co/docs/transformers/quantization/overview).
+Conform [documentației](https://huggingface.co/docs/transformers/quantization/bitsandbytes), bitsandbytes funcționează pe plăcile grafice NVIDIA, pe acceleratoarele Intel și pe procesor (CPU). Exemplul de mai sus a funcționat și pe un cip Apple Silicon. Transformers oferă și alte metode de cuantizare, unele cu modele deja cuantizate de autori și publicate pe Hub. Metodele sunt comparate în [prezentarea generală a cuantizării](https://huggingface.co/docs/transformers/quantization/overview).
 :::
 
 ## Alte instrumente pentru rulare locală

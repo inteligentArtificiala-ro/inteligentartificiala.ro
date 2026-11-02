@@ -52,7 +52,7 @@ Atenția era deja folosită alături de rețelele recurente. Încă din 2014, de
 
 ## Definiție
 
-Atenția calculează pentru fiecare token o nouă reprezentare, ca medie ponderată a reprezentărilor tokenurilor din context. Ponderile nu sunt fixate dinainte, ci calculate din conținutul tokenurilor. Ele arată cât de relevant este fiecare token pentru cel curent.
+Atenția calculează pentru fiecare token o nouă reprezentare, ca medie ponderată a reprezentărilor tokenurilor din context. Ponderile nu sunt fixate dinainte, ci calculate din conținutul tokenurilor, și arată cât de relevant este fiecare token pentru cel curent.
 
 În propoziția „Pisica nu a traversat strada pentru că ea era prea obosită”, pronumele „ea” se referă la pisică. Dacă ultimul cuvânt devine „lată”, același pronume se referă la stradă. Ambele substantive sunt feminine, deci gramatica nu ajută. Doar sensul restului propoziției decide. Exemplul este adaptat după [prezentarea Transformerului de pe blogul Google](https://research.google/blog/transformer-a-novel-neural-network-architecture-for-language-understanding/), din 2017.
 
@@ -68,7 +68,7 @@ Mecanismul lucrează cu trei roluri, iar fiecare token produce câte un vector p
 - **Cheia** (_key_) descrie după ce îl pot găsi celelalte tokenuri.
 - **Valoarea** (_value_) este informația pe care tokenul o transmite.
 
-O analogie bună este căutarea într-un dicționar. Interogarea se compară cu toate cheile, iar rezultatul combină valorile. Spre deosebire de un dicționar obișnuit, potrivirea nu este exactă, iar fiecare valoare contribuie cu atât mai mult cu cât cheia ei se potrivește mai bine.
+O analogie bună este căutarea într-un dicționar. Interogarea se compară cu toate cheile, iar rezultatul combină valorile. Spre deosebire de un dicționar obișnuit, potrivirea nu este exactă, iar fiecare valoare contribuie cu atât mai mult cu cât cheia corespunzătoare se potrivește mai bine.
 
 Cei trei vectori se obțin înmulțind reprezentarea tokenului cu trei matrice de ponderi, învățate la antrenare.
 
@@ -84,7 +84,7 @@ $$
 
 ## Atenția prin produs scalar scalat
 
-Articolul numește formula de bază **atenție prin produs scalar scalat** (_scaled dot-product attention_). Interogarea fiecărui token se compară, printr-un produs scalar, cu cheile tuturor tokenurilor. Scorurile obținute sunt împărțite la o constantă, iar softmax le transformă în ponderi pozitive, cu suma 1. Rezultatul este media valorilor, ponderată cu ele.
+Articolul numește formula de bază **atenție prin produs scalar scalat** (_scaled dot-product attention_). Interogarea fiecărui token se compară, printr-un produs scalar, cu cheile tuturor tokenurilor. Scorurile obținute sunt împărțite la o constantă, iar softmax le transformă în ponderi pozitive, cu suma 1. Rezultatul este media ponderată a valorilor, cu aceste ponderi.
 
 <DeepDive title="Formula atenției">
 
@@ -94,7 +94,7 @@ $$
 
 Produsul $Q K^\top$ conține produsele scalare dintre fiecare interogare și fiecare cheie. Elementul de pe rândul $i$ și coloana $j$ măsoară cât de bine se potrivește interogarea tokenului $i$ cu cheia tokenului $j$. Softmax se aplică pe fiecare rând și transformă scorurile în ponderi pozitive, cu suma 1. Înmulțirea cu $V$ face apoi media ponderată a valorilor.
 
-Mărimea $d_k$ este dimensiunea vectorilor cheie. Dacă vectorii au componente independente, cu media 0 și varianța 1, produsul lor scalar are varianța $d_k$. Pentru $d_k$ mare, scorurile devin mari în valoare absolută, iar softmax dă aproape toată ponderea unui singur token. În această zonă, gradienții sunt foarte mici și antrenarea încetinește. Împărțirea la $\sqrt{d_k}$ readuce varianța la 1.
+Mărimea $d_k$ este dimensiunea vectorilor cheie. Dacă vectorii au componente independente, cu media 0 și varianța 1, produsul scalar al vectorilor are varianța $d_k$. Pentru $d_k$ mare, scorurile devin mari în valoare absolută, iar softmax dă aproape toată ponderea unui singur token. În această zonă, gradienții sunt foarte mici și antrenarea încetinește. Împărțirea la $\sqrt{d_k}$ readuce varianța la 1.
 
 </DeepDive>
 
@@ -117,7 +117,7 @@ print("Forma ieșirii:", output.shape)
 ## Masca cauzală
 
 :::note[De ce avem nevoie de o mască?]
-Un model care generează text de la stânga la dreapta nu are voie să folosească tokenurile de după poziția curentă. La generare ele nu există încă, iar la antrenare i-ar dezvălui chiar tokenul pe care trebuie să-l prezică. De aceea, înainte de softmax se adaugă o **mască cauzală** (_causal mask_) $M$.
+Un model care generează text de la stânga la dreapta nu are voie să folosească tokenurile de după poziția curentă. La generare, aceste tokenuri nu există încă, iar la antrenare i-ar dezvălui chiar tokenul pe care trebuie să-l prezică. De aceea, înainte de softmax se adaugă o **mască cauzală** (_causal mask_) $M$.
 :::
 
 <DeepDive title="Formula măștii cauzale">
@@ -153,7 +153,7 @@ print(masked_weights)
 `}
 />
 
-Primul token se vede doar pe el însuși, deci primește ponderea 1. Ultimul rând nu se schimbă, pentru că ultimul token vede oricum tot contextul.
+Primul token se vede doar pe sine, deci primește ponderea 1. Ultimul rând nu se schimbă, pentru că ultimul token vede oricum tot contextul.
 
 ## Atenția cu capete multiple (multi-head)
 
@@ -197,7 +197,7 @@ unde $x$ este vectorul unei poziții, $W_1$ și $W_2$ sunt matrice de ponderi, $
 
 Rețeaua are un strat ascuns de dimensiune $d_{\text{ff}} = 2048$ și funcția de activare [ReLU](/retele-neuronale/ce-sunt-retelele-neuronale/#definiție). Atenția amestecă informația între poziții, iar rețeaua feed-forward o prelucrează în fiecare poziție.
 
-Decodorul are tot 6 straturi, cu trei componente. Prima este auto-atenția mascată, cu masca cauzală de mai sus. A doua este **atenția încrucișată** (_cross-attention_), în care interogările vin din decodor, iar cheile și valorile vin de la ieșirea codificatorului. Prin ea, fiecare token al traducerii consultă propoziția sursă. A treia este rețeaua feed-forward.
+Decodorul are tot 6 straturi, cu trei componente. Prima este auto-atenția mascată, cu masca cauzală de mai sus. A doua este **atenția încrucișată** (_cross-attention_), în care interogările vin din decodor, iar cheile și valorile vin de la ieșirea codificatorului. Prin atenția încrucișată, fiecare token al traducerii consultă propoziția sursă. A treia este rețeaua feed-forward.
 
 Fiecare componentă este înconjurată de o **conexiune reziduală** (_residual connection_) și urmată de o **normalizare pe strat** (_layer normalization_).
 

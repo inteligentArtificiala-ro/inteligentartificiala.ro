@@ -9,7 +9,7 @@ Paginile teoretice explică ideile. În laboratoare, aceleași idei devin cod ca
 
 Toate laboratoarele folosesc Python 3.10 sau mai nou, cu pachetele instalate într-un mediu virtual creat cu `venv`. Rulează pe o placă grafică NVIDIA (CUDA), pe un cip Apple Silicon (MPS) sau, mai lent, pe procesor (CPU). Excepție face laboratorul cu PPO, unde rețeaua este atât de mică încât procesorul este cel mai rapid. Pagina despre [utilitatea plăcilor grafice](/concepte-de-baza/utilitatea-placilor-grafice/) explică de ce diferența de viteză este atât de mare.
 
-Toate laboratoarele pot rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser. Fiecare laborator are un singur notebook, cu tot codul lui, păstrat în [repozitoriul site-ului](https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/tree/main/public/laboratoare), care se deschide în Colab din pagina de introducere a laboratorului, cu butonul **Deschidere în Google Colab**.
+Toate laboratoarele pot rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser. Fiecare laborator are un singur notebook, cu tot codul laboratorului, păstrat în [repozitoriul site-ului](https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/tree/main/public/laboratoare), care se deschide în Colab din pagina de introducere a laboratorului, cu butonul **Deschidere în Google Colab**.
 
 În laboratoarele de antrenare, exemplele scurte rulează direct în pagină, cu Python în browser (WebAssembly), fără nicio instalare. Antrenarea propriu-zisă rulează local, iar paginile arată rezultatele de referință, ca să le putem compara cu ce obținem pe propriul calculator. Codul acestor laboratoare este public, în [organizația proiectului de pe GitHub](https://github.com/inteligentArtificiala-ro), și poate fi clonat cu Git sau descărcat fișier cu fișier.
 
@@ -52,7 +52,7 @@ Laboratorul începe cu [prezentarea modelului și pregătirea mediului de lucru]
 
 ## Un model de limbaj local cu Transformers
 
-Descărcăm de pe [Hugging Face Hub](https://huggingface.co/models) un model de limbaj cu **ponderi deschise** (_open weights_) și îl rulăm în Python, cu bibliotecile Transformers și PyTorch. Laboratorul pornește de la funcția `pipeline`, care pune un model în funcțiune în câteva linii de cod. Apoi refacem de mână pașii pe care ea îi ascunde: tokenizarea, șablonul de chat și generarea. Ultimele pagini arată de câtă memorie are nevoie un model, cum îl micșorăm prin **cuantizare** (_quantization_) și cum rulăm local un model de raționament.
+Descărcăm de pe [Hugging Face Hub](https://huggingface.co/models) un model de limbaj cu **ponderi deschise** (_open weights_) și îl rulăm în Python, cu bibliotecile Transformers și PyTorch. Laboratorul pornește de la funcția `pipeline`, care pune un model în funcțiune în câteva linii de cod. Apoi refacem de mână pașii pe care această funcție îi ascunde: tokenizarea, șablonul de chat și generarea. Ultimele pagini arată de câtă memorie are nevoie un model, cum îl micșorăm prin **cuantizare** (_quantization_) și cum rulăm local un model de raționament.
 
 - **Nivel**: începător.
 - **Cerințe**: un calculator cu cel puțin 8 GB de memorie RAM și între 700 MB și 4 GB de spațiu pe disc pentru modele.

@@ -1,6 +1,6 @@
 ---
 title: Procesul de difuzie, pas cu pas
-description: Procesul invers al unui model de difuzie, scris de mână cu Diffusers pe un U-Net care generează pisici. Zgomotul estimat la fiecare pas, estimarea imaginii curate, DDPM față de DDIM și procesul direct, verificat pe formula lui.
+description: Procesul invers al unui model de difuzie, scris de mână cu Diffusers pe un U-Net care generează pisici. Zgomotul estimat la fiecare pas, estimarea imaginii curate, DDPM față de DDIM și procesul direct, verificat pe formula din teorie.
 sidebar:
   order: 2
 level: intermediar
@@ -8,7 +8,7 @@ tags:
   - Modele de difuzie
 ---
 
-Pagina despre [modelele de difuzie](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/) descrie procesul invers prin formule: rețeaua estimează zgomotul din imagine, din el obținem o estimare a imaginii curate, apoi facem un pas spre o imagine cu mai puțin zgomot. Pe această pagină scriem procesul invers în Python, pe un model real. Folosim [google/ddpm-cat-256](https://huggingface.co/google/ddpm-cat-256), unul dintre modelele publicate de autorii articolului DDPM, convertit pentru Diffusers. Este un U-Net cu aproximativ 114 milioane de parametri, antrenat pe fotografiile cu pisici din setul de date LSUN, care generează imagini de 256 × 256 pixeli. Modelul nu primește niciun text: pornește doar de la zgomot.
+Pagina despre [modelele de difuzie](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/) descrie procesul invers prin formule: rețeaua estimează zgomotul din imagine, din zgomotul estimat obținem o estimare a imaginii curate, apoi facem un pas spre o imagine cu mai puțin zgomot. Pe această pagină scriem procesul invers în Python, pe un model real. Folosim [google/ddpm-cat-256](https://huggingface.co/google/ddpm-cat-256), unul dintre modelele publicate de autorii articolului DDPM, convertit pentru Diffusers. Este un U-Net cu aproximativ 114 milioane de parametri, antrenat pe fotografiile cu pisici din setul de date LSUN, care generează imagini de 256 × 256 pixeli. Modelul nu primește niciun text: pornește doar de la zgomot.
 
 ## Programul de zgomot
 
@@ -76,7 +76,7 @@ grid.save("pasi.png")
 to_image(x).save("pisica.png")
 ```
 
-Fișierul `pisica.png` conține pisica generată, iar `pasi.png` drumul până la ea. Rândul de sus arată imaginea cu zgomot de la începutul fiecărui pas. Rândul de jos arată ce crede rețeaua că se află sub zgomot. La primul pas, estimarea este o pată încețoșată, aproape fără detalii. Este [media tuturor imaginilor posibile](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/#generarea-de-la-zgomot-la-imagine) care s-ar putea ascunde sub acel zgomot. Pe măsură ce zgomotul scade, estimarea se fixează pe o singură pisică: întâi apar forma și culorile, apoi blana și ochii.
+Fișierul `pisica.png` conține pisica generată, iar `pasi.png`, drumul până la această imagine. Rândul de sus arată imaginea cu zgomot de la începutul fiecărui pas. Rândul de jos arată ce crede rețeaua că se află sub zgomot. La primul pas, estimarea este o pată încețoșată, aproape fără detalii. Este [media tuturor imaginilor posibile](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/#generarea-de-la-zgomot-la-imagine) care s-ar putea ascunde sub acel zgomot. Pe măsură ce zgomotul scade, estimarea se fixează pe o singură pisică: întâi apar forma și culorile, apoi blana și ochii.
 
 Codul are doar câteva linii esențiale.
 
@@ -114,7 +114,7 @@ grid.save("ddpm_ddim.png")
 
 Fiecare pas înseamnă o trecere prin rețea, așa că timpul crește aproape proporțional cu numărul de pași, iar DDPM durează de aproximativ 20 de ori mai mult. Pe procesor, cei 1.000 de pași DDPM durează mult, așa că pentru acest exemplu merită folosită o placă grafică, de exemplu cea din Google Colab.
 
-Cele două pisici sunt diferite, deși pornesc de la același zgomot. DDPM adaugă la fiecare pas puțin zgomot nou, ales la întâmplare, deci drumul lui se îndepărtează treptat de cel al lui DDIM, care este determinist. Imaginea DDIM este, în schimb, practic aceeași cu pisica generată de codul scris de mână: același zgomot de pornire, aceeași rețea și aceiași pași. Alte metode de eșantionare, precum `DPMSolverMultistepScheduler` sau `EulerDiscreteScheduler`, se schimbă la fel și sunt comparate în [documentația despre metodele de eșantionare](https://huggingface.co/docs/diffusers/using-diffusers/schedulers).
+Cele două pisici sunt diferite, deși pornesc de la același zgomot. DDPM adaugă la fiecare pas puțin zgomot nou, ales la întâmplare, deci drumul lui DDPM se îndepărtează treptat de cel al lui DDIM, care este determinist. Imaginea DDIM este, în schimb, practic aceeași cu pisica generată de codul scris de mână: același zgomot de pornire, aceeași rețea și aceiași pași. Alte metode de eșantionare, precum `DPMSolverMultistepScheduler` sau `EulerDiscreteScheduler`, se schimbă la fel și sunt comparate în [documentația despre metodele de eșantionare](https://huggingface.co/docs/diffusers/using-diffusers/schedulers).
 
 ## Procesul direct
 

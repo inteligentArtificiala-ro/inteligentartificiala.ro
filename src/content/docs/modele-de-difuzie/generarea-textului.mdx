@@ -17,7 +17,7 @@ import { Steps } from '@astrojs/starlight/components';
 
 Paginile despre [imagini](/modele-de-difuzie/generarea-imaginilor/), [voce](/modele-de-difuzie/generarea-vocii/) și [video](/modele-de-difuzie/generarea-video/) au ceva în comun: datele sunt numere care pot varia continuu. Un pixel poate avea valoarea 0,37 sau 0,41, iar puțin zgomot îl mută doar puțin. Textul este altfel. Un [model de limbaj](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) lucrează cu tokenuri dintr-un vocabular fix, iar între „pisică” și „câine” nu există un cuvânt aflat la jumătatea drumului.
 
-Difuzia funcționează totuși și pentru text. Din 2025 au apărut **modele de limbaj bazate pe difuzie** (_diffusion language models_), precum LLaDA, Mercury, Gemini Diffusion și DiffusionGemma. Ele nu scriu răspunsul de la stânga la dreapta, câte un token pe rând. Pornesc de la un răspuns în care toate tokenurile sunt ascunse și le dezvăluie treptat, câte mai multe la fiecare pas. Câștigul principal este viteza: unele dintre ele generează peste 1.000 de tokenuri pe secundă.
+Difuzia funcționează totuși și pentru text. Din 2025 au apărut **modele de limbaj bazate pe difuzie** (_diffusion language models_), precum LLaDA, Mercury, Gemini Diffusion și DiffusionGemma. Aceste modele nu scriu răspunsul de la stânga la dreapta, câte un token pe rând. Pornesc de la un răspuns în care toate tokenurile sunt ascunse și le dezvăluie treptat, câte mai multe la fiecare pas. Câștigul principal este viteza: unele modele generează peste 1.000 de tokenuri pe secundă.
 
 ## De ce nu putem adăuga zgomot unui cuvânt
 
@@ -26,13 +26,13 @@ Procesul direct al unui [model de difuzie](/modele-de-difuzie/ce-sunt-modelele-d
 Cercetătorii au încercat două drumuri.
 
 - **Difuzia pe reprezentări vectoriale**: fiecare token are o [reprezentare vectorială](/modele-lingvistice/embeddings-si-tokenizare/#reprezentări-vectoriale-de-la-id-uri-la-vectori) (_embedding_), adică un șir de numere continue, iar acestor numere li se poate adăuga zgomot gaussian, ca pixelilor. La final, fiecare vector curățat este înlocuit cu tokenul cel mai apropiat. Diffusion-LM (Universitatea Stanford, 2022) a folosit această idee ca să controleze structura frazelor generate, dar a rămas în urma modelelor autoregresive la calitatea textului.
-- **Difuzia discretă** (_discrete diffusion_): zgomotul schimbă chiar tokenurile. În 2021, Jacob Austin și colegii săi de la Google au propus modelele D3PM, în care procesul direct poate înlocui un token cu un alt token, ales la întâmplare din vocabular, sau cu un token special, numit **mască** (_mask_). Pe text, varianta cu mască a dat cele mai bune rezultate, iar modelele de astăzi pornesc de la ea.
+- **Difuzia discretă** (_discrete diffusion_): zgomotul schimbă chiar tokenurile. În 2021, Jacob Austin și colegii săi de la Google au propus modelele D3PM, în care procesul direct poate înlocui un token cu un alt token, ales la întâmplare din vocabular, sau cu un token special, numit **mască** (_mask_). Pe text, varianta cu mască a dat cele mai bune rezultate, iar modelele de astăzi pornesc de la această variantă.
 
 ## Definiție
 
 Un model de **difuzie cu mască** (_masked diffusion_) are aceleași două procese ca orice model de difuzie.
 
-- **Procesul direct** ascunde tokenurile. Alegem un moment $t$ între 0 și 1, iar fiecare token al textului este înlocuit cu tokenul de mască, independent de celelalte, cu probabilitatea $t$. La $t = 0$ textul este intact, la jumătatea drumului este ascuns cam jumătate din el, iar la $t = 1$ nu mai rămân decât măști. Ca la imagini, procesul este fixat dinainte, nu are nimic de învățat și putem sări direct la orice moment $t$.
+- **Procesul direct** ascunde tokenurile. Alegem un moment $t$ între 0 și 1, iar fiecare token al textului este înlocuit cu tokenul de mască, independent de celelalte, cu probabilitatea $t$. La $t = 0$ textul este intact, la jumătatea drumului cam jumătate din text este ascunsă, iar la $t = 1$ nu mai rămân decât măști. Ca la imagini, procesul este fixat dinainte, nu are nimic de învățat și putem sări direct la orice moment $t$.
 - **Procesul invers** completează textul. O rețea neuronală primește textul cu măști și estimează, pentru fiecare poziție ascunsă, câte o probabilitate pentru fiecare token din vocabular, la fel ca stratul de ieșire al unui model de limbaj obișnuit. Diferența este că le estimează pe toate deodată, nu doar tokenul următor.
 
 <MaskedDiffusionDiagram />
@@ -47,11 +47,11 @@ t, & \text{dacă } x_t^i = \text{M}
 \end{cases}
 $$
 
-Aici $x_0$ este textul original, $x_t$ este textul la momentul $t$, $x_t^i$ este tokenul de pe poziția $i$, iar $\text{M}$ este tokenul de mască. Fiecare poziție este tratată separat: tokenul ei rămâne neschimbat cu probabilitatea $1 - t$ și este ascuns cu probabilitatea $t$. Spre deosebire de zgomotul gaussian, nu există o variantă „puțin ascunsă” a unui token. O poziție este fie intactă, fie complet ascunsă.
+Aici $x_0$ este textul original, $x_t$ este textul la momentul $t$, $x_t^i$ este tokenul de pe poziția $i$, iar $\text{M}$ este tokenul de mască. Fiecare poziție este tratată separat: tokenul de acolo rămâne neschimbat cu probabilitatea $1 - t$ și este ascuns cu probabilitatea $t$. Spre deosebire de zgomotul gaussian, nu există o variantă „puțin ascunsă” a unui token. O poziție este fie intactă, fie complet ascunsă.
 
 </DeepDive>
 
-Rețeaua este un [Transformer](/modele-lingvistice/arhitectura-transformer/), dar fără [masca cauzală](/modele-lingvistice/avem-nevoie-doar-de-atentie/#masca-cauzală). Într-un model de limbaj obișnuit, masca cauzală împiedică fiecare token să se uite la tokenurile de după el, pentru că acelea încă nu au fost generate. Aici, fiecare poziție vede tot textul, la stânga și la dreapta, inclusiv măștile. Cuvântul „mască” apare astfel cu două sensuri: masca cauzală ascunde unele tokenuri de mecanismul de atenție, iar tokenul de mască ascunde conținutul unei poziții. Un model de difuzie cu mască folosește tokenul de mască, dar nu și masca cauzală.
+Rețeaua este un [Transformer](/modele-lingvistice/arhitectura-transformer/), dar fără [masca cauzală](/modele-lingvistice/avem-nevoie-doar-de-atentie/#masca-cauzală). Într-un model de limbaj obișnuit, masca cauzală împiedică fiecare token să se uite la tokenurile următoare, pentru că acelea încă nu au fost generate. Aici, fiecare poziție vede tot textul, la stânga și la dreapta, inclusiv măștile. Cuvântul „mască” apare astfel cu două sensuri: masca cauzală ascunde unele tokenuri de mecanismul de atenție, iar tokenul de mască ascunde conținutul unei poziții. Un model de difuzie cu mască folosește tokenul de mască, dar nu și masca cauzală.
 
 ## Antrenarea: completarea unui text cu goluri
 
@@ -61,7 +61,7 @@ Un pas de antrenare arată astfel:
 1. Alegem un text $x_0$ din setul de antrenare.
 2. Alegem la întâmplare un moment $t$ între 0 și 1.
 3. Ascundem fiecare token cu probabilitatea $t$ și obținem textul cu măști $x_t$.
-4. Rețeaua primește $x_t$ și estimează, pentru fiecare mască, ce token se află sub ea.
+4. Rețeaua primește $x_t$ și estimează, pentru fiecare mască, ce token se află sub mască.
 5. Calculăm [entropia încrucișată](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#antrenarea) doar pe pozițiile ascunse, adică măsurăm cât de mică este probabilitatea dată tokenului corect, și ajustăm parametrii prin [retropropagare](/retele-neuronale/retropropagare/).
 
    <DeepDive title="Funcția de pierdere">
@@ -77,23 +77,23 @@ Un pas de antrenare arată astfel:
 
 Exercițiul seamănă cu cel al lui **BERT** (Google, 2018), un model care învăța să ghicească tokenurile ascunse dintr-un text. BERT ascundea însă mereu în jur de 15% din tokenuri și era folosit ca să înțeleagă texte, de exemplu ca să clasifice o recenzie drept pozitivă sau negativă, nu ca să scrie. Un model de difuzie cu mască exersează toate proporțiile, de la câteva goluri până la textul ascuns în întregime, iar acest ultim caz este chiar punctul de pornire al generării. Lucrarea MDLM (2024) a arătat că funcția de pierdere a unui astfel de model este, de fapt, o medie a unor pierderi de tip BERT, calculate pentru proporții diferite de măști.
 
-Antrenarea are și un preț. Un model autoregresiv învață din fiecare token al fiecărui text, pentru că la fiecare poziție are de ghicit tokenul următor. Un model de difuzie cu mască învață doar din pozițiile ascunse, în medie jumătate din text, iar sarcina lui este mai grea, pentru că trebuie să poată completa textul în orice ordine. În 2024, Shen Nie și colegii săi au estimat că un astfel de model are nevoie de aproximativ 16 ori mai mult timp de preantrenare ca să egaleze un model autoregresiv.
+Antrenarea are și un preț. Un model autoregresiv învață din fiecare token al fiecărui text, pentru că la fiecare poziție are de ghicit tokenul următor. Un model de difuzie cu mască învață doar din pozițiile ascunse, în medie jumătate din text, și are o sarcină mai grea, pentru că trebuie să poată completa textul în orice ordine. În 2024, Shen Nie și colegii săi au estimat că un astfel de model are nevoie de aproximativ 16 ori mai mult timp de preantrenare ca să egaleze un model autoregresiv.
 
 Situația se schimbă când datele sunt puține și același set de date este parcurs de multe ori. Mihir Prabhudesai și colegii săi au arătat în 2025 că, în acest caz, modelele de difuzie ajung mai departe decât cele autoregresive. La fiecare parcurgere sunt ascunse alte tokenuri, așa că același text devine de fiecare dată un exercițiu nou.
 
 ## Generarea: de la măști la text
 
-La generare, promptul rămâne vizibil, iar răspunsul pornește ca un șir de măști, de o lungime aleasă dinainte, de exemplu 256 de tokenuri. Alegem și numărul de pași. La fiecare pas, rețeaua estimează toate pozițiile ascunse, apoi o parte dintre ele sunt fixate, iar celelalte primesc din nou masca și așteaptă pasul următor. Cu 256 de tokenuri și 64 de pași, la fiecare pas sunt fixate 4 tokenuri. Un token fixat nu se mai schimbă.
+La generare, promptul rămâne vizibil, iar răspunsul pornește ca un șir de măști, de o lungime aleasă dinainte, de exemplu 256 de tokenuri. Alegem și numărul de pași. La fiecare pas, rețeaua estimează toate pozițiile ascunse, apoi o parte dintre poziții sunt fixate, iar celelalte primesc din nou masca și așteaptă pasul următor. Cu 256 de tokenuri și 64 de pași, la fiecare pas sunt fixate 4 tokenuri. Un token fixat nu se mai schimbă.
 
-Răspunsul nu trebuie să umple toate pozițiile. La ajustarea fină a lui LLaDA, răspunsurile scurte au fost completate cu tokenuri de sfârșit de text, până la lungimea celorlalte răspunsuri din lot, iar modelul a învățat să prezică aceste tokenuri ca pe oricare altele. La generare, modelul le pune singur pe pozițiile de care nu are nevoie, iar tot ce urmează după primul dintre ele este șters.
+Răspunsul nu trebuie să umple toate pozițiile. La ajustarea fină a lui LLaDA, răspunsurile scurte au fost completate cu tokenuri de sfârșit de text, până la lungimea celorlalte răspunsuri din lot, iar modelul a învățat să prezică aceste tokenuri ca pe oricare altele. La generare, modelul le pune singur pe pozițiile de care nu are nevoie, iar tot ce urmează după primul token de sfârșit este șters.
 
-Care tokenuri sunt fixate la fiecare pas? În teorie, unele alese la întâmplare. În practică, LLaDA le fixează pe cele de care rețeaua este cea mai sigură, adică pe cele cu probabilitatea cea mai mare, și pune din nou masca pe celelalte. Strategia vine de la MaskGIT (Google, 2022), un generator de imagini care lucra tot cu tokenuri și tot cu măști. Astfel, deciziile ușoare se iau primele, iar cele grele rămân pentru pașii de la sfârșit, când în jurul lor există deja mult context. Textul nu mai apare de la stânga la dreapta, ci în ordinea aleasă de model.
+Care tokenuri sunt fixate la fiecare pas? În teorie, unele alese la întâmplare. În practică, LLaDA le fixează pe cele de care rețeaua este cea mai sigură, adică pe cele cu probabilitatea cea mai mare, și pune din nou masca pe celelalte. Strategia vine de la MaskGIT (Google, 2022), un generator de imagini care lucra tot cu tokenuri și tot cu măști. Astfel, deciziile ușoare se iau primele, iar cele grele rămân pentru pașii de la sfârșit, când în jurul pozițiilor rămase există deja mult context. Textul nu mai apare de la stânga la dreapta, ci în ordinea aleasă de model.
 
 <TextGenerationOrderDiagram />
 
 Cele mai sigure alegeri pot fi însă și cele mai puțin utile. Autorii LLaDA au observat că tokenurile de sfârșit de text, fixate prea devreme, duc la răspunsuri foarte scurte, așa că, în unele teste, au pus la zero încrederea acestor tokenuri.
 
-Pentru răspunsuri lungi, generarea poate fi împărțită în blocuri: răspunsul este scris bloc cu bloc, de la stânga la dreapta, iar fiecare bloc este completat prin difuzie. Ideea a fost formalizată în 2025 de Marianne Arriola și colegii săi, sub numele de **difuzie pe blocuri** (_block diffusion_). Un bloc terminat nu se mai schimbă, deci cheile și valorile lui pot fi păstrate în [memoria cache](/modele-lingvistice/arhitectura-transformer/#memoria-cache-pentru-chei-și-valori-kv-cache), ca la un model autoregresiv, iar lungimea totală a răspunsului nu mai trebuie aleasă dinainte. DiffusionGemma (Google DeepMind, 2026) lucrează astfel, cu blocuri de câte 256 de tokenuri.
+Pentru răspunsuri lungi, generarea poate fi împărțită în blocuri: răspunsul este scris bloc cu bloc, de la stânga la dreapta, iar fiecare bloc este completat prin difuzie. Ideea a fost formalizată în 2025 de Marianne Arriola și colegii săi, sub numele de **difuzie pe blocuri** (_block diffusion_). Un bloc terminat nu se mai schimbă, deci cheile și valorile blocului pot fi păstrate în [memoria cache](/modele-lingvistice/arhitectura-transformer/#memoria-cache-pentru-chei-și-valori-kv-cache), ca la un model autoregresiv, iar lungimea totală a răspunsului nu mai trebuie aleasă dinainte. DiffusionGemma (Google DeepMind, 2026) lucrează astfel, cu blocuri de câte 256 de tokenuri.
 
 ## Câți pași: tokenurile alese deodată
 
@@ -109,7 +109,7 @@ Metodele mai noi aleg singure câte tokenuri fixează: la fiecare pas sunt fixat
 
 Exemplul de mai jos rulează difuzia cu mască pe un set de antrenare minuscul: patru propoziții de câte cinci cuvinte, iar fiecare cuvânt este un token. Ca în [exemplul cu imagini](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/#un-exemplu-care-rulează-în-browser), nu avem nevoie de o rețea antrenată, pentru că putem calcula exact cea mai bună estimare. Pentru un text cu măști, căutăm propozițiile din setul de antrenare care se potrivesc cu tokenurile vizibile. Pe fiecare poziție ascunsă, probabilitatea unui cuvânt este proporția acestor propoziții care au acel cuvânt pe poziția respectivă.
 
-Codul arată procesul direct, apoi procesul invers, cu un token pe pas. Apoi generează câte 1.000 de propoziții cu 1, 2, 3 și 5 pași și numără câte dintre ele sunt propoziții din setul de antrenare. La final, ultimul cuvânt este dat dinainte, iar modelul completează începutul.
+Codul arată procesul direct, apoi procesul invers, cu un token pe pas. Apoi generează câte 1.000 de propoziții cu 1, 2, 3 și 5 pași și numără câte dintre rezultate sunt propoziții din setul de antrenare. La final, ultimul cuvânt este dat dinainte, iar modelul completează începutul.
 
 <Python
   packages={['numpy']}
@@ -181,18 +181,18 @@ generate(4, x=[MASK, MASK, MASK, MASK, "Neamț"], verbose=True)
 `}
 />
 
-Cu 5 pași, adică un token pe pas, fiecare alegere ține cont de toate cele dinainte, iar toate propozițiile generate sunt corecte. Cu un singur pas, toate cele cinci cuvinte sunt alese deodată, fiecare după frecvența lui pe poziția respectivă, și doar aproximativ 5% dintre rezultate sunt propoziții întregi. Restul sunt amestecuri precum „autobuzul vine spre Târgu Jiu”. Cu 2 și 3 pași, rezultatele se află între aceste extreme.
+Cu 5 pași, adică un token pe pas, fiecare alegere ține cont de toate cele dinainte, iar toate propozițiile generate sunt corecte. Cu un singur pas, toate cele cinci cuvinte sunt alese deodată, fiecare după cât de des apare pe poziția respectivă, și doar aproximativ 5% dintre rezultate sunt propoziții întregi. Restul sunt amestecuri precum „autobuzul vine spre Târgu Jiu”. Cu 2 și 3 pași, rezultatele se află între aceste extreme.
 
 Completarea arată ceva ce un model autoregresiv nu poate face direct. Propoziția se termină cu „Neamț”, iar modelul de difuzie alege primul cuvânt, „autobuzul”, știind deja cum se termină propoziția. Un model autoregresiv ar trebui să aleagă primul cuvânt fără să vadă sfârșitul.
 
-Ca la imagini, o estimare perfectă pentru un set de antrenare finit poate doar să copieze propozițiile din el. Un model real, antrenat pe mii de miliarde de tokenuri, învață regulile limbii și poate scrie propoziții noi.
+Ca la imagini, o estimare perfectă pentru un set de antrenare finit poate doar să copieze propozițiile din set. Un model real, antrenat pe mii de miliarde de tokenuri, învață regulile limbii și poate scrie propoziții noi.
 
 ## Ce câștigăm și ce pierdem
 
 Difuzia pentru text are câteva avantaje față de generarea autoregresivă.
 
 - **Viteza**: un model autoregresiv face o trecere completă prin rețea pentru fiecare token. La generare, o [placă grafică](/concepte-de-baza/utilitatea-placilor-grafice/) își petrece mare parte din timp citind ponderile modelului din memorie, nu calculând, așa că o trecere care fixează mai multe tokenuri costă aproape cât una care produce un singur token. După evaluările independente ale Artificial Analysis, Mercury Coder Mini (Inception Labs, 2025) generează 1.109 tokenuri pe secundă pe o placă NVIDIA H100, iar Google raportează pentru Gemini Diffusion o viteză medie de 1.479 de tokenuri pe secundă. Câștigul este cel mai mare când un singur utilizator rulează modelul, de exemplu local. Pe serverele care răspund multor utilizatori deodată, plăcile grafice sunt deja ocupate cu mai multe cereri, iar Google notează că acolo avantajul lui DiffusionGemma scade.
-- **Context din ambele părți**: fiecare poziție vede și ce se află la dreapta ei, așa că modelul poate completa o bucată lipsă din mijlocul unui text sau al unui program, ca în exemplul de mai sus. Același lucru ajută la **blestemul inversării** (_reversal curse_): un model autoregresiv care a învățat că „A este B” nu deduce ușor că „B este A”. Într-un test cu versuri din poezii chinezești, LLaDA 8B a găsit versul dinaintea unui vers dat în 45,6% din cazuri, față de 34,3% pentru GPT-4o. La versul următor, GPT-4o rămâne însă mult mai bun, cu 82,7%, față de 51,8% pentru LLaDA.
+- **Context din ambele părți**: fiecare poziție vede și textul de la dreapta, așa că modelul poate completa o bucată lipsă din mijlocul unui text sau al unui program, ca în exemplul de mai sus. Același lucru ajută la **blestemul inversării** (_reversal curse_): un model autoregresiv care a învățat că „A este B” nu deduce ușor că „B este A”. Într-un test cu versuri din poezii chinezești, LLaDA 8B a găsit versul dinaintea unui vers dat în 45,6% din cazuri, față de 34,3% pentru GPT-4o. La versul următor, GPT-4o rămâne însă mult mai bun, cu 82,7%, față de 51,8% pentru LLaDA.
 - **Un compromis ales la generare**: numărul de pași nu este fixat la antrenare, deci același model poate răspunde mai repede, cu o calitate mai mică, sau mai încet, cu o calitate mai bună.
 
 Limitele sunt la fel de concrete.

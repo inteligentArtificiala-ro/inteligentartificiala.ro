@@ -31,7 +31,7 @@ const gridRows = Array.from({ length: 14 }, (_, i) => MATRIX.y + (i + 1) * 12);
       <title id='tokenization-title'>De la text la vectori: tokenizarea și matricea de reprezentări vectoriale</title>
       <desc id='tokenization-desc'>
         Expresia „învățare automată” este împărțită în trei tokenuri: „învățare”, „autom” și „ată”. Fiecare token
-        primește ID-ul lui din vocabular (3847, 5120 și 8634). Fiecare ID alege un rând din matricea de reprezentări
+        primește ID-ul corespunzător din vocabular (3847, 5120 și 8634). Fiecare ID alege un rând din matricea de reprezentări
         vectoriale, care are 10.000 de rânduri și 256 de coloane, iar rândul ales este vectorul tokenului, cu 256 de
         valori.
       </desc>
@@ -105,7 +105,7 @@ const gridRows = Array.from({ length: 14 }, (_, i) => MATRIX.y + (i + 1) * 12);
     </svg>
   </div>
   <figcaption>
-    Tokenizatorul împarte textul în tokenuri și înlocuiește fiecare token cu ID-ul lui din vocabular. ID-ul alege un
+    Tokenizatorul împarte textul în tokenuri și înlocuiește fiecare token cu ID-ul corespunzător din vocabular. ID-ul alege un
     rând din matricea de reprezentări vectoriale, iar rândul ales este vectorul pe care îl primesc straturile modelului.
     Împărțirea și ID-urile sunt ilustrative.
   </figcaption>

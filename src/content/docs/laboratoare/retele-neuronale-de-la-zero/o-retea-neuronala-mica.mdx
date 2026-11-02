@@ -35,9 +35,9 @@ Un [neuron artificial](/retele-neuronale/ce-sunt-retelele-neuronale/#definiție)
 
 <SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/nn.py" symbols={['Module', 'Neuron']} />
 
-Ponderile pornesc de la valori aleatoare între −1 și 1. Dacă ar porni toate de la aceeași valoare, neuronii unui strat ar calcula același lucru și ar primi aceiași gradienți, deci ar rămâne identici. Funcția `sum` primește _bias_-ul ca valoare de pornire, așa că rezultatul este un singur obiect `Value`, cu tot calculul în graful lui.
+Ponderile pornesc de la valori aleatoare între −1 și 1. Dacă ar porni toate de la aceeași valoare, neuronii unui strat ar calcula același lucru și ar primi aceiași gradienți, deci ar rămâne identici. Funcția `sum` primește _bias_-ul ca valoare de pornire, așa că rezultatul este un singur obiect `Value`, cu tot calculul în propriul graf.
 
-Clasa de bază `Module` adaugă metoda `zero_grad`, care readuce gradienții la zero. Pe [pagina despre motor](/laboratoare/retele-neuronale-de-la-zero/motorul-de-diferentiere/#de-ce-gradienții-se-adună) am văzut de ce este nevoie de ea: fiecare `backward()` adaugă la gradienții existenți.
+Clasa de bază `Module` adaugă metoda `zero_grad`, care readuce gradienții la zero. Pe [pagina despre motor](/laboratoare/retele-neuronale-de-la-zero/motorul-de-diferentiere/#de-ce-gradienții-se-adună) am văzut de ce este nevoie de această metodă: fiecare `backward()` adaugă la gradienții existenți.
 
 ## Straturi și rețea
 
@@ -68,7 +68,7 @@ print("ieșirea pentru intrarea [1.0, -0.5]:", model([1.0, -0.5]))
 
 ## Datele: două semilune
 
-Problema este una de **clasificare** (_classification_): punctele din plan aparțin uneia din două clase, iar rețeaua trebuie să spună, pentru fiecare punct, clasa lui. Punctele sunt așezate pe două semilune întrepătrunse, așa că nicio linie dreaptă nu le poate separa. Rețeaua are nevoie de straturile ascunse și de neliniaritatea lor.
+Problema este una de **clasificare** (_classification_): punctele din plan aparțin uneia din două clase, iar rețeaua trebuie să spună, pentru fiecare punct, clasa din care face parte. Punctele sunt așezate pe două semilune întrepătrunse, așa că nicio linie dreaptă nu le poate separa. Rețeaua are nevoie de straturi ascunse neliniare.
 
 <SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/moons.py" symbols={['make_moons']} />
 
@@ -102,7 +102,7 @@ $$
 
 <SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/moons.py" symbols={['loss_and_accuracy']} />
 
-Pierderea este un singur obiect `Value`, calculat din scorurile tuturor celor 100 de puncte. Graful ei conține deci toate calculele rețelei, pentru toate punctele, iar un singur `backward()` dă gradientul pierderii în raport cu fiecare dintre cei 105 parametri.
+Pierderea este un singur obiect `Value`, calculat din scorurile tuturor celor 100 de puncte. Graful pierderii conține deci toate calculele rețelei, pentru toate punctele, iar un singur `backward()` dă gradientul pierderii în raport cu fiecare dintre cei 105 parametri.
 
 ## Antrenarea
 
@@ -111,7 +111,7 @@ Antrenarea repetă același pas de mai multe ori.
 <SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/moons.py" symbols={['train']} />
 
 <Steps>
-1. **Propagarea directă**: rețeaua calculează scorurile tuturor punctelor, iar din ele se calculează pierderea.
+1. **Propagarea directă**: rețeaua calculează scorurile tuturor punctelor, iar din scoruri se calculează pierderea.
 2. **Ștergerea gradienților**: `zero_grad()` readuce la zero gradienții de la pasul anterior.
 3. **Retropropagarea**: `loss.backward()` calculează gradientul pierderii în raport cu fiecare parametru.
 4. **Actualizarea**: fiecare parametru face un pas mic în sens opus gradientului său, adică în sensul în care pierderea scade. Mărimea pasului este dată de rata de învățare, `lr = 0.1`.
@@ -199,7 +199,7 @@ print(f"o imagine: {time.time() - start:.1f} s")
 `}
 />
 
-Pe un laptop modern, o singură imagine durează în jur de o secundă, atât local, cât și în browser. Setul de antrenare MNIST are 60.000 de imagini, așa că o singură trecere prin el ar dura cel puțin 16 ore. Pe pagina următoare, aceeași rețea, scrisă cu matrice NumPy, face o trecere completă în mai puțin de o secundă.
+Pe un laptop modern, o singură imagine durează în jur de o secundă, atât local, cât și în browser. Setul de antrenare MNIST are 60.000 de imagini, așa că o singură trecere prin toate imaginile ar dura cel puțin 16 ore. Pe pagina următoare, aceeași rețea, scrisă cu matrice NumPy, face o trecere completă în mai puțin de o secundă.
 
 ## Bibliografie
 

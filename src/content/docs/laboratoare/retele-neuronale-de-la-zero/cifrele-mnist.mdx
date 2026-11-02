@@ -26,7 +26,7 @@ for name in ["mnist_data.py", "mnist_numpy.py"]:
 sys.path.insert(0, ".")
 `;
 
-Pe [pagina anterioară](/laboratoare/retele-neuronale-de-la-zero/o-retea-neuronala-mica/), motorul pentru scalari a avut nevoie de circa o secundă pentru o singură imagine. Rețeaua rămâne aceeași, dar calculul ei se poate organiza altfel: toate sumele ponderate ale unui strat, pentru un lot întreg de imagini, sunt un singur produs de matrice. Pe această pagină scriem rețeaua cu NumPy, o bibliotecă Python pentru calcul cu matrice, și scriem de mână, pentru matrice, aceleași derivate pe care motorul le aplica număr cu număr.
+Pe [pagina anterioară](/laboratoare/retele-neuronale-de-la-zero/o-retea-neuronala-mica/), motorul pentru scalari a avut nevoie de circa o secundă pentru o singură imagine. Rețeaua rămâne aceeași, dar calculul se poate organiza altfel: toate sumele ponderate ale unui strat, pentru un lot întreg de imagini, sunt un singur produs de matrice. Pe această pagină scriem rețeaua cu NumPy, o bibliotecă Python pentru calcul cu matrice, și scriem de mână, pentru matrice, aceleași derivate pe care motorul le aplica număr cu număr.
 
 ## Setul de date MNIST
 
@@ -36,7 +36,7 @@ Fișierul `mnist_data.py` descarcă setul o singură dată, în copia publicată
 
 <SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/mnist_data.py" symbols={['URL', 'SHA256', 'download', 'load_mnist']} />
 
-Fiecare imagine devine un vector de 784 de numere (28 × 28), iar fiecare pixel, un număr între 0 și 1. Rețeaua nu știe că pixelii formau o imagine: pentru ea, o cifră este doar o listă de 784 de intrări.
+Fiecare imagine devine un vector de 784 de numere (28 × 28), iar fiecare pixel, un număr între 0 și 1. Rețeaua nu știe că pixelii formau o imagine: pentru rețea, o cifră este doar o listă de 784 de intrări.
 
 ## De la numere la matrice
 
@@ -90,7 +90,7 @@ Ponderile pornesc de la valori aleatoare, cu [inițializarea He](/retele-neurona
 
 ## Softmax și entropia încrucișată
 
-Cele 10 ieșiri sunt **scoruri nenormalizate** (_logits_): numere oarecare, pozitive sau negative. Funcția **softmax** le transformă în probabilități: fiecare scor trece prin funcția exponențială, care face din orice număr unul pozitiv, apoi rezultatele sunt împărțite la suma lor, ca să dea 1 împreună. Cifra cu scorul cel mai mare primește cea mai mare probabilitate.
+Cele 10 ieșiri sunt **scoruri nenormalizate** (_logits_): numere oarecare, pozitive sau negative. Funcția **softmax** le transformă în probabilități: fiecare scor trece prin funcția exponențială, care face din orice număr unul pozitiv, apoi rezultatele sunt împărțite la suma tuturor rezultatelor, ca să dea 1 împreună. Cifra cu scorul cel mai mare primește cea mai mare probabilitate.
 
 Pierderea este **entropia încrucișată** (_cross-entropy_): logaritmul negativ al probabilității date cifrei corecte, mediat pe lot. Dacă rețeaua dă cifrei corecte probabilitatea 1, pierderea este 0. Dacă îi dă o probabilitate mică, pierderea crește foarte repede.
 
@@ -112,7 +112,7 @@ $$
 
 <SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/mnist_numpy.py" symbols={['softmax', 'cross_entropy']} />
 
-O rețea care nu știe nimic dă fiecărei cifre probabilitatea 1/10, deci pierderea ei este $-\log(1/10) = \ln 10 \approx 2{,}30$. Rețeaua noastră, abia inițializată, are pe imaginile de testare pierderea 2,40 și ghicește corect 9,87% din cifre, cam cât ar ghici la întâmplare.
+O rețea care nu știe nimic dă fiecărei cifre probabilitatea 1/10, deci pierderea este $-\log(1/10) = \ln 10 \approx 2{,}30$. Rețeaua noastră, abia inițializată, are pe imaginile de testare pierderea 2,40 și ghicește corect 9,87% din cifre, cam cât ar ghici la întâmplare.
 
 <Python
   packages={['numpy']}
@@ -146,8 +146,8 @@ Pe ultimul rând, rețeaua este foarte sigură pe clasa greșită, iar probabili
 
 Motorul pentru scalari aplica regula lanțului nod cu nod. Pentru matrice, aceleași reguli se scriu o singură dată pentru fiecare strat. Pornim de la pierdere și mergem înapoi:
 
-- Pentru softmax urmat de entropie încrucișată, gradientul în raport cu scorurile are o formă foarte simplă: probabilitățile, din care se scade 1 la cifra corectă, împărțite la numărul de imagini din lot. Dacă rețeaua a dat cifrei corecte probabilitatea 0,7, gradientul este −0,3, iar scorul ei va fi împins în sus.
-- Pentru un strat liniar, gradientul ponderilor este produsul dintre intrările stratului, transpuse, și gradientul ieșirilor lui. Gradientul _bias_-ului este suma gradienților ieșirilor pe tot lotul. Gradientul trimis stratului anterior este produsul dintre gradientul ieșirilor și ponderile transpuse.
+- Pentru softmax urmat de entropie încrucișată, gradientul în raport cu scorurile are o formă foarte simplă: probabilitățile, din care se scade 1 la cifra corectă, împărțite la numărul de imagini din lot. Dacă rețeaua a dat cifrei corecte probabilitatea 0,7, gradientul este −0,3, iar scorul cifrei corecte va fi împins în sus.
+- Pentru un strat liniar, gradientul ponderilor este produsul dintre intrările stratului, transpuse, și gradientul ieșirilor stratului. Gradientul _bias_-ului este suma gradienților ieșirilor pe tot lotul. Gradientul trimis stratului anterior este produsul dintre gradientul ieșirilor și ponderile transpuse.
 - ReLU lasă gradientul să treacă doar acolo unde suma ponderată a fost pozitivă, ca în `Value.relu`.
 
 <DeepDive title="Gradienții rețelei, pentru matrice">
@@ -166,13 +166,13 @@ $$
 \frac{\partial L}{\partial Z_1} = \frac{\partial L}{\partial H} \odot [Z_1 > 0], \qquad \frac{\partial L}{\partial W_1} = X^\top \frac{\partial L}{\partial Z_1}, \qquad \frac{\partial L}{\partial b_1} = \sum_{i=1}^{N} \left(\frac{\partial L}{\partial Z_1}\right)_i
 $$
 
-unde $\odot$ este înmulțirea element cu element, iar $[Z_1 > 0]$ este 1 unde suma ponderată a fost pozitivă și 0 în rest. Fiecare formulă este regula lanțului de pe [pagina despre motor](/laboratoare/retele-neuronale-de-la-zero/motorul-de-diferentiere/#operațiile-și-derivatele-lor-locale), aplicată tuturor elementelor unei matrice deodată: în $\frac{\partial L}{\partial W_2}$, de exemplu, fiecare pondere primește suma, pe tot lotul, a gradienților ieșirii ei înmulțiți cu intrarea ei.
+unde $\odot$ este înmulțirea element cu element, iar $[Z_1 > 0]$ este 1 unde suma ponderată a fost pozitivă și 0 în rest. Fiecare formulă este regula lanțului de pe [pagina despre motor](/laboratoare/retele-neuronale-de-la-zero/motorul-de-diferentiere/#derivatele-locale-ale-operațiilor), aplicată tuturor elementelor unei matrice deodată: în $\frac{\partial L}{\partial W_2}$, de exemplu, fiecare pondere primește suma, pe tot lotul, a gradientului ieșirii în care intră, înmulțit cu intrarea pe care o înmulțește.
 
 </DeepDive>
 
 <SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/mnist_numpy.py" symbols={['backward']} />
 
-Funcția are doar câteva rânduri, dar o greșeală în oricare dintre ele nu ar produce nicio eroare, doar o rețea care învață prost. De aceea, o verificăm cu diferențe finite, pe o rețea mică, cu 6 intrări, 5 neuroni ascunși și 4 ieșiri, în care fiecare parametru poate fi modificat pe rând.
+Funcția are doar câteva rânduri, dar o greșeală în oricare rând nu ar produce nicio eroare, doar o rețea care învață prost. De aceea, o verificăm cu diferențe finite, pe o rețea mică, cu 6 intrări, 5 neuroni ascunși și 4 ieșiri, în care fiecare parametru poate fi modificat pe rând.
 
 <Python
   packages={['numpy']}
@@ -259,7 +259,7 @@ Mai interesante sunt greșelile. Imaginea următoare arată primele 12 cifre de 
 
 ![Primele 12 cifre de testare clasificate greșit, cu cifra prezisă și cea corectă: 2 (4), 0 (6), 7 (2), 7 (3), 0 (6), 5 (3), 5 (3), 2 (8), 8 (2), 8 (1), 8 (2), 3 (7). Multe sunt scrise neobișnuit.](/laboratoare/retele-neuronale-de-la-zero/imagini/greseli.png)
 
-Unele greșeli sunt de înțeles, pentru că cifrele sunt scrise neobișnuit, iar altele, ca 6-urile citite ca 0, arată limitele rețelei. Ea vede doar 784 de numere separate, fără să știe care pixeli sunt vecini. Rețelele convoluționale, construite pentru imagini, folosesc tocmai această vecinătate și ajung la peste 99% pe MNIST.
+Unele greșeli sunt de înțeles, pentru că cifrele sunt scrise neobișnuit, iar altele, ca 6-urile citite ca 0, arată limitele rețelei, care vede doar 784 de numere separate, fără să știe care pixeli sunt vecini. Rețelele convoluționale, construite pentru imagini, folosesc tocmai această vecinătate și ajung la peste 99% pe MNIST.
 
 ## Aceeași rețea în PyTorch
 
@@ -267,7 +267,7 @@ Unele greșeli sunt de înțeles, pentru că cifrele sunt scrise neobișnuit, ia
 
 <SourceFile path="laboratoare/retele-neuronale-de-la-zero/cod/mnist_torch.py" symbols={['make_model', 'train']} />
 
-Nu mai scriem nici `backward`, nici softmax. Funcția `cross_entropy` primește direct scorurile nenormalizate și aplică ea softmax, `loss.backward()` face retropropagarea cu `autograd`, iar `optimizer.step()` face actualizarea `p -= lr * p.grad` pentru fiecare parametru. `optimizer.zero_grad()` are același rol ca `zero_grad()` din `nn.py`: gradienții se adună și aici de la un `backward()` la altul.
+Nu mai scriem nici `backward`, nici softmax. Funcția `cross_entropy` primește direct scorurile nenormalizate și aplică singură softmax, `loss.backward()` face retropropagarea cu `autograd`, iar `optimizer.step()` face actualizarea `p -= lr * p.grad` pentru fiecare parametru. `optimizer.zero_grad()` are același rol ca `zero_grad()` din `nn.py`: gradienții se adună și aici de la un `backward()` la altul.
 
 Înainte de antrenare, scriptul verifică retropropagarea noastră încă o dată: copiază aceleași ponderi în rețeaua PyTorch, calculează gradienții pe același lot de 64 de imagini în ambele feluri și îi compară.
 
@@ -304,7 +304,7 @@ Durata antrenării: 4.3 s
 
 Gradienții calculați de mână și cei calculați de PyTorch diferă cu cel mult $3 \cdot 10^{-8}$, cât permit numerele zecimale de 32 de biți. Antrenarea ajunge la 97,57%, aproape cât varianta NumPy. Diferențele mici vin din punctul de pornire: `nn.Linear` își inițializează ponderile cu altă distribuție decât inițializarea He din `init_params`, iar loturile sunt amestecate de alt generator de numere aleatoare.
 
-Același cod rulează și pe o placă grafică, după ce rețeaua și datele sunt mutate pe ea cu `.to("cuda")` sau `.to("mps")`. Pentru o rețea atât de mică, procesorul este însă suficient. Laboratorul [Un model de limbaj de la zero](/laboratoare/model-lingvistic-de-la-zero/prezentare/) continuă de aici, cu un Transformer de 14,6 milioane de parametri, scris tot în PyTorch.
+Același cod rulează și pe o placă grafică, după ce rețeaua și datele sunt mutate pe placă cu `.to("cuda")` sau `.to("mps")`. Pentru o rețea atât de mică, procesorul este însă suficient. Laboratorul [Un model de limbaj de la zero](/laboratoare/model-lingvistic-de-la-zero/prezentare/) continuă de aici, cu un Transformer de 14,6 milioane de parametri, scris tot în PyTorch.
 
 ## Bibliografie
 

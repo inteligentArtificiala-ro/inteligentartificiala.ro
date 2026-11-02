@@ -79,13 +79,13 @@ $$
 L^{\text{CLIP}}(\theta) = \mathbb{E}_t\Big[ \min\big( \rho_t(\theta)\, \hat{A}_t,\ \operatorname{clip}(\rho_t(\theta), 1 - \varepsilon, 1 + \varepsilon)\, \hat{A}_t \big) \Big]
 $$
 
-unde $\hat{A}_t$ este avantajul estimat, iar $\varepsilon$ este de obicei 0,2. Dacă un token are avantaj pozitiv, obiectivul crește cu probabilitatea lui, dar numai până când raportul ajunge la $1 + \varepsilon$. Peste această limită, gradientul devine zero, deci nu se mai câștigă nimic dacă strategia este împinsă mai departe. Pentru avantaje negative, limita este $1 - \varepsilon$.
+unde $\hat{A}_t$ este avantajul estimat, iar $\varepsilon$ este de obicei 0,2. Dacă un token are avantaj pozitiv, obiectivul crește odată cu probabilitatea tokenului, dar numai până când raportul ajunge la $1 + \varepsilon$. Peste această limită, gradientul devine zero, deci nu se mai câștigă nimic dacă strategia este împinsă mai departe. Pentru avantaje negative, limita este $1 - \varepsilon$.
 
 </DeepDive>
 
 Datorită decupării, fiecare lot de răspunsuri poate fi folosit pentru mai mulți pași de actualizare fără ca strategia să se degradeze.
 
-Avantajele vin de la un **model de valoare** (_value model_), numit și critic, care estimează pentru fiecare token recompensa așteptată de acolo până la final. PPO le calculează de obicei cu metoda **GAE** (_generalized advantage estimation_), propusă tot de [Schulman și colaboratorii](https://arxiv.org/abs/1506.02438). Criticul este un model separat, de obicei de aceeași mărime cu modelul principal (strategia), care trebuie și el antrenat.
+Avantajele vin de la un **model de valoare** (_value model_), numit și critic, care estimează pentru fiecare token recompensa așteptată de acolo până la final. PPO le calculează de obicei cu metoda **GAE** (_generalized advantage estimation_), propusă tot de [Schulman și colaboratorii](https://arxiv.org/abs/1506.02438). Criticul este un al doilea model care trebuie antrenat, de obicei de aceeași mărime cu modelul principal (strategia).
 
 :::note[Costul de memorie: PPO față de GRPO]
 În total, PPO pentru LLM-uri ține în memorie patru modele în același timp: strategia (modelul antrenat), modelul de referință, modelul de recompensă și modelul de valoare. Pentru modele de zeci de miliarde de parametri, asta înseamnă foarte mult hardware. De aceea au devenit atractive alternative precum GRPO, care renunță la critic.
@@ -97,7 +97,7 @@ Avantajele vin de la un **model de valoare** (_value model_), numit și critic, 
 
 <PpoGrpoDiagram />
 
-Pentru fiecare prompt $x$, strategia generează un grup de $G$ răspunsuri $y_1, \ldots, y_G$, care primesc recompensele $r_1, \ldots, r_G$. Avantajul fiecărui răspuns este recompensa lui normalizată în interiorul grupului.
+Pentru fiecare prompt $x$, strategia generează un grup de $G$ răspunsuri $y_1, \ldots, y_G$, care primesc recompensele $r_1, \ldots, r_G$. Avantajul fiecărui răspuns este recompensa răspunsului, normalizată în interiorul grupului.
 
 <DeepDive title="Avantajul în GRPO">
 
@@ -146,7 +146,7 @@ for ratio in [0.5, 0.9, 1.0, 1.1, 1.5]:
 `}
 />
 
-Când toate răspunsurile din grup primesc aceeași recompensă, toate avantajele sunt zero și grupul nu contribuie la învățare. De aceea, problemele folosite la antrenare nu trebuie să fie nici prea ușoare, nici prea grele pentru modelul curent. În valorile afișate pentru obiectiv, cele cu avantaj pozitiv se opresc la 1,2: odată ce un token a devenit cu 20% mai probabil, nu se mai câștigă nimic dacă probabilitatea lui crește în continuare.
+Când toate răspunsurile din grup primesc aceeași recompensă, toate avantajele sunt zero și grupul nu contribuie la învățare. De aceea, problemele folosite la antrenare nu trebuie să fie nici prea ușoare, nici prea grele pentru modelul curent. În valorile afișate pentru obiectiv, cele cu avantaj pozitiv se opresc la 1,2: odată ce un token a devenit cu 20% mai probabil, nu se mai câștigă nimic dacă probabilitatea tokenului crește în continuare.
 
 ## Recompense verificabile și raționament
 
@@ -156,7 +156,7 @@ Modelul [DeepSeek-R1](https://arxiv.org/abs/2501.12948), publicat în ianuarie 2
 
 ## Alternative fără consolidare
 
-Învățarea prin consolidare este costisitoare, deoarece modelul trebuie să genereze răspunsuri în timpul antrenării, iar procesul este sensibil la hiperparametri. **DPO** (_direct preference optimization_), propus în 2023 de [Rafailov și colaboratorii](https://arxiv.org/abs/2305.18290), folosește aceleași perechi de răspunsuri preferate și respinse ca RLHF, dar optimizează modelul direct pe ele, cu o funcție de pierdere obișnuită, fără model de recompensă separat și fără generare în timpul antrenării. Modelul SmolLM2 din [demo-ul de pe pagina despre LLM-uri](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#un-model-compact-în-browser) a fost aliniat cu DPO.
+Învățarea prin consolidare este costisitoare, deoarece modelul trebuie să genereze răspunsuri în timpul antrenării, iar procesul este sensibil la hiperparametri. **DPO** (_direct preference optimization_), propus în 2023 de [Rafailov și colaboratorii](https://arxiv.org/abs/2305.18290), folosește aceleași perechi de răspunsuri preferate și respinse ca RLHF, dar optimizează modelul direct pe aceste perechi, cu o funcție de pierdere obișnuită, fără model de recompensă separat și fără generare în timpul antrenării. Modelul SmolLM2 din [demo-ul de pe pagina despre LLM-uri](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#un-model-compact-în-browser) a fost aliniat cu DPO.
 
 :::tip[Rețeta obișnuită de post-antrenare]
 În practică, metodele sunt adesea combinate.

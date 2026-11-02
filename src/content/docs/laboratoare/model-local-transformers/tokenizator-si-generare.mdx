@@ -82,7 +82,7 @@ Câteva lucruri merită observate.
 - **`AutoModelForCausalLM`** încarcă un **model de limbaj cauzal** (_causal language model_), adică un model care prezice următorul token pe baza celor anterioare. Argumentul `dtype="auto"` păstrează tipul de date în care au fost salvate ponderile, aici `bfloat16`, iar `device_map="auto"` pune modelul pe placa grafică, dacă există una.
 - **Șablonul de chat** (_chat template_) este salvat împreună cu tokenizatorul. Fiecare familie de modele își marchează altfel rolurile. SmolLM2 folosește `<|im_start|>` și `<|im_end|>`, iar alte modele au alte tokenuri speciale. Dacă promptul nu respectă exact formatul de la antrenare, răspunsurile devin mult mai slabe. Detaliile sunt în [ghidul despre șabloanele de chat](https://huggingface.co/docs/transformers/chat_templating).
 - **`add_generation_prompt=True`** adaugă la final începutul replicii asistentului, `<|im_start|>assistant`, ca modelul să continue cu răspunsul, nu cu o nouă întrebare a utilizatorului.
-- **Răspunsul este greșit.** Modelul a ales sensul de „jeton” al cuvântului _token_, nu pe cel din informatică. Un model cu 362 de milioane de parametri cunoaște limba destul de bine, dar are puține cunoștințe despre lume. Pagina despre [halucinații](/modele-lingvistice/halucinatii/) explică de ce un astfel de răspuns sună totuși sigur pe el.
+- **Răspunsul este greșit.** Modelul a ales sensul de „jeton” al cuvântului _token_, nu pe cel din informatică. Un model cu 362 de milioane de parametri cunoaște limba destul de bine, dar are puține cunoștințe despre lume. Pagina despre [halucinații](/modele-lingvistice/halucinatii/) explică de ce un astfel de răspuns sună totuși atât de sigur.
 
 ## Parametrii generării
 

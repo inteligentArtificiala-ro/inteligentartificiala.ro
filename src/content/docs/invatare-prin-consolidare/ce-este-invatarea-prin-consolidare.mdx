@@ -17,7 +17,7 @@ Metodele din această familie au jucat table aproape de nivelul celor mai buni j
 
 ## Definiție
 
-Problema are doi participanți. **Agentul** (_agent_) ia decizii, iar **mediul** (_environment_) răspunde la ele. La fiecare pas $t$, agentul observă **starea** (_state_) $s_t$ și alege o **acțiune** (_action_) $a_t$. Mediul trece în starea $s_{t+1}$ și îi dă agentului o **recompensă** (_reward_) $r_{t+1}$, un număr real.
+Problema are doi participanți. **Agentul** (_agent_) ia decizii, iar **mediul** (_environment_) răspunde la aceste decizii. La fiecare pas $t$, agentul observă **starea** (_state_) $s_t$ și alege o **acțiune** (_action_) $a_t$. Mediul trece în starea $s_{t+1}$ și îi dă agentului o **recompensă** (_reward_) $r_{t+1}$, un număr real.
 
 <AgentEnvironmentDiagram />
 
@@ -65,7 +65,7 @@ Când strategia este o rețea neuronală cu parametrii $\theta$, o notăm $\pi_\
 
 O **funcție de valoare** (_value function_) estimează cât de bună este o situație, adică ce recompensă cumulată poate aștepta agentul de acolo înainte, dacă urmează strategia $\pi$.
 
-$V^{\pi}(s)$ este valoarea unei stări. $Q^{\pi}(s, a)$ este valoarea alegerii acțiunii $a$ în starea $s$, după care agentul continuă să urmeze strategia $\pi$. Diferența dintre ele se numește **avantaj** (_advantage_).
+$V^{\pi}(s)$ este valoarea unei stări. $Q^{\pi}(s, a)$ este valoarea alegerii acțiunii $a$ în starea $s$, după care agentul continuă să urmeze strategia $\pi$. Diferența dintre cele două valori se numește **avantaj** (_advantage_).
 
 <DeepDive title="Funcțiile de valoare și avantajul">
 

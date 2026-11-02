@@ -15,7 +15,7 @@ import DeepDive from '@components/DeepDive.astro';
 import AgentMemoryDiagram from '@components/diagrams/AgentMemoryDiagram.astro';
 import { Steps } from '@astrojs/starlight/components';
 
-Un [model de limbaj](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) nu ține minte nimic de la o cerere la alta. Ponderile lui nu se schimbă în timpul folosirii, iar tot ce „știe” modelul despre conversația curentă vine din textul primit în [fereastra de context](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#limitări). Când un asistent pare să-și amintească numele nostru sau o decizie luată acum o oră, de fapt [harnașamentul](/comportament-agentic/harnasamentul/) a pus din nou acea informație în prompt.
+Un [model de limbaj](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) nu ține minte nimic de la o cerere la alta. Ponderile modelului nu se schimbă în timpul folosirii, iar tot ce „știe” modelul despre conversația curentă vine din textul primit în [fereastra de context](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#limitări). Când un asistent pare să-și amintească numele nostru sau o decizie luată acum o oră, de fapt [harnașamentul](/comportament-agentic/harnasamentul/) a pus din nou acea informație în prompt.
 
 **Memoria unui agent** (_agent memory_) este deci, înainte de toate, o problemă de inginerie a harnașamentului. Trebuie să decidem ce păstrăm, unde păstrăm, cum regăsim informația și când o aducem înapoi în context. Răspunsurile depind de cât timp trebuie să trăiască informația și de cât de exactă trebuie să rămână.
 
@@ -58,13 +58,13 @@ Locul din prompt contează și din alt motiv. Furnizorii de modele păstrează �
 
 ### Rezumarea (summarization)
 
-Când conversația se lungește, mesajele vechi pot fi înlocuite de un rezumat. Varianta clasică este **rezumatul cumulativ** (_rolling summary_): la câteva schimburi de mesaje, un apel separat către model actualizează rezumatul cu ce s-a întâmplat între timp, iar mesajele rezumate ies din context. Ultimele mesaje rămân întregi, pentru că de ele depinde de obicei pasul următor.
+Când conversația se lungește, mesajele vechi pot fi înlocuite de un rezumat. Varianta clasică este **rezumatul cumulativ** (_rolling summary_): la câteva schimburi de mesaje, un apel separat către model actualizează rezumatul cu ce s-a întâmplat între timp, iar mesajele rezumate ies din context. Ultimele mesaje rămân întregi, pentru că sunt de obicei cele de care depinde pasul următor.
 
 ### Compactarea (context compaction)
 
 [Compactarea](/comportament-agentic/orchestrare-si-sisteme-multi-agent/#compactarea-contextului-context-compaction) este rezumarea aplicată întregii sesiuni de lucru, atunci când contextul se apropie de limită. Harnașamentul îi cere modelului un rezumat structurat: obiectivul, deciziile luate, fișierele modificate, ce a eșuat și ce a rămas de făcut. Apoi pornește un context nou, care conține promptul de sistem, rezumatul și ultimele mesaje.
 
-O variantă mai ieftină este **curățarea rezultatelor de instrumente** (_tool result clearing_). Ieșirile lungi ale comenzilor deja procesate, cum ar fi jurnalele de compilare sau conținutul fișierelor citite, sunt înlocuite cu o mențiune scurtă, de exemplu _„[rezultat eliminat, 4.200 de linii]”_. Dacă agentul are din nou nevoie de ele, rulează comanda încă o dată.
+O variantă mai ieftină este **curățarea rezultatelor de instrumente** (_tool result clearing_). Ieșirile lungi ale comenzilor deja procesate, cum ar fi jurnalele de compilare sau conținutul fișierelor citite, sunt înlocuite cu o mențiune scurtă, de exemplu _„[rezultat eliminat, 4.200 de linii]”_. Dacă agentul are din nou nevoie de acele ieșiri, rulează comanda încă o dată.
 
 :::caution[Compactarea pierde informație]
 Orice rezumat este o comprimare cu pierderi. Un detaliu care părea neimportant în momentul compactării, de exemplu o restricție menționată în treacăt de utilizator, poate dispărea, iar agentul nu știe că l-a pierdut. De aceea, harnașamentele bune îi cer modelului să păstreze explicit cerințele utilizatorului și deciziile, iar ce trebuie să supraviețuiască sigur este scris în afara contextului, într-un fișier sau într-o bază de date.
@@ -129,7 +129,7 @@ Până aici, memoria a stat în afara modelului, iar harnașamentul a adus-o în
 - **Straturi de memorie.** [Memory Layers at Scale](https://arxiv.org/abs/2412.09764) (Berges și colaboratorii, Meta, 2024) înlocuiește unele rețele feed-forward cu tabele mari de chei și valori antrenabile, din care fiecare token citește doar câteva intrări. Modelul poate stoca mai multe fapte fără ca, la fiecare token, costul computațional să crească în aceeași măsură.
 - **Memorie care învață la inferență.** [Titans](https://arxiv.org/abs/2501.00663) (Behrouz și colaboratorii, Google, 2024) adaugă un modul neuronal de memorie pe termen lung, ale cărui ponderi se actualizează chiar în timpul inferenței, cu atât mai mult cu cât informația nouă îl „surprinde” mai tare.
 
-Aceste abordări sunt promițătoare, dar, în afară de ponderi și de KV cache, rămân în mare parte în zona de cercetare. Memoria arhitecturală nu poate fi citită sau corectată de un om, nu poate fi ștearsă selectiv pentru un singur utilizator și cere de obicei un model antrenat special pentru ea. Din aceste motive, în produsele de azi memoria pe termen lung stă aproape întotdeauna în afara modelului.
+Aceste abordări sunt promițătoare, dar, în afară de ponderi și de KV cache, rămân în mare parte în zona de cercetare. Memoria arhitecturală nu poate fi citită sau corectată de un om, nu poate fi ștearsă selectiv pentru un singur utilizator și cere de obicei un model antrenat special pentru acest tip de memorie. Din aceste motive, în produsele de azi memoria pe termen lung stă aproape întotdeauna în afara modelului.
 
 ## Memoria ca text în harnașamentele de azi
 
@@ -137,7 +137,7 @@ Dacă ne uităm la asistenții conversaționali și la agenții de programare fo
 
 - **Fișiere de instrucțiuni ale proiectului**: `AGENTS.md`, `CLAUDE.md` sau alte fișiere de reguli, scrise de oameni și încărcate automat la începutul sesiunii.
 - **Notițe scrise de agent**: un director cu fișiere Markdown în care agentul notează ce a aflat (comenzile de build, capcanele proiectului, preferințele utilizatorului) și pe care le citește în sesiunile următoare.
-- **Fapte-cheie despre utilizator**: asistenții conversaționali de tipul ChatGPT, Gemini sau Claude au funcții de memorie care păstrează informații între conversații, de exemplu _„lucrează ca inginer de date”_ sau _„preferă exemple în Python”_. Implementarea lor exactă nu este publică, dar principiul general este cel descris mai jos.
+- **Fapte-cheie despre utilizator**: asistenții conversaționali de tipul ChatGPT, Gemini sau Claude au funcții de memorie care păstrează informații între conversații, de exemplu _„lucrează ca inginer de date”_ sau _„preferă exemple în Python”_. Implementarea exactă a acestor funcții nu este publică, dar principiul general este cel descris mai jos.
 - **Planuri și jurnale de progres**: pentru sarcinile lungi, agentul ține un fișier cu planul și cu pașii terminați, ca să poată relua lucrul după o compactare sau într-o sesiune nouă.
 
 Un fișier de memorie al unui agent de programare poate arăta, de exemplu, așa.
@@ -158,7 +158,7 @@ Un fișier de memorie al unui agent de programare poate arăta, de exemplu, așa
 
 ### Extragerea faptelor-cheie
 
-Când memoria nu este scrisă de mână, ea se construiește prin **extragerea faptelor-cheie** (_key fact extraction_). Ciclul are de obicei patru pași.
+Când nu este scrisă de mână, memoria se construiește prin **extragerea faptelor-cheie** (_key fact extraction_). Ciclul are de obicei patru pași.
 
 <Steps>
 1. **Extragerea**: după o conversație, sau periodic, în fundal, un apel separat către model citește mesajele și scoate o listă de fapte scurte, care se înțeleg și singure, de exemplu _„Utilizatorul lucrează pe macOS.”_, _„Proiectul Atlas are termen pe 1 decembrie.”_
@@ -179,7 +179,7 @@ Observăm că, și atunci când la pasul 2 se folosesc vectori, rezultatul final
 :::caution[Limitele memoriei text]
 - **Memoria crește.** Ocupă context la fiecare apel și are nevoie de curățare periodică, la fel ca orice documentație.
 - **Faptele extrase automat pot fi greșite.** Un fapt înțeles greșit, învechit sau scos din context este tratat apoi de model ca adevărat, în toate sesiunile.
-- **Otrăvirea memoriei** (_memory poisoning_). Un text malițios citit de agent, de exemplu o pagină web sau un comentariu dintr-un fișier, îl poate convinge să salveze o „regulă” care îi influențează toate sesiunile viitoare. Memoria scrisă de agent trebuie tratată ca date, nu ca instrucțiuni de încredere, iar modificările ei trebuie să poată fi verificate de un om. Pagina [Provocări și bune practici](/comportament-agentic/provocari-si-bune-practici/) discută mai pe larg securitatea agenților.
+- **Otrăvirea memoriei** (_memory poisoning_). Un text malițios citit de agent, de exemplu o pagină web sau un comentariu dintr-un fișier, îl poate convinge să salveze o „regulă” care îi influențează toate sesiunile viitoare. Memoria scrisă de agent trebuie tratată ca date, nu ca instrucțiuni de încredere, iar modificările memoriei trebuie să poată fi verificate de un om. Pagina [Provocări și bune practici](/comportament-agentic/provocari-si-bune-practici/) discută mai pe larg securitatea agenților.
 :::
 
 ## Bibliografie

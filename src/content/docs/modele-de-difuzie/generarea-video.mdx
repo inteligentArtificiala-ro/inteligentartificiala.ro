@@ -12,7 +12,7 @@ import VideoDiffusionDiagram from '@components/diagrams/VideoDiffusionDiagram.as
 
 În februarie 2024, OpenAI a prezentat Sora, un model care genera clipuri realiste de până la un minut pornind de la o descriere. În mai puțin de doi ani au apărut zeci de modele asemănătoare: Veo (Google), Kling (Kuaishou), Runway Gen-4, dar și modele cu ponderi deschise, precum HunyuanVideo (Tencent) și Wan (Alibaba). În 2025, Veo 3 și Sora 2 au început să genereze și sunetul: dialog sincronizat cu mișcarea buzelor, zgomote de fundal și muzică.
 
-Cele mai multe dintre modelele despre care se știu detalii sunt [modele de difuzie](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/). Ele lucrează pe aceleași principii ca [generatoarele de imagini](/modele-de-difuzie/generarea-imaginilor/), cu o dimensiune în plus: timpul.
+Cele mai multe dintre modelele despre care se știu detalii sunt [modele de difuzie](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/). Aceste modele lucrează pe aceleași principii ca [generatoarele de imagini](/modele-de-difuzie/generarea-imaginilor/), cu o dimensiune în plus: timpul.
 
 ## De ce este un clip mai greu decât o imagine
 
@@ -25,9 +25,9 @@ Cea mai simplă idee, ca un generator de imagini să deseneze fiecare cadru sepa
 
 ## Comprimarea în spațiu și timp
 
-Ca la [difuzia latentă](/modele-de-difuzie/generarea-imaginilor/#difuzia-în-spațiul-latent) pentru imagini, clipul este mai întâi comprimat de un autoencoder. Pentru video, autoencoderul este un **VAE 3D**, care comprimă nu doar fiecare cadru, ci și timpul, pentru că două cadre consecutive seamănă foarte mult între ele. Modelele HunyuanVideo și Wan comprimă clipul de 4 ori în timp și de 8 ori pe fiecare dimensiune a imaginii, cu 16 valori pentru fiecare poziție.
+Ca la [difuzia latentă](/modele-de-difuzie/generarea-imaginilor/#difuzia-în-spațiul-latent) pentru imagini, clipul este mai întâi comprimat de un autoencoder. Pentru video, autoencoderul este un **VAE 3D**, care comprimă nu doar fiecare cadru, ci și timpul, pentru că două cadre consecutive seamănă foarte mult unul cu altul. Modelele HunyuanVideo și Wan comprimă clipul de 4 ori în timp și de 8 ori pe fiecare dimensiune a imaginii, cu 16 valori pentru fiecare poziție.
 
-Un clip de 121 de cadre, la 1280 × 720, are $121 \times 720 \times 1280 \times 3 = 334.540.800$ de valori. Reprezentarea lui latentă are $31 \times 90 \times 160 \times 16 = 7.142.400$ de valori, de aproape 47 de ori mai puține. Primul cadru este codificat separat, de aceea 121 de cadre devin $1 + 120 / 4 = 31$. Așa, același autoencoder poate codifica și o singură imagine, ca pe un clip cu un cadru.
+Un clip de 121 de cadre, la 1280 × 720, are $121 \times 720 \times 1280 \times 3 = 334.540.800$ de valori. Reprezentarea latentă a clipului are $31 \times 90 \times 160 \times 16 = 7.142.400$ de valori, de aproape 47 de ori mai puține. Primul cadru este codificat separat, de aceea 121 de cadre devin $1 + 120 / 4 = 31$. Așa, același autoencoder poate codifica și o singură imagine, ca pe un clip cu un cadru.
 
 ## Petice de spațiu-timp
 
@@ -46,9 +46,9 @@ Modelele video pot porni de la mai multe tipuri de intrare.
 - **De la text la video** (_text-to-video_): clipul este generat doar din descriere.
 - **De la imagine la video** (_image-to-video_): primul cadru este dat, iar modelul generează mișcarea care urmează. Așa sunt „animate” fotografiile, inclusiv fotografiile vechi de familie. Aceeași funcție poate pune însă o persoană reală, dintr-o fotografie, în situații care nu au avut loc niciodată.
 - **De la video la video** (_video-to-video_): un clip existent este transformat, de exemplu i se schimbă stilul sau un obiect, sau este continuat cu cadre noi.
-- **Sunetul**: Veo 3 (Google, 2025) și Sora 2 (OpenAI, 2025) generează sunetul odată cu imaginea, inclusiv vorbirea sincronizată cu mișcarea buzelor. Detaliile arhitecturii lor nu sunt publice.
+- **Sunetul**: Veo 3 (Google, 2025) și Sora 2 (OpenAI, 2025) generează sunetul odată cu imaginea, inclusiv vorbirea sincronizată cu mișcarea buzelor. Detaliile arhitecturii acestor modele nu sunt publice.
 
-Un pas mai departe sunt **modelele lumii** (_world models_), precum Genie 3 (Google DeepMind, 2025). Ele generează în timp real o lume prin care utilizatorul se poate deplasa, iar cadrele următoare depind de acțiunile lui, ca într-un joc video desenat pe loc.
+Un pas mai departe sunt **modelele lumii** (_world models_), precum Genie 3 (Google DeepMind, 2025). Aceste modele generează în timp real o lume prin care utilizatorul se poate deplasa, iar cadrele următoare depind de acțiunile lui, ca într-un joc video desenat pe loc.
 
 ## Limitele modelelor video
 
@@ -59,11 +59,11 @@ Un pas mai departe sunt **modelele lumii** (_world models_), precum Genie 3 (Goo
 
 ## Clipurile false cu persoane reale
 
-Cele mai multe clipuri false care circulă nu sunt generate de la zero. De obicei, se pornește de la o înregistrare reală a unei persoane publice, de exemplu un interviu sau o emisiune. Peste ea se pune o [voce clonată](/modele-de-difuzie/generarea-vocii/#clonarea-vocii), iar buzele sunt modificate ca să se potrivească noului text (**sincronizarea buzelor**, _lip sync_). Alteori, fața este înlocuită cu a altei persoane (**înlocuirea feței**, _face swap_). Astfel de clipuri se numesc **deepfake** și pot fi făcute astăzi cu aplicații accesibile oricui.
+Cele mai multe clipuri false care circulă nu sunt generate de la zero. De obicei, se pornește de la o înregistrare reală a unei persoane publice, de exemplu un interviu sau o emisiune. Peste înregistrare se pune o [voce clonată](/modele-de-difuzie/generarea-vocii/#clonarea-vocii), iar buzele sunt modificate ca să se potrivească noului text (**sincronizarea buzelor**, _lip sync_). Alteori, fața este înlocuită cu a altei persoane (**înlocuirea feței**, _face swap_). Astfel de clipuri se numesc **deepfake** și pot fi făcute astăzi cu aplicații accesibile oricui.
 
-În România au circulat pe Facebook, YouTube și Instagram reclame cu clipuri false în care persoane cunoscute (oficiali ai statului, politicieni, prezentatori TV și oameni de afaceri) păreau să recomande platforme de investiții cu câștiguri garantate. Instituții precum Banca Națională a României și Directoratul Național de Securitate Cibernetică (DNSC) au avertizat public, de mai multe ori, asupra lor.
+În România au circulat pe Facebook, YouTube și Instagram reclame cu clipuri false în care persoane cunoscute (oficiali ai statului, politicieni, prezentatori TV și oameni de afaceri) păreau să recomande platforme de investiții cu câștiguri garantate. Instituții precum Banca Națională a României și Directoratul Național de Securitate Cibernetică (DNSC) au avertizat public, de mai multe ori, asupra acestor reclame.
 
-Unele servicii marchează clipurile pe care le generează. Veo adaugă filigranul invizibil SynthID, iar clipurile Sora 2 au un filigran vizibil și metadate C2PA, descrise pe pagina despre [recunoașterea imaginilor generate](/modele-de-difuzie/generarea-imaginilor/#cum-recunoaștem-o-imagine-generată). Un filigran vizibil poate fi însă decupat, iar metadatele se pierd la reîncărcare, așa că lipsa lor nu dovedește că un clip este real.
+Unele servicii marchează clipurile pe care le generează. Veo adaugă filigranul invizibil SynthID, iar clipurile Sora 2 au un filigran vizibil și metadate C2PA, descrise pe pagina despre [recunoașterea imaginilor generate](/modele-de-difuzie/generarea-imaginilor/#cum-recunoaștem-o-imagine-generată). Un filigran vizibil poate fi însă decupat, iar metadatele se pierd la reîncărcare, așa că lipsa filigranului sau a metadatelor nu dovedește că un clip este real.
 
 :::caution[Cum ne ferim de clipurile false]
 - **Promisiunea**: semnalul de alarmă este oferta, nu calitatea clipului. Nicio persoană publică și nicio instituție nu recomandă într-o reclamă o platformă cu câștiguri garantate.

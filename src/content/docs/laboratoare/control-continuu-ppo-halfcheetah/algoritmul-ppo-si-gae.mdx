@@ -49,7 +49,7 @@ unde $\epsilon$ are de regulă valoarea $0{,}2$. Operatorul `clip` ține raportu
 Funcția `min` alege varianta mai pesimistă dintre obiectivul netrunchiat și cel trunchiat. Să luăm pe rând cele două cazuri, după semnul avantajului $\hat{A}_t$:
 
 1. **Avantaj pozitiv ($\hat{A}_t > 0$)**: acțiunea a fost mai bună decât media. Vrem să-i creștem probabilitatea ($r_t > 1$). Însă dacă $r_t > 1+\epsilon$ (adică $r_t > 1{,}2$), termenul trunchiat devine $(1+\epsilon)\hat{A}_t$, care este mai mic decât $r_t \hat{A}_t$. Funcția `min` alege valoarea plafonată, iar gradientul devine zero. Astfel, strategia nu mai are niciun câștig dacă face un pas prea mare într-o singură iterație.
-2. **Avantaj negativ ($\hat{A}_t < 0$)**: acțiunea a fost mai slabă decât media. Vrem să-i scădem probabilitatea ($r_t < 1$). Dacă $r_t < 1-\epsilon$ (adică $r_t < 0{,}8$), termenul trunchiat devine $(1-\epsilon)\hat{A}_t$. Cum avantajul este negativ, acest termen este mai mic decât $r_t \hat{A}_t$, așa că funcția `min` îl alege pe el, iar gradientul devine din nou zero. Strategia nu câștigă nimic dacă scade prea mult probabilitatea acțiunii într-o singură iterație.
+2. **Avantaj negativ ($\hat{A}_t < 0$)**: acțiunea a fost mai slabă decât media. Vrem să-i scădem probabilitatea ($r_t < 1$). Dacă $r_t < 1-\epsilon$ (adică $r_t < 0{,}8$), termenul trunchiat devine $(1-\epsilon)\hat{A}_t$. Cum avantajul este negativ, acest termen este mai mic decât $r_t \hat{A}_t$, așa că funcția `min` alege acest termen, iar gradientul devine din nou zero. Strategia nu câștigă nimic dacă scade prea mult probabilitatea acțiunii într-o singură iterație.
 
 </DeepDive>
 
@@ -86,7 +86,7 @@ Observăm că, pentru $\hat{A}_t = +1$, odată ce $r_t$ depășește $1{,}2$, ob
 
 Ca să știm cât de bună a fost o acțiune față de ce ne așteptam în medie în starea respectivă, avem nevoie de o estimare bună a [avantajului](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/#funcții-de-valoare) $A(s_t, a_t)$.
 
-Cea mai simplă estimare este eroarea de diferență temporală (_temporal difference_, TD) la un singur pas. Ea compară recompensa primită la acest pas, plus valoarea estimată a stării următoare, cu valoarea estimată a stării curente.
+Cea mai simplă estimare este eroarea de diferență temporală (_temporal difference_, TD) la un singur pas. Această eroare compară recompensa primită la acest pas, plus valoarea estimată a stării următoare, cu valoarea estimată a stării curente.
 
 <DeepDive title="Eroarea TD la un singur pas">
 

@@ -13,13 +13,13 @@ import NeuralNetworkDiagram from '../../../components/NeuralNetworkDiagram.astro
 import NeuronDemo from '../../../components/NeuronDemo.astro';
 import ReluGraph from '../../../components/ReluGraph.astro';
 
-O **rețea neuronală** (_neural network_) este un model de **învățare automată** (_machine learning_) alcătuit din unități de calcul legate între ele. Fiecare unitate prelucrează câteva valori numerice, iar rețeaua înlănțuie aceste calcule, unul după altul, până ajunge la o predicție. În timpul antrenării, valorile conexiunilor dintre neuroni se ajustează treptat, astfel încât rețeaua să surprindă tiparele din date.
+O **rețea neuronală** (_neural network_) este un model de **învățare automată** (_machine learning_) alcătuit din unități de calcul legate unele de altele. Fiecare unitate prelucrează câteva valori numerice, iar rețeaua înlănțuie aceste calcule, unul după altul, până ajunge la o predicție. În timpul antrenării, valorile conexiunilor dintre neuroni se ajustează treptat, astfel încât rețeaua să surprindă tiparele din date.
 
 Când folosim rețele cu mai multe straturi ascunse, vorbim despre **învățare profundă** (_deep learning_). Pe astfel de rețele se sprijină marile progrese din recunoașterea imaginilor, sinteza vocală și modelele de limbaj. Ideea de pornire a venit din biologie, dar rețelele neuronale artificiale sunt modele matematice antrenate prin optimizare numerică, nu simulări fidele ale creierului uman.
 
 ## Definiție
 
-Un **neuron artificial** (_artificial neuron_) primește un vector de intrare $x_1, x_2, \ldots, x_n$. Fiecare intrare are o **pondere** (_weight_) $w_i$, care arată cât contează acea valoare. Primul pas este calculul sumei ponderate $z$. Neuronul înmulțește fiecare intrare cu ponderea ei, adună rezultatele și adaugă *bias*-ul, un număr care mută pragul de la care neuronul se activează.
+Un **neuron artificial** (_artificial neuron_) primește un vector de intrare $x_1, x_2, \ldots, x_n$. Fiecare intrare are o **pondere** (_weight_) $w_i$, care arată cât contează acea valoare. Primul pas este calculul sumei ponderate $z$. Neuronul înmulțește fiecare intrare cu ponderea corespunzătoare, adună rezultatele și adaugă *bias*-ul, un număr care mută pragul de la care neuronul se activează.
 
 Rezultatul trece apoi printr-o **funcție de activare** (_activation function_), care adaugă calculului o transformare neliniară. Una dintre cele mai folosite este **funcția liniară rectificată** (_rectified linear unit_, ReLU).
 
@@ -67,7 +67,7 @@ Demo-ul interactiv de mai jos arată un neuron cu două intrări și activare Re
 
 <NeuronDemo />
 
-Cât timp suma ponderată este negativă, ieșirea ReLU rămâne zero (neuronul este inactiv). Când suma devine pozitivă, ieșirea crește liniar odată cu ea. Într-o rețea întreagă, același calcul se repetă, în paralel, pentru milioane sau miliarde de neuroni.
+Cât timp suma ponderată este negativă, ieșirea ReLU rămâne zero (neuronul este inactiv). Când suma devine pozitivă, ieșirea crește liniar odată cu suma. Într-o rețea întreagă, același calcul se repetă, în paralel, pentru milioane sau miliarde de neuroni.
 
 ## Cum învață o rețea neuronală
 

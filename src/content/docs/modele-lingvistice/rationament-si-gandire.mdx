@@ -16,7 +16,7 @@ import Python from '@components/Python.astro';
 
 Unii asistenți conversaționali afișează, înainte de răspuns, un mesaj de tipul _„Gândește…”_ și abia după câteva secunde sau minute răspund. Dacă ne uităm la textul generat în acest timp, găsim ceva ce seamănă izbitor cu un monolog interior: _„Hmm, stai puțin. Am numărat de două ori același caz. Să reiau.”_ Este greu să nu avem impresia că modelul chiar gândește.
 
-Pagina explică ce se întâmplă de fapt. Pornim de la o observație simplă despre calculul dintr-un [model de limbaj](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/), trecem prin lanțul de gânduri cerut prin prompt, apoi prin modelele antrenate să raționeze cu [învățare prin consolidare](/modele-lingvistice/invatare-prin-consolidare-pentru-llm/) și prin sistemele agentice care împart gândirea în mai mulți pași. La final, ne întoarcem la întrebarea de la început: de unde vine impresia de gândire și cât de mult putem avea încredere în ea.
+Pagina explică ce se întâmplă de fapt. Pornim de la o observație simplă despre calculul dintr-un [model de limbaj](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/), trecem prin lanțul de gânduri cerut prin prompt, apoi prin modelele antrenate să raționeze cu [învățare prin consolidare](/modele-lingvistice/invatare-prin-consolidare-pentru-llm/) și prin sistemele agentice care împart gândirea în mai mulți pași. La final, ne întoarcem la întrebarea de la început: de unde vine impresia de gândire și cât de mult putem avea încredere în această impresie.
 
 <ReasoningLevelsDiagram />
 
@@ -24,7 +24,7 @@ Pagina explică ce se întâmplă de fapt. Pornim de la o observație simplă de
 
 În contextul modelelor de limbaj, **raționamentul** (_reasoning_) se referă la textul intermediar pe care modelul îl generează înainte de răspunsul final: calcule parțiale, ipoteze, verificări, reveniri asupra unor pași greșiți. Tokenurile din această parte se numesc adesea **tokenuri de gândire** (_thinking tokens_), iar un **model de raționament** (_reasoning model_) este un model antrenat special să producă un astfel de text, de obicei lung, înainte să răspundă.
 
-Pentru model, aceste tokenuri nu sunt cu nimic speciale. Sunt generate exact ca orice alt text, câte unul pe rând, prin [predicția următorului token](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/). Diferența ține de ce conțin și de felul în care harnașamentul le tratează. De obicei, ele sunt marcate cu tokenuri speciale, de exemplu `<think>` și `</think>`, iar interfața le ascunde, le afișează separat sau arată doar un rezumat al lor.
+Pentru model, aceste tokenuri nu sunt cu nimic speciale. Sunt generate exact ca orice alt text, câte unul pe rând, prin [predicția următorului token](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/). Diferența ține de ce conțin și de felul în care harnașamentul le tratează. De obicei, tokenurile de gândire sunt marcate cu tokenuri speciale, de exemplu `<think>` și `</think>`, iar interfața le ascunde, le afișează separat sau arată doar un rezumat.
 
 ## Unde se face calculul
 
@@ -38,7 +38,7 @@ Dacă o problemă cere mai mulți pași de calcul care depind unul de altul dec�
 Ideea de **ciornă** (_scratchpad_) a fost testată de [Nye și colaboratorii](https://arxiv.org/abs/2112.00114) în 2021: modele antrenate să scrie pașii intermediari ai unei adunări sau ai execuției unui program obțineau rezultate mult mai bune decât cele antrenate să dea direct rezultatul. Mai târziu, [Merrill și Sabharwal](https://arxiv.org/abs/2310.07923) (2023) au arătat și teoretic că un Transformer care poate genera pași intermediari rezolvă clase de probleme pe care același Transformer, obligat să răspundă imediat, nu le poate rezolva.
 
 :::note[Între două tokenuri, modelul nu „ține minte” nimic altceva]
-Singura stare care trece de la un token la altul este contextul, împreună cu [memoria cache pentru chei și valori](/modele-lingvistice/arhitectura-transformer/#memoria-cache-pentru-chei-și-valori-kv-cache) calculată din el. Modelul nu are un gând ascuns care continuă în fundal. Tot ce „gândește” de la un pas la altul trebuie să fie scris în tokenuri.
+Singura stare care trece de la un token la altul este contextul, împreună cu [memoria cache pentru chei și valori](/modele-lingvistice/arhitectura-transformer/#memoria-cache-pentru-chei-și-valori-kv-cache) calculată din context. Modelul nu are un gând ascuns care continuă în fundal. Tot ce „gândește” de la un pas la altul trebuie să fie scris în tokenuri.
 :::
 
 ## Lanțul de gânduri (chain of thought)
@@ -64,7 +64,7 @@ Exemplul arată de ce ajută pașii scriși. Răspunsul direct pare plauzibil, d
 
 Generarea textului are o parte aleatoare, controlată de [temperatură](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/), așa că două lanțuri de gânduri pentru aceeași întrebare pot ajunge la răspunsuri diferite. [Wang și colaboratorii](https://arxiv.org/abs/2203.11171) (2022) au propus metoda numită **autoconsecvență** (_self-consistency_): generăm mai multe lanțuri independente și păstrăm răspunsul final care apare cel mai des.
 
-Metoda funcționează pentru că greșelile tind să fie diferite de la un lanț la altul, pe când drumurile corecte ajung la același rezultat. Codul de mai jos simulează un model care găsește răspunsul corect într-un singur lanț cu probabilitatea 0,4, iar greșelile lui se împart între cinci răspunsuri greșite.
+Metoda funcționează pentru că greșelile tind să fie diferite de la un lanț la altul, pe când drumurile corecte ajung la același rezultat. Codul de mai jos simulează un model care găsește răspunsul corect într-un singur lanț cu probabilitatea 0,4, iar greșelile modelului se împart între cinci răspunsuri greșite.
 
 <Python
   packages={['numpy']}
@@ -97,7 +97,7 @@ Cu un singur lanț, răspunsul este corect în aproximativ 40% din cazuri. Cu c�
 
 Lanțul de gânduri cerut prin prompt depinde de ce a văzut modelul în datele de antrenare. Pasul următor a fost să antrenăm modelul chiar pentru a raționa.
 
-O primă metodă a fost **STaR** (_Self-Taught Reasoner_), propusă de [Zelikman și colaboratorii](https://arxiv.org/abs/2203.14465) în 2022. Modelul generează raționamente pentru multe probleme, se păstrează doar cele care ajung la răspunsul corect, iar modelul este ajustat fin pe ele. Ciclul se repetă, iar modelul învață din propriile raționamente reușite.
+O primă metodă a fost **STaR** (_Self-Taught Reasoner_), propusă de [Zelikman și colaboratorii](https://arxiv.org/abs/2203.14465) în 2022. Modelul generează raționamente pentru multe probleme, se păstrează doar cele care ajung la răspunsul corect, iar modelul este ajustat fin pe aceste raționamente. Ciclul se repetă, iar modelul învață din propriile raționamente reușite.
 
 În septembrie 2024, OpenAI a prezentat modelul [o1](https://openai.com/index/learning-to-reason-with-llms/), întâi în versiunea _o1-preview_, antrenat prin învățare prin consolidare să scrie un lanț lung de gânduri înainte de răspuns. OpenAI a raportat că rezultatele cresc atât cu calculul folosit la antrenare, cât și cu timpul lăsat modelului să „gândească” la inferență. Lanțul complet de gânduri nu este arătat utilizatorilor. Interfața afișează doar un rezumat.
 
@@ -112,7 +112,7 @@ Rezultatul este interesant tocmai pentru că nicio recompensă nu cerea un anumi
 
 Explicația nu are nimic misterios. Modelul preantrenat a văzut deja pe internet milioane de rezolvări, demonstrații și explicații scrise de oameni, inclusiv momente de tipul _„stai, aici am greșit”_. Învățarea prin consolidare nu inventează aceste tipare, ci le face mai probabile pe cele care duc, statistic, la răspunsuri corecte. Verificarea propriilor pași este un astfel de tipar.
 
-Un astfel de raționament poate fi transferat și unor modele mai mici. DeepSeek a generat cu R1 aproximativ 800.000 de exemple și a ajustat fin pe ele modele mai mici, din familiile Qwen și Llama, metodă numită **distilare** (_distillation_). Modelele distilate au învățat să scrie raționamente asemănătoare fără nicio etapă de învățare prin consolidare.
+Un astfel de raționament poate fi transferat și unor modele mai mici. DeepSeek a generat cu R1 aproximativ 800.000 de exemple și a ajustat fin pe aceste exemple modele mai mici, din familiile Qwen și Llama, metodă numită **distilare** (_distillation_). Modelele distilate au învățat să scrie raționamente asemănătoare fără nicio etapă de învățare prin consolidare.
 
 ## Bugetul de gândire
 
@@ -120,7 +120,7 @@ Dacă rezultatele cresc cu numărul de tokenuri de gândire, apare o întrebare 
 
 Calculul suplimentar poate fi folosit în două feluri.
 
-- **În serie**: un singur lanț de gânduri, mai lung. Modelul își verifică pașii și revine asupra lor în același text.
+- **În serie**: un singur lanț de gânduri, mai lung. Modelul își verifică și își reia pașii în același text.
 - **În paralel**: mai multe lanțuri independente, din care alegem răspunsul prin vot majoritar sau cu ajutorul unui verificator. O variantă mai elaborată este [căutarea în arbore](/concepte-de-baza/rolul-algoritmilor-in-ai/#căutarea-la-momentul-inferenței-în-llm-uri-test-time-compute), cu un model care notează fiecare pas intermediar.
 
 Lucrarea [s1](https://arxiv.org/abs/2501.19393) (Muennighoff și colaboratorii, 2025) arată cât de direct poate fi controlat bugetul în serie. Autorii au ajustat fin un model pe doar 1.000 de exemple de raționament, apoi au folosit o metodă numită **forțarea bugetului** (_budget forcing_). Când modelul voia să încheie raționamentul prea devreme, harnașamentul ștergea tokenul de final și adăuga cuvântul _„Wait”_. Modelul continua să gândească, își verifica deseori răspunsul și, uneori, îl corecta. Când raționamentul devenea prea lung, harnașamentul îl oprea și cerea direct răspunsul.
@@ -138,28 +138,28 @@ Peste această alternanță de gânduri, acțiuni și observații, harnașamentu
 - **Planificare**: modelul scrie mai întâi un plan, iar harnașamentul îl [împarte în sarcini](/comportament-agentic/orchestrare-si-sisteme-multi-agent/#planul-și-împărțirea-în-sarcini) care sunt rezolvate una câte una sau în paralel.
 - **Verificare externă**: rezultatul este verificat de un program (teste, compilator) sau de o altă instanță a modelului, cu instrucțiuni de critic.
 - **Reflecție**: în metoda [Reflexion](https://arxiv.org/abs/2303.11366) (Shinn și colaboratorii, 2023), după o încercare eșuată modelul scrie în cuvinte ce a greșit, iar textul este păstrat în [memorie](/comportament-agentic/memoria-agentilor/) și pus în context la încercarea următoare.
-- **Un instrument pentru gânduri**: Anthropic a descris un [instrument „think”](https://www.anthropic.com/research/claude-think-tool) care nu face nimic, doar primește textul unui gând. Simpla lui existență îi dă modelului un loc explicit în care să se oprească și să analizeze rezultatele primite, între două apeluri de instrumente.
+- **Un instrument pentru gânduri**: Anthropic a descris un [instrument „think”](https://www.anthropic.com/research/claude-think-tool) care nu face nimic, doar primește textul unui gând. Simpla existență a instrumentului îi dă modelului un loc explicit în care să se oprească și să analizeze rezultatele primite, între două apeluri de instrumente.
 
-În aceste sisteme, „gândirea” nu mai este un singur text continuu. Ea este distribuită în planuri, fișiere de notițe, rezultate de teste și mesaje între mai multe instanțe ale modelului. Pagina despre [Sistemul 1 și Sistemul 2](/comportament-agentic/sistemul-1-si-sistemul-2/) discută de ce un astfel de proces seamănă cu gândirea lentă și deliberată descrisă de Daniel Kahneman.
+În aceste sisteme, „gândirea” nu mai este un singur text continuu, ci este distribuită în planuri, fișiere de notițe, rezultate de teste și mesaje între mai multe instanțe ale modelului. Pagina despre [Sistemul 1 și Sistemul 2](/comportament-agentic/sistemul-1-si-sistemul-2/) discută de ce un astfel de proces seamănă cu gândirea lentă și deliberată descrisă de Daniel Kahneman.
 
 ## De unde vine impresia de gândire
 
 Acum putem răspunde la întrebarea de la început. Impresia că modelul gândește are mai multe surse, și nu toate sunt de același fel.
 
 1. **Textul seamănă cu gândirea umană pentru că a fost învățat de la oameni.** Expresii precum _„hmm”_, _„stai”_ sau _„să verific”_ vin din textele scrise de oameni care rezolvau probleme. Învățarea prin consolidare le-a păstrat pentru că, statistic, însoțesc răspunsuri corecte.
-2. **Calculul suplimentar este real.** Tokenurile de gândire nu sunt decor. Fiecare dintre ele înseamnă încă o trecere completă prin rețea, iar rezultatele intermediare scrise în context sunt folosite efectiv mai departe. Pe problemele de matematică și de programare, diferența de acuratețe se măsoară ușor.
+2. **Calculul suplimentar este real.** Tokenurile de gândire nu sunt decor. Fiecare token de gândire înseamnă încă o trecere completă prin rețea, iar rezultatele intermediare scrise în context sunt folosite efectiv mai departe. Pe problemele de matematică și de programare, diferența de acuratețe se măsoară ușor.
 3. **Interfața întărește impresia.** Mesajul _„Gândește…”_, durata afișată și rezumatul gândurilor sunt alegeri de prezentare. Același proces ar putea fi afișat la fel de bine ca _„Se generează 4.000 de tokenuri intermediare”_.
 4. **Comportamentul agentic arată ca o activitate.** Un agent care își face un plan, citește fișiere, rulează teste și își schimbă abordarea după o eroare se comportă, din afară, ca un om care lucrează la o problemă.
 
 ### Spun modelele ce gândesc?
 
-Faptul că raționamentul ajută nu înseamnă că el descrie exact cum a ajuns modelul la răspuns. Calitatea aceasta se numește **fidelitatea raționamentului** (_faithfulness_), iar mai multe studii arată că ea nu este garantată.
+Faptul că raționamentul ajută nu înseamnă că descrie exact cum a ajuns modelul la răspuns. Calitatea aceasta se numește **fidelitatea raționamentului** (_faithfulness_), iar mai multe studii arată că fidelitatea nu este garantată.
 
-- [Turpin și colaboratorii](https://arxiv.org/abs/2305.04388) (2023) au pus în prompt exemple în care răspunsul corect era mereu varianta „(A)”. Modelele au început să aleagă mai des „(A)” și la întrebări noi, dar explicațiile lor pas cu pas aproape niciodată nu menționau acest tipar (una singură din cele 426 analizate). Ele justificau convingător un răspuns ales, de fapt, din alt motiv.
-- [Chen și colaboratorii](https://arxiv.org/abs/2505.05410) (Anthropic, 2025) au strecurat în prompt indicii despre răspuns și au verificat dacă modelele de raționament care foloseau indiciul îl și pomeneau în gândurile lor. În majoritatea cazurilor, nu îl pomeneau.
+- [Turpin și colaboratorii](https://arxiv.org/abs/2305.04388) (2023) au pus în prompt exemple în care răspunsul corect era mereu varianta „(A)”. Modelele au început să aleagă mai des „(A)” și la întrebări noi, dar în explicațiile pas cu pas aproape niciodată nu menționau acest tipar (una singură din cele 426 analizate). Explicațiile justificau convingător un răspuns ales, de fapt, din alt motiv.
+- [Chen și colaboratorii](https://arxiv.org/abs/2505.05410) (Anthropic, 2025) au strecurat în prompt indicii despre răspuns și au verificat dacă modelele de raționament care foloseau indiciul îl și pomeneau în lanțul de gânduri. În majoritatea cazurilor, nu îl pomeneau.
 - [Pfau și colaboratorii](https://arxiv.org/abs/2404.15758) (2024) au antrenat modele care rezolvau anumite probleme la fel de bine când, în locul pașilor intermediari, scriau doar puncte („……”). Pe acele sarcini, tokenurile suplimentare aduceau calcul, iar sensul cuvintelor nu mai conta.
 
-Cercetarea în **interpretabilitate** (_interpretability_), care încearcă să citească direct ce se întâmplă în interiorul rețelei, completează imaginea. Echipa Anthropic a studiat modelul Claude 3.5 Haiku în lucrarea [On the Biology of a Large Language Model](https://transformer-circuits.pub/2025/attribution-graphs/biology.html) (2025). La întrebarea _„Care este capitala statului în care se află Dallas?”_, modelul reprezenta intern „Texas” ca pas intermediar înainte de „Austin”, deci făcea un raționament în doi pași chiar în interiorul unui singur token. La adunarea 36 + 59, modelul folosea în paralel două căi, una care aproxima rezultatul și una care calcula exact ultima cifră. Întrebat cum a calculat, modelul descria însă algoritmul învățat la școală, cu „unu ținut minte”. Explicația lui era una plauzibilă, preluată din texte scrise de oameni, nu o descriere a propriului mecanism.
+Cercetarea în **interpretabilitate** (_interpretability_), care încearcă să citească direct ce se întâmplă în interiorul rețelei, completează imaginea. Echipa Anthropic a studiat modelul Claude 3.5 Haiku în lucrarea [On the Biology of a Large Language Model](https://transformer-circuits.pub/2025/attribution-graphs/biology.html) (2025). La întrebarea _„Care este capitala statului în care se află Dallas?”_, modelul reprezenta intern „Texas” ca pas intermediar înainte de „Austin”, deci făcea un raționament în doi pași chiar în interiorul unui singur token. La adunarea 36 + 59, modelul folosea în paralel două căi, una care aproxima rezultatul și una care calcula exact ultima cifră. Întrebat cum a calculat, modelul descria însă algoritmul învățat la școală, cu „unu ținut minte”. Explicația modelului era una plauzibilă, preluată din texte scrise de oameni, nu o descriere a propriului mecanism.
 
 ### Gândesc sau nu?
 
@@ -169,7 +169,7 @@ Ce putem spune cu siguranță este mai modest decât oricare dintre titluri.
 
 - Modelele de raționament fac un calcul suplimentar real, care le îmbunătățește măsurabil rezultatele pe probleme cu pași multipli.
 - Textul acestui calcul este o fereastră utilă, dar imperfectă, spre ce face modelul. Poate omite motive reale și poate oferi justificări construite după aceea.
-- Dacă acest proces merită numit „gândire” depinde de ce înțelegem prin cuvânt. Dacă ne interesează funcția (explorarea variantelor, verificarea pașilor, corectarea greșelilor), multe dintre aceste elemente sunt prezente. Dacă ne referim la experiența conștientă a unui om care gândește, nimic din ce știm despre aceste modele nu ne dă motive să credem că ea există.
+- Dacă acest proces merită numit „gândire” depinde de ce înțelegem prin cuvânt. Dacă ne interesează funcția (explorarea variantelor, verificarea pașilor, corectarea greșelilor), multe dintre aceste elemente sunt prezente. Dacă ne referim la experiența conștientă a unui om care gândește, nimic din ce știm despre aceste modele nu ne dă motive să credem că o astfel de experiență există.
 
 Pentru cine construiește sisteme cu modele de limbaj, concluzia practică este simplă: raționamentul crește șansele unui răspuns corect, dar nu îl garantează. Pentru deciziile importante avem în continuare nevoie de verificări externe, precum teste, surse citate sau un om care citește rezultatul. Pagina despre [halucinații](/modele-lingvistice/halucinatii/) discută mai pe larg aceste metode.
 

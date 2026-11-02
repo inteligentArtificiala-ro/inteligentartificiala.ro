@@ -44,7 +44,7 @@ Pagina [Videouri](/videouri/) și unele pagini din documentație includ episoade
 
 ## Găzduire și alte servicii
 
-Site-ul este găzduit pe GitHub Pages (GitHub, Inc.), care poate păstra jurnale tehnice ale accesărilor, de exemplu adresa IP, pentru securitate și funcționare. Fonturile sunt servite de pe același domeniu, iar căutarea rulează integral în browser, pe baza unui index static. Niciuna dintre ele nu trimite date către alți terți.
+Site-ul este găzduit pe GitHub Pages (GitHub, Inc.), care poate păstra jurnale tehnice ale accesărilor, de exemplu adresa IP, pentru securitate și funcționare. Fonturile sunt servite de pe același domeniu, iar căutarea rulează integral în browser, pe baza unui index static. Nici fonturile, nici căutarea nu trimit date către alți terți.
 
 ## Exemple de cod Python
 

@@ -26,7 +26,7 @@ O variantă mai sigură este ca modelul să fie antrenat să producă **ieșire 
 
 ## Pași secvențiali și paraleli
 
-Când o sarcină are nevoie de rezultatul alteia, cele două rulează în ordine, iar a doua așteaptă până se termină prima. De exemplu, agentul nu poate repara un test înainte să vadă mesajul de eroare. Sarcinile care nu depind una de alta pot rula în paralel. Sistemul poate porni pentru ele mai multe instanțe ale modelului, care lucrează în același timp, fiecare la partea ei. Una poate citi documentația unei biblioteci, în timp ce alta caută în cod locurile în care este folosită.
+Când o sarcină are nevoie de rezultatul alteia, cele două rulează în ordine, iar a doua așteaptă până se termină prima. De exemplu, agentul nu poate repara un test înainte să vadă mesajul de eroare. Sarcinile care nu depind una de alta pot rula în paralel. Sistemul poate porni pentru aceste sarcini mai multe instanțe ale modelului, care lucrează în același timp, fiecare la propria parte. Una poate citi documentația unei biblioteci, în timp ce alta caută în cod locurile în care este folosită.
 
 Rezultatele se întorc apoi la coordonator, adică la agentul care a împărțit sarcina. Coordonatorul citește ce a primit, combină rezultatele și decide ce urmează: pornește sarcinile care așteptau aceste rezultate, cere o corectură sau scrie răspunsul final.
 
