@@ -55,11 +55,14 @@ const { siteTitleHref } = Astro.locals.starlightRoute;
     paint-order: stroke fill;
   }
 
-  /* Copia primului „A”, decupată la jumătatea de jos, ca să treacă peste al doilea. */
+  /* Copia primului „A”, decupată de la bara orizontală în jos, ca să treacă peste al doilea. Tăietura e măsurată de la
+     mijlocul rândului, în em, deci nu depinde de înălțimea rândului: bara începe la 0,042em sub mijloc (Source Sans 3
+     Bold), iar tăietura e cu 0,043em mai jos, în interiorul barei. Pe marginea ei de sus, conturul copiei lăsa o linie
+     subțire de-a curmezișul primului „A”. */
   .first-over {
     position: absolute;
     inset-inline-start: 0;
     top: 0;
-    clip-path: inset(52% 0 0 0);
+    clip-path: inset(calc(50% + 0.085em) 0 0 0);
   }
 </style>
