@@ -16,12 +16,13 @@ Every lab has one Jupyter notebook, `public/laboratoare/<lab>/<lab>.ipynb`, with
 
 | Lab | Colab |
 | --- | --- |
+| [Control continuu cu PPO în MuJoCo](https://inteligentartificiala.ro/laboratoare/control-continuu-ppo-halfcheetah/prezentare/) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/inteligentArtificiala-ro/inteligentartificiala.ro/blob/main/public/laboratoare/control-continuu-ppo-halfcheetah/control-continuu-ppo-halfcheetah.ipynb) |
+| [Rețele neuronale de la zero](https://inteligentartificiala.ro/laboratoare/retele-neuronale-de-la-zero/prezentare/) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/inteligentArtificiala-ro/inteligentartificiala.ro/blob/main/public/laboratoare/retele-neuronale-de-la-zero/retele-neuronale-de-la-zero.ipynb) |
 | [Un model de limbaj local cu Transformers](https://inteligentartificiala.ro/laboratoare/model-local-transformers/prezentare/) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/inteligentArtificiala-ro/inteligentartificiala.ro/blob/main/public/laboratoare/model-local-transformers/model-local-transformers.ipynb) |
 | [Imagini și sunete cu modele de difuzie](https://inteligentartificiala.ro/laboratoare/difuzie-imagini-si-sunete/prezentare/) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/inteligentArtificiala-ro/inteligentartificiala.ro/blob/main/public/laboratoare/difuzie-imagini-si-sunete/difuzie-imagini-si-sunete.ipynb) |
 | [Un model de limbaj de la zero (mvGPT)](https://inteligentartificiala.ro/laboratoare/model-lingvistic-de-la-zero/prezentare/) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/inteligentArtificiala-ro/inteligentartificiala.ro/blob/main/public/laboratoare/model-lingvistic-de-la-zero/model-lingvistic-de-la-zero.ipynb) |
-| [Control continuu cu PPO în MuJoCo](https://inteligentartificiala.ro/laboratoare/control-continuu-ppo-halfcheetah/prezentare/) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/inteligentArtificiala-ro/inteligentartificiala.ro/blob/main/public/laboratoare/control-continuu-ppo-halfcheetah/control-continuu-ppo-halfcheetah.ipynb) |
 
-The notebooks of the first two labs are generated from the code blocks of the lab pages, so changes go into the pages, not into the notebooks. The mvGPT and PPO notebooks run those labs' scripts.
+The notebooks of the Transformers and diffusion labs are generated from the code blocks of the lab pages, so changes go into the pages, not into the notebooks. The PPO, neural-networks-from-scratch and mvGPT notebooks are written by hand and run those labs' scripts.
 
 ## Videos
 

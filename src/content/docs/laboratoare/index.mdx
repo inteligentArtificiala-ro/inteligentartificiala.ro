@@ -1,19 +1,42 @@
 ---
 title: Laboratoare practice
-description: Patru laboratoare cu cod sursă deschis, în Python și PyTorch, care rulează și în Google Colab. Rulăm local un model de limbaj, generăm imagini și sunete prin difuzie, antrenăm de la zero un model de tip GPT și învățăm un robot simulat să alerge cu PPO.
+description: Cinci laboratoare cu cod sursă deschis, în Python și PyTorch, care rulează și în Google Colab. Învățăm un robot simulat să alerge cu PPO, construim de la zero o rețea neuronală care recunoaște cifre scrise de mână, rulăm local un model de limbaj, generăm imagini și sunete prin difuzie și antrenăm de la zero un model de tip GPT.
 sidebar:
   label: Prezentare generală
 ---
 
-Paginile teoretice explică ideile. În laboratoare, aceleași idei devin cod care rulează pe propriul calculator. Fiecare laborator explică pas cu pas codul, scris în Python și PyTorch, și se încheie cu un rezultat pe care îl putem verifica: un model care răspunde la întrebări, imagini și sunete generate din text, un model care scrie povești sau un robot simulat care aleargă.
+Paginile teoretice explică ideile. În laboratoare, aceleași idei devin cod care rulează pe propriul calculator. Fiecare laborator explică pas cu pas codul, scris în Python și PyTorch, și se încheie cu un rezultat pe care îl putem verifica: un robot simulat care aleargă, o rețea care recunoaște cifre scrise de mână, un model care răspunde la întrebări, imagini și sunete generate din text sau un model care scrie povești.
 
-Toate laboratoarele folosesc Python 3.10 sau mai nou, cu pachetele instalate într-un mediu virtual creat cu `venv`. Rulează pe o placă grafică NVIDIA (CUDA), pe un cip Apple Silicon (MPS) sau, mai lent, pe procesor (CPU). Pagina despre [utilitatea plăcilor grafice](/concepte-de-baza/utilitatea-placilor-grafice/) explică de ce diferența de viteză este atât de mare.
+Toate laboratoarele folosesc Python 3.10 sau mai nou, cu pachetele instalate într-un mediu virtual creat cu `venv`. Rulează pe o placă grafică NVIDIA (CUDA), pe un cip Apple Silicon (MPS) sau, mai lent, pe procesor (CPU). Excepție face laboratorul cu PPO, unde rețeaua este atât de mică încât procesorul este cel mai rapid. Pagina despre [utilitatea plăcilor grafice](/concepte-de-baza/utilitatea-placilor-grafice/) explică de ce diferența de viteză este atât de mare.
 
 Toate laboratoarele pot rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser. Fiecare laborator are un singur notebook, cu tot codul lui, păstrat în [repozitoriul site-ului](https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/tree/main/public/laboratoare), care se deschide în Colab din pagina de introducere a laboratorului, cu butonul **Deschidere în Google Colab**.
 
 În laboratoarele de antrenare, exemplele scurte rulează direct în pagină, cu Python în browser (WebAssembly), fără nicio instalare. Antrenarea propriu-zisă rulează local, iar paginile arată rezultatele de referință, ca să le putem compara cu ce obținem pe propriul calculator. Codul acestor laboratoare este public, în [organizația proiectului de pe GitHub](https://github.com/inteligentArtificiala-ro), și poate fi clonat cu Git sau descărcat fișier cu fișier.
 
-Laboratoarele sunt ordonate după nivel. Primele două se pot parcurge fără cunoștințe despre rețele neuronale, iar ultimul presupune paginile despre învățarea prin consolidare.
+Primul laborator, cu robotul care învață să alerge, este cel mai avansat și presupune paginile despre învățarea prin consolidare. Pentru începători, punctul de pornire potrivit este al doilea, despre rețelele neuronale construite de la zero. Laboratoarele cu Transformers și cu modele de difuzie se pot parcurge fără cunoștințe despre rețele neuronale.
+
+## Control continuu cu PPO în MuJoCo
+
+Robotul **HalfCheetah**, un robot bidimensional inspirat de ghepard, cu 6 articulații acționate de motoare, învață de la zero să alerge în simulatorul fizic **MuJoCo**. Motoarele primesc valori continue, nu comenzi dintr-o listă finită, așa că problema este una de **control continuu** (_continuous control_). Agentul este antrenat cu **PPO** (_Proximal Policy Optimization_), implementat în PyTorch, cu o rețea actor-critic, o strategie gaussiană și estimarea generalizată a avantajului (GAE). Laboratorul se încheie cu evaluarea strategiei antrenate și cu un videoclip al robotului care aleargă.
+
+- **Nivel**: avansat.
+- **Cerințe**: un procesor cu 4–8 nuclee. O antrenare completă, de 1 milion de pași, durează câteva minute pe procesor (circa 7 minute pe un calculator cu cip Apple Silicon).
+- **Înainte de laborator**: paginile despre [învățarea prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/) și despre [gradientul strategiei și REINFORCE](/invatare-prin-consolidare/gradientul-politicii-reinforce/).
+- **Cod sursă**: repozitoriul [inteligentArtificiala-ro/control-continuu-ppo](https://github.com/inteligentArtificiala-ro/control-continuu-ppo).
+- **Google Colab**: un notebook pentru tot laboratorul.
+
+Laboratorul începe cu [prezentarea robotului și a simulatorului](/laboratoare/control-continuu-ppo-halfcheetah/prezentare/).
+
+## Rețele neuronale de la zero
+
+Scriem de la zero, în Python, tot ce se află sub o rețea neuronală. Pornim de la un **motor de diferențiere automată** (_automatic differentiation_) pentru numere obișnuite, în spiritul proiectului [micrograd](https://github.com/karpathy/micrograd) al lui Andrej Karpathy, și desenăm cu Graphviz grafurile computaționale pe care le parcurge retropropagarea, înainte și după calculul gradienților. Din aceleași piese construim neuroni, straturi și o rețea cu mai multe straturi, pe care o antrenăm cu cod scris de mână. La final, trecem de la numere la matrice: cu NumPy, scriem de mână retropropagarea unei rețele care recunoaște cifrele scrise de mână din setul MNIST, apoi scriem aceeași rețea în PyTorch.
+
+- **Nivel**: începător.
+- **Cerințe**: orice procesor obișnuit, fără placă grafică, și programul `dot` din Graphviz pentru diagrame. Antrenarea pe MNIST durează câteva secunde.
+- **Înainte de laborator**: paginile despre [rețelele neuronale](/retele-neuronale/ce-sunt-retelele-neuronale/) și despre [retropropagare](/retele-neuronale/retropropagare/).
+- **Google Colab**: un notebook pentru tot laboratorul.
+
+Laboratorul începe cu [prezentarea laboratorului și pregătirea mediului de lucru](/laboratoare/retele-neuronale-de-la-zero/prezentare/).
 
 ## Un model de limbaj local cu Transformers
 
@@ -48,15 +71,3 @@ Construim și antrenăm de la zero **mvGPT** (_Minimum Viable GPT_), un model de
 - **Google Colab**: un notebook pentru tot laboratorul.
 
 Laboratorul începe cu [prezentarea modelului și pregătirea mediului de lucru](/laboratoare/model-lingvistic-de-la-zero/prezentare/).
-
-## Control continuu cu PPO în MuJoCo
-
-Robotul **HalfCheetah**, un robot bidimensional inspirat de ghepard, cu 6 articulații acționate de motoare, învață de la zero să alerge în simulatorul fizic **MuJoCo**. Motoarele primesc valori continue, nu comenzi dintr-o listă finită, așa că problema este una de **control continuu** (_continuous control_). Agentul este antrenat cu **PPO** (_Proximal Policy Optimization_), implementat în PyTorch, cu o rețea actor-critic, o strategie gaussiană și estimarea generalizată a avantajului (GAE). Laboratorul se încheie cu evaluarea strategiei antrenate și cu un videoclip al robotului care aleargă.
-
-- **Nivel**: avansat.
-- **Cerințe**: un procesor cu 4–8 nuclee, un cip Apple Silicon sau o placă grafică NVIDIA. O antrenare completă, de 1 milion de pași, durează cam 15–25 de minute.
-- **Înainte de laborator**: paginile despre [învățarea prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/) și despre [gradientul strategiei și REINFORCE](/invatare-prin-consolidare/gradientul-politicii-reinforce/).
-- **Cod sursă**: repozitoriul [inteligentArtificiala-ro/control-continuu-ppo](https://github.com/inteligentArtificiala-ro/control-continuu-ppo).
-- **Google Colab**: un notebook pentru tot laboratorul.
-
-Laboratorul începe cu [prezentarea robotului și a simulatorului](/laboratoare/control-continuu-ppo-halfcheetah/prezentare/).
