@@ -55,7 +55,7 @@ Primele componente transformă descrierea în vectori, ca codificatorul CLIP din
 
 ## De la reprezentarea latentă la sunet
 
-Cu `output_type="latent"`, pipeline-ul se oprește după procesul invers și întoarce reprezentarea latentă curată, fără să o decodeze. Codul de mai jos face de mână ultimii doi pași, decodarea cu VAE-ul și vocoderul, și desenează spectrograma mel dintre ei.
+Cu `output_type="latent"`, pipeline-ul se oprește după procesul invers și întoarce reprezentarea latentă curată, fără să o decodeze. Codul de mai jos face de mână ultimii doi pași, decodarea cu VAE-ul și vocoderul, și desenează spectrograma mel obținută între cei doi pași.
 
 ```python
 import matplotlib.pyplot as plt
