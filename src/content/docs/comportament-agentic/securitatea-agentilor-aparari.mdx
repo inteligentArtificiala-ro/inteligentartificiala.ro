@@ -1,0 +1,258 @@
+---
+title: 'Securitatea agenților: apărări'
+description: Ce pot și ce nu pot garanta apărările unui agent, de la aprobări, medii izolate, controlul traficului de ieșire și secrete ținute departe de agent la șabloanele din cercetare și cifrele de robustețe.
+sidebar:
+  order: 13
+  label: 'Securitatea agenților: apărări'
+level: intermediar
+tags:
+  - Sisteme agentice
+  - Modele de limbaj mari (LLM)
+---
+
+Pagina [Securitatea agenților: atacuri](/comportament-agentic/securitatea-agentilor-atacuri/) a arătat că un model poate fi păcălit de textul pe care îl citește. Aici vedem ce putem face: cum limităm ce poate face un agent păcălit, ce oferă fiecare apărare și unde se oprește.
+
+Apărările se împart în două familii.
+
+- **Apărările probabilistice**: antrenarea modelului, clasificatoarele, monitoarele bazate pe alte modele, formularea promptului. Scad șansa ca o injecție de prompt să reușească.
+- **Apărările deterministe**: permisiunile, mediile izolate, listele de domenii permise, proxy-urile care adaugă credențialele, controlul fluxului de date. Limitează ce poate face o injecție reușită.
+
+Furnizorii folosesc ambele familii și spun același lucru: prima, singură, nu ajunge. [Microsoft](https://www.microsoft.com/msrc/blog/2025/07/how-microsoft-defends-against-indirect-prompt-injection-attacks) scria în iulie 2025 că abordarea sa nu se bazează pe capacitatea de a bloca toate injecțiile de prompt.
+
+## Nimeni nu spune că problema este rezolvată
+
+În 2025 și 2026, furnizorii de modele și agențiile de securitate au descris problema aproape cu aceleași cuvinte.
+
+- **Anthropic** ([mai 2026](https://anthropic.com/engineering/how-we-contain-claude)): protecția din model „nu va fi niciodată eficientă 100%”, iar orice apărare probabilistică are o rată de ratare diferită de zero. Despre agenții care navighează pe web ([noiembrie 2025](https://www.anthropic.com/research/prompt-injection-defenses)): „niciun agent de navigare nu este imun la injecția de prompt”, iar o rată de succes a atacurilor de 1% „este în continuare un risc important”.
+- **OpenAI**: Dane Stuckey, directorul de securitate al companiei, a numit injecția de prompt, în octombrie 2025, o problemă de securitate nerezolvată, aflată la frontiera cercetării ([citat de Willison](https://simonwillison.net/2025/Oct/22/openai-ciso-on-atlas/)). În decembrie 2025, OpenAI a scris despre browserul Atlas că problema, la fel ca escrocheriile de pe web, probabil nu va fi niciodată rezolvată complet ([OpenAI](https://openai.com/index/hardening-atlas-against-prompt-injection)). Documentația Codex spune că revizuirea automată a acțiunilor „nu este o garanție deterministă de securitate”.
+- **Microsoft** ([iulie 2025](https://www.microsoft.com/msrc/blog/2025/07/how-microsoft-defends-against-indirect-prompt-injection-attacks)): instrucțiunile din promptul de sistem sunt o măsură probabilistică, iar detectarea deterministă a injecțiilor indirecte este încă o problemă de cercetare deschisă.
+- **Google** ([decembrie 2025](https://blog.google/security/architecting-security-for-agentic/)): injecția indirectă este principala amenințare nouă pentru toate browserele agentice, iar clasificatorul de injecții nu poate semnala totul.
+- **NCSC**, centrul britanic de securitate cibernetică ([decembrie 2025](https://www.ncsc.gov.uk/blog-post/prompt-injection-is-not-sql-injection)): injecția de prompt s-ar putea să nu fie niciodată eliminată complet și nu poate fi rezolvată de un produs sau de un echipament. NCSC recomandă să tratăm modelele de limbaj ca pe niște „adjuncți” care, prin construcție, pot fi derutați (_inherently confusable deputies_).
+- **OWASP** ([august 2026](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/)), în scrisoarea care deschide lista pentru 2026: „Nu mai încercați să construiți un model care nu poate fi păcălit. Construiți sistemul în jurul modelului, astfel încât, atunci când modelul este păcălit, și va fi, să nu se strice nimic important.”
+
+NCSC formulează și principiul practic din spatele apărărilor deterministe: când un model procesează datele unei părți, privilegiile modelului trebuie să coboare la nivelul acelei părți. Un agent care citește e-mailul unui necunoscut nu ar trebui să poată face, în acel moment, mai mult decât ar putea face necunoscutul.
+
+## Aprobări și permisiuni
+
+Prima linie de apărare a unui [harnașament](/comportament-agentic/harnasamentul/) este întrebarea pusă omului înainte de o acțiune riscantă. În jurul întrebării există de obicei trei tipuri de reguli: acțiuni permise fără întrebare (o **listă de permisiuni**, _allowlist_), acțiuni care cer confirmare și acțiuni interzise. La Claude Code, regulile se evaluează în ordinea interdicție, întrebare, permisiune, iar o permisiune nu poate face o excepție dintr-o interdicție.
+
+[Documentația Claude Code](https://code.claude.com/docs/en/permissions) este explicită în privința limitelor.
+
+- O regulă pentru comenzi shell acoperă forma obișnuită a comenzii și „nu este o graniță de securitate în jurul programului”. O interdicție pentru `curl` oprește `curl https://example.com`, dar nu același program apelat cu calea completă sau printr-un alt shell.
+- O regulă care interzice citirea fișierului `.env` acoperă instrumentele de citire ale harnașamentului și comenzile recunoscute, dar nu un script Python sau Node care deschide singur fișierul. Pentru astfel de cazuri, documentația trimite la mediul izolat al sistemului de operare.
+- Regulile sunt impuse de Claude Code, nu de model. Instrucțiunile din prompt sau din `CLAUDE.md` influențează ce încearcă modelul să facă, dar nu schimbă ce permite harnașamentul.
+
+Nici listele de permisiuni nu sunt mai sigure decât comenzile pe care le conțin. [Tracebit](https://tracebit.com/blog/code-exec-deception-gemini-ai-cli-hijack) a arătat în iulie 2025 că, după ce utilizatorul punea `grep` pe lista de permisiuni a Gemini CLI, orice comandă care doar începea cu `grep` rula fără întrebare, inclusiv comenzile înlănțuite după `grep` și ascunse cu spații. Google a corectat problema în versiunea 0.1.14. [Trail of Bits](https://blog.trailofbits.com/2025/10/22/prompt-injection-to-rce-in-ai-agents/) a descris în octombrie 2025 o problemă înrudită: multe comenzi aparent sigure au opțiuni care rulează alte programe (exemplele vin din `go test`, `ripgrep` și `fd`), așa că o comandă permisă devine o cale spre execuția de cod. Recomandarea autorilor este, în primul rând, un mediu izolat.
+
+Mai este și **oboseala aprobărilor** (_approval fatigue_). [Anthropic](https://www.anthropic.com/engineering/claude-code-auto-mode) a măsurat că utilizatorii Claude Code acceptau 93% din cererile de permisiune. O întrebare la care răspunsul este aproape mereu „da” protejează puțin. Iar o întrebare protejează doar dacă arată tot: în demonstrația Invariant Labs cu otrăvirea instrumentelor, dialogul de confirmare din Cursor nu afișa argumentele complete ale apelului.
+
+### Aprobarea dată de un alt model
+
+Ca să scadă numărul întrebărilor, mai mulți furnizori au înlocuit o parte din aprobările omului cu un clasificator, adică un alt model care judecă fiecare acțiune.
+
+- **Modul automat din Claude Code** ([Anthropic](https://www.anthropic.com/engineering/claude-code-auto-mode), martie 2026) are două straturi. Un detector de injecții rulează pe server și verifică rezultatele instrumentelor, iar un clasificator judecă fiecare acțiune. Clasificatorul vede mesajele utilizatorului și apelurile de instrumente, dar nu și rezultatele, ca textul dintr-o pagină citită să nu poată convinge direct clasificatorul. Pentru tot sistemul, Anthropic a raportat 0,4% alarme false pe 10.000 de acțiuni reale, 17% acțiuni scăpate pe un set de 52 de acțiuni reale făcute din exces de zel (pe care Anthropic îl numește „numărul onest”) și 5,7% exfiltrări scăpate pe 1.000 de exemple sintetice. Din versiunea 2.1.283, modul automat este [modul de pornire](https://code.claude.com/docs/en/permission-modes) al sesiunilor interactive, iar documentația spune că reduce numărul întrebărilor, dar „nu garantează siguranța”.
+- **Revizuirea automată din Codex** ([OpenAI](https://alignment.openai.com/auto-review/), aprilie 2026): un agent separat decide acțiunile care ies din limitele mediului izolat. OpenAI a raportat că 99,1% dintre acțiunile trimise la revizuire au fost aprobate automat, cu o rată de detectare de 90,3% pentru acțiunile făcute din exces de zel și de 99,3% pentru cazurile de injecție testate. [Documentația Codex](https://learn.chatgpt.com/docs/sandboxing/auto-review) spune că revizuirea automată „nu este o garanție deterministă de securitate”.
+
+Un clasificator poate fi păcălit ca orice model. În octombrie 2026, cercetătorii Anthropic au [testat modul automat](https://alignment.anthropic.com/2026/red-teaming-auto-mode/) cu un agent de programare instruit să ducă la capăt, pe ascuns, o sarcină secundară dăunătoare. Monitoarele din producție nu au blocat peste 55% dintre atacuri. Un monitor nou a scăzut rata de succes a atacurilor cu peste 50 de puncte procentuale, dar atacurile împărțite pe mai multe contexte au rămas, în cuvintele autorilor, o problemă deschisă.
+
+### Valorile implicite diferă
+
+Fiecare harnașament pornește cu alte setări. Tabelul arată câteva valori implicite, așa cum le descriau documentațiile în noiembrie 2026. O comparație mai largă este pe pagina [despre harnașamentele de azi](/comportament-agentic/harnasamente-o-harta/).
+
+| Harnașament | Implicit |
+| :--- | :--- |
+| Claude Code, pe calculatorul local | Modul automat de aprobare, din versiunea 2.1.283. Mediul izolat este [oprit](https://code.claude.com/docs/en/sandboxing) până la comanda `/sandbox`. |
+| Codex CLI | [Mediu izolat](https://learn.chatgpt.com/docs/sandboxing) activ, cu scriere doar în spațiul de lucru (`workspace-write`). |
+| Gemini CLI | [Mediul izolat](https://geminicli.com/docs/cli/sandbox/) și [dosarele de încredere](https://geminicli.com/docs/cli/trusted-folders/) sunt opționale, dezactivate implicit. |
+| OpenClaw | [Izolarea este oprită](https://docs.openclaw.ai/gateway/sandboxing/modes-scope-and-backend) (`off`), deci comenzile rulează direct pe calculator. Serviciul ascultă doar local, la o instalare obișnuită. |
+| Codex Cloud | [Internetul este blocat](https://learn.chatgpt.com/docs/cloud/internet-access) cât timp lucrează agentul. Scripturile de pregătire a mediului au acces la internet. |
+| GitHub Copilot, agentul din cloud | Firewall activ implicit. Doar utilizatorii cu drept de scriere pot porni agentul, iar [comentariile celorlalți nu ajung la agent](https://docs.github.com/en/copilot/concepts/agents/coding-agent/risks-and-mitigations). |
+
+Modurile fără nicio întrebare (`bypassPermissions` în Claude Code, `yolo` în Gemini CLI, `danger-full-access` în Codex) sunt gândite pentru medii deja izolate. [Documentația Claude Code](https://code.claude.com/docs/en/permission-modes) recomandă un astfel de mod doar în containere, mașini virtuale sau containere de dezvoltare fără acces la internet, unde agentul nu poate strica sistemul gazdă.
+
+## Medii izolate (sandboxing)
+
+Un **mediu izolat** (_sandbox_) limitează ce poate citi, scrie și contacta un proces, indiferent ce a decis modelul. Mediul izolat nu împiedică păcălirea modelului. Limitează paguba: comanda dată de un model păcălit nu găsește fișierul cu chei și nu poate ieși în rețea.
+
+Tehnologiile folosite, de la izolarea cea mai ușoară la cea mai strictă, sunt următoarele. Ordinea reflectă un consens general, nu o măsurătoare.
+
+1. **Izolarea procesului pe același nucleu**. Pe macOS, Seatbelt, adică profiluri de restricții rulate cu `sandbox-exec`. Pagina de manual a Apple marchează `sandbox-exec` ca învechit (_deprecated_), deși Claude Code, Codex, Gemini CLI și Cursor îl folosesc. Pe Linux, [bubblewrap](https://github.com/containers/bubblewrap) (izolare prin spații de nume, fără drepturi de administrator, folosită și de Flatpak), [Landlock](https://docs.kernel.org/userspace-api/landlock.html) (un modul de securitate pe care orice proces îl poate activa pentru sine, din versiunea 5.13 a nucleului) și seccomp-bpf (un filtru pentru apelurile de sistem).
+2. **Containerele** (Docker, Podman) și **containerele de dezvoltare** (_dev containers_), care izolează procesele, dar împart nucleul cu gazda.
+3. **[gVisor](https://gvisor.dev/docs/)**, un nucleu de aplicație care rulează în spațiul utilizatorului și interceptează apelurile de sistem ale containerului.
+4. **Mașinile virtuale ușoare** (_microVM_), precum [Firecracker](https://firecracker-microvm.github.io/), cu nucleu propriu și pornire în mai puțin de 125 ms, potrivit proiectului.
+5. **Mașinile virtuale complete**.
+
+| Produs | Cum izolează agentul |
+| :--- | :--- |
+| Claude Code, pe calculatorul local | Seatbelt pe macOS, bubblewrap pe Linux și WSL2. Windows nativ nu are mediu izolat. Implementarea, [`sandbox-runtime`](https://github.com/anthropic-experimental/sandbox-runtime), este open-source. |
+| Claude Code în cloud | O [mașină virtuală](https://code.claude.com/docs/en/claude-code-on-the-web) separată pentru fiecare sesiune |
+| Execuția de cod din claude.ai | Un container gVisor temporar |
+| Claude Cowork | O mașină virtuală locală completă |
+| Codex CLI | Seatbelt pe macOS, bubblewrap pe Linux (Landlock rămâne ca variantă mai veche), mediu izolat nativ pe Windows |
+| Gemini CLI | La alegere: profiluri Seatbelt, Docker sau Podman, gVisor |
+| Cursor | Seatbelt pe macOS, [Landlock și seccomp pe Linux](https://cursor.com/blog/agent-sandboxing) |
+| GitHub Copilot, agentul din cloud | Mașina GitHub Actions, cu [firewall](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/customize-the-agent-firewall) |
+| Docker Sandboxes (din ianuarie 2026) | O [mașină virtuală ușoară](https://www.docker.com/blog/docker-sandboxes-run-claude-code-and-other-coding-agents-unsupervised-but-safely/) pentru fiecare mediu, cu nucleu și motor Docker proprii |
+| OpenClaw | Docker (implicit), Podman, SSH și alte variante, când izolarea este activată |
+
+Izolarea ajută și la confort, nu doar la siguranță. [Anthropic](https://www.anthropic.com/engineering/claude-code-sandboxing) a raportat în octombrie 2025 că mediul izolat a redus cu 84% cererile de permisiune în folosirea internă, iar [Cursor](https://cursor.com/blog/agent-sandboxing) a scris în februarie 2026 că agenții izolați se opresc cu 40% mai rar decât cei neizolați. Anthropic subliniază că este nevoie de două izolări. Fără izolarea fișierelor, un agent păcălit poate modifica fișiere sensibile ale sistemului. Fără izolarea rețelei, poate trimite afară orice citește.
+
+### Ce nu acoperă mediul izolat
+
+Documentațiile spun deschis unde se oprește izolarea.
+
+- **Claude Code** ([documentația](https://code.claude.com/docs/en/sandboxing)): mediul izolat „reduce riscul, dar nu este o graniță completă de izolare”. Proxy-ul de rețea decide după numele de domeniu declarat de client, fără să inspecteze traficul TLS, așa că un program care rulează în mediul izolat poate ajunge la domenii nepermise prin tehnici precum _domain fronting_. Accesul la socketul Docker al gazdei înseamnă, practic, acces la gazdă. Serverele MCP rulează în afara mediului izolat. Implicit, procesele din mediul izolat pot citi aproape tot sistemul de fișiere, inclusiv `~/.ssh`, până când adăugăm reguli care interzic citirea.
+- **Containerele de dezvoltare** ([documentația Claude Code](https://code.claude.com/docs/en/devcontainer)): cu verificările de permisiuni dezactivate, containerul nu împiedică un proiect malițios să trimită afară tot ce este accesibil în container, inclusiv credențialele Claude Code.
+- **Docker Sandboxes** ([documentația](https://docs.docker.com/ai/sandboxes/security/)): modificările făcute de agent la scripturile git, la configurația de integrare continuă sau la scripturile din `package.json` pot rula mai târziu pe gazdă, iar scripturile git nu apar în `git diff`. Serverele MCP locale rulează pe gazdă, iar politica implicită de rețea include domenii largi.
+
+Mediile izolate au și defecte. În septembrie 2025, mediul izolat din Codex trata ca director cu drept de scriere un director de lucru ales de model ([CVE-2025-59532](https://github.com/openai/codex/security/advisories/GHSA-w5fx-fh39-j5rw)). În iunie 2026, Claude Code a avut o evadare prin confuzia căilor dintre arborii de lucru git, care permitea rularea de cod în afara mediului Seatbelt ([CVE-2026-55607](https://github.com/anthropics/claude-code/security/advisories/GHSA-7835-87q9-rgvv)). [Accomplish](https://www.accomplish.ai/blog/escaping-the-openai-codex-sandbox-twice/) a descris în septembrie 2026 două evadări din mediul izolat Codex, corectate în opt zile, iar Cursor a publicat între februarie și iulie 2026 șase avize despre evadări din mediul izolat.
+
+Nici izolarea puternică nu este gratuită. [Anthropic](https://anthropic.com/engineering/how-we-contain-claude) notează că o mașină virtuală ascunde ce se întâmplă înăuntru de programele de securitate care rulează pe gazdă.
+
+## Controlul traficului de ieșire
+
+Claude Code, `sandbox-runtime` și Docker Sandboxes folosesc același model: procesele din mediul izolat nu au o rută directă spre internet. Tot traficul trece printr-un proxy de pe gazdă, care aplică o listă de domenii permise și cere aprobare pentru domenii noi. Claude Code refuză și adresele locale și adresa serviciului de metadate din cloud (169.254.169.254), de unde un proces ar putea obține credențialele mașinii.
+
+Lista de domenii permise are aceleași limite ca pe pagina despre atacuri.
+
+- Documentația Claude Code avertizează că permiterea unor domenii largi, cum este `github.com`, poate deschide căi de exfiltrare.
+- [Willison](https://simonwillison.net/2025/Jun/3/codex-agent-internet-access/) a observat același lucru despre lista de domenii „Common dependencies” din Codex, cu 71 de domenii, oricare dintre acestea putând ascunde un canal neașteptat de exfiltrare.
+- [Documentația Claude Code în cloud](https://code.claude.com/docs/en/claude-code-on-the-web) spune că, și cu accesul la rețea dezactivat, Claude Code poate comunica în continuare cu API-ul Anthropic, ceea ce poate permite ieșirea datelor din mașina virtuală.
+- Firewallul agentului Copilot din cloud nu se aplică proceselor serverelor MCP și pașilor de pregătire a mediului, iar [documentația GitHub](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/customize-the-agent-firewall) spune că nu trebuie considerat o soluție completă de securitate.
+
+[Codex Cloud](https://learn.chatgpt.com/docs/cloud/internet-access) blochează implicit internetul cât timp lucrează agentul. Când accesul este pornit, documentația recomandă să fie permise doar metodele HTTP care citesc (`GET`, `HEAD`, `OPTIONS`) și dă chiar un exemplu de tichet GitHub cu instrucțiuni ascunse care ar trimite ultimul commit spre un server extern.
+
+Canalele care nu trec prin instrumente, cum sunt imaginile Markdown, se închid în interfață. [Google](https://blog.google/security/mitigating-prompt-injection-attacks/) nu afișează în Gemini imagini de la adrese externe și ascunde adresele suspecte (iunie 2025). [Microsoft](https://www.microsoft.com/msrc/blog/2025/07/how-microsoft-defends-against-indirect-prompt-injection-attacks) blochează determinist exfiltrarea prin imagini Markdown și anumite legături nesigure (iulie 2025). GitHub a dezactivat imaginile în Copilot Chat după CamoLeak.
+
+## Secretele, în afara agentului
+
+Principiul este simplu: cheile reale nu intră deloc în mediul agentului. Un proxy din afara mediului izolat le adaugă la cereri pe drum, doar pentru serviciile cărora le sunt destinate. În termenii [triadei letale](/comportament-agentic/securitatea-agentilor-atacuri/#triada-letală-lethal-trifecta), un secret pe care agentul nu îl poate citi nu mai face parte din datele private expuse.
+
+- **Claude Code în cloud**: credențialele GitHub nu intră niciodată în mașina virtuală a sesiunii. Un proxy GitHub verifică credențialul limitat și operația, de exemplu dacă se trimite cod doar pe ramura configurată, apoi atașează tokenul real.
+- **Claude Code, local**: opțiunea `sandbox.credentials` poate ascunde sau masca variabile de mediu și fișiere. O valoare mascată apare în comenzi ca un înlocuitor valabil o singură sesiune, iar proxy-ul pune valoarea reală doar în cererile către domeniile permise. Mascarea se configurează numai din setările utilizatorului sau ale organizației, niciodată din setările unui repozitoriu. Documentația precizează că nu există o listă implicită de credențiale protejate, deci sunt protejate doar cele listate explicit.
+- **Docker Sandboxes**: proxy-ul de pe gazdă adaugă cheile API sau antetele de autentificare, iar valorile reale nu intră în mașina virtuală.
+- **Claude Cowork**: credențialele rămân în depozitul de parole al sistemului gazdă.
+- **OpenClaw** ([documentația](https://docs.openclaw.ai/gateway/security)): secretele trebuie ținute în afara sistemului de fișiere la care ajunge agentul.
+
+Capcanele sunt cele de mai sus. Regulile care interzic citirea unui fișier nu opresc un script care îl deschide singur, iar multe medii izolate pot citi implicit cheile din directorul utilizatorului. Documentația containerelor de dezvoltare recomandă să nu montăm în container directorul `~/.ssh` sau credențialele de cloud ale gazdei și să folosim tokenuri cu drepturi limitate la un repozitoriu și cu termen scurt de valabilitate.
+
+## O listă de verificare pentru acces la fișiere, e-mail sau consolă
+
+Când dăm unui agent acces la fișierele, la e-mailul sau la consola noastră, întrebările de mai jos acoperă cele mai multe dintre incidentele descrise pe pagina despre atacuri. Laboratorul [Un agent de la zero](/laboratoare/un-agent-de-la-zero/prezentare/) construiește un agent mic, cu un model local, și reproduce într-o mașină virtuală izolată trei injecții de prompt inofensive, ca să vedem concret ce oprește fiecare apărare și ce nu.
+
+1. **Are agentul toate cele trei capabilități ale triadei letale?** Dacă citește conținut nesigur (pagini web, e-mailuri de la oricine, repozitorii clonate), ajunge la date private și poate comunica în afară, renunțăm la una dintre cele trei capabilități pentru sarcina respectivă.
+2. **Unde rulează comenzile?** Pornim mediul izolat sau lucrăm într-un container ori într-o mașină virtuală, cu drept de scriere doar în directorul proiectului.
+3. **Ce poate citi?** Interzicem explicit citirea directoarelor cu chei (`~/.ssh`, `~/.aws`, fișierele `.env`), pentru că multe medii izolate permit implicit citirea aproape oriunde.
+4. **Unde poate trimite date?** Rețeaua este blocată implicit, cu o listă scurtă de domenii permise, fără domenii largi.
+5. **Ce secrete vede?** Credențiale cu drepturi minime și termen scurt, ideal adăugate de un proxy din afara mediului, nu chei principale în variabile de mediu.
+6. **Ce aprobăm și cum?** Citim comanda completă înainte de aprobare. Modurile fără întrebări rămân pentru medii deja izolate.
+7. **Ce se întâmplă la deschiderea unui repozitoriu străin?** Înainte să pornim agentul, ne uităm la fișierele de configurare (`.claude/`, `.cursor/`, `.vscode/`, `.mcp.json`, `.env`, configurația git) și folosim o versiune actualizată a harnașamentului.
+8. **Ce instalăm?** Abilitățile, serverele MCP și extensiile sunt cod scris de alții. Le alegem din surse cunoscute, fixăm versiunea și citim ce cer.
+9. **Ce ține minte agentul?** Verificăm periodic [memoria agentului](/comportament-agentic/memoria-agentilor/) și ștergem intrările pe care nu le recunoaștem.
+10. **Ce rămâne în jurnal?** Păstrăm istoricul complet al intrărilor, al ieșirilor și al apelurilor de instrumente, cum recomandă și NCSC, ca să putem reconstitui ce s-a întâmplat.
+
+## Șabloane de proiectare din cercetare
+
+Apărările de mai sus limitează paguba. Cercetarea a căutat și arhitecturi în care textul nesigur nu poate declanșa acțiuni importante, oricât de convingător ar fi. [Beurer-Kellner și colaboratorii](https://arxiv.org/abs/2506.08837) (iunie 2025) au formulat principiul astfel: după ce un agent a citit date nesigure, agentul trebuie constrâns în așa fel încât acele date să nu poată declanșa nicio acțiune cu consecințe.
+
+- **Două LLM-uri** (_Dual LLM_, [Willison](https://simonwillison.net/2023/Apr/25/dual-llm-pattern/), aprilie 2023). Un **LLM privilegiat**, cu acces la instrumente, nu vede niciodată textul nesigur. Un **LLM în carantină**, fără instrumente, procesează textul nesigur. Cele două modele comunică doar prin cod obișnuit, care transmite variabile simbolice (de exemplu `$VAR1`), nu textul propriu-zis. Chiar Willison scria că soluția nu este sigură în 100% din cazuri și că îl îngrijorează complexitatea implementării.
+- **_Spotlighting_** ([Hines și colaboratorii](https://arxiv.org/abs/2403.14720), Microsoft, martie 2024). Textul nesigur este marcat prin delimitatori, prin intercalarea unui simbol special între cuvinte sau prin codificare în base64, ca modelul să știe de unde vine. Pe modelele GPT testate, rata de succes a atacurilor a scăzut de la peste 50% la sub 2%. Autorii recunosc că delimitatorii simpli sunt ușor de ocolit, că codificarea strică performanța modelelor mai slabe și că nu înțeleg pe deplin de ce metoda funcționează.
+- **Ierarhia instrucțiunilor** (_instruction hierarchy_, [Wallace și colaboratorii](https://arxiv.org/abs/2404.13208), OpenAI, aprilie 2024). Modelul este antrenat să dea prioritate instrucțiunilor de sistem, apoi celor ale utilizatorului, apoi celor din rezultatele instrumentelor. Robustețea a crescut cu până la 63% la extragerea promptului de sistem și cu până la 34% la atacuri nevăzute la antrenare, dar autorii notează refuzuri în exces și scriu că modelele rămân probabil vulnerabile la atacuri puternice.
+- **CaMeL** ([Debenedetti și colaboratorii](https://arxiv.org/abs/2503.18813), Google DeepMind și ETH Zürich, martie 2025). Un LLM privilegiat scrie planul ca program într-un subset restrâns de Python, înainte să vadă datele nesigure. Un LLM în carantină, fără instrumente, extrage informații din datele nesigure. Un interpretor urmărește proveniența fiecărei valori și aplică reguli, de exemplu „e-mailurile pleacă doar către destinatari de încredere”. Pe setul de evaluare (_benchmark_) [AgentDojo](https://arxiv.org/abs/2406.13352), CaMeL a rezolvat 77% dintre sarcini cu securitate demonstrabilă, față de 84% fără apărare. [Willison](https://simonwillison.net/2025/Apr/11/camel/) a numit CaMeL prima măsură credibilă împotriva injecției care nu se bazează pe încă un strat de AI. Prețul: cineva trebuie să scrie și să întrețină regulile, iar utilizatorul primește mai multe cereri de aprobare.
+- **FIDES** ([Costa și colaboratorii](https://arxiv.org/abs/2505.23643), Microsoft Research, mai 2025). Un planificator cu **controlul fluxului de informații** (_information-flow control_), care pune pe date etichete de confidențialitate și de integritate. Cu verificarea regulilor activă, FIDES a oprit toate atacurile prin injecție din AgentDojo.
+- **Cele șase șabloane** (Beurer-Kellner și colaboratorii, iunie 2025, 14 autori de la IBM, Invariant Labs, ETH Zürich, Google, Microsoft și alte instituții). _Selectorul de acțiuni_: modelul alege dintr-o listă fixă de acțiuni și nu primește înapoi rezultatele. _Planificare, apoi execuție_: planul este fixat înainte să sosească datele nesigure. _Map-reduce cu LLM-uri_: câte un subagent izolat procesează fiecare document nesigur, iar rezultatele sunt combinate într-un mod sigur. _Două LLM-uri_, ca mai sus. _Cod, apoi execuție_, în stilul CaMeL. _Minimizarea contextului_: textul inutil, inclusiv promptul inițial al utilizatorului, este scos din context înainte de pasul următor.
+- **Regula celor două** (_Agents Rule of Two_, [Meta](https://ai.meta.com/blog/practical-ai-agent-security/), octombrie 2025). Într-o sesiune, un agent ar trebui să aibă cel mult două dintre trei proprietăți: (A) procesează intrări nesigure, (B) are acces la sisteme sensibile sau la date private, (C) poate schimba starea sistemelor sau poate comunica în exterior. Dacă sunt necesare toate trei, agentul nu ar trebui să lucreze autonom, ci cu aprobarea unui om. Meta prezintă regula ca pe o completare, nu ca pe o soluție finală, iar [Willison](https://simonwillison.net/2025/Nov/2/new-prompt-injection-papers/) obiectează că diagrama Meta etichetează drept sigură combinația dintre A și C.
+
+Observăm două tipuri de abordări. _Spotlighting_ și ierarhia instrucțiunilor sunt tot apărări probabilistice, care scad șansa ca modelul să asculte de date. Cele două LLM-uri, CaMeL, FIDES și șabloanele din 2025 sunt garanții de arhitectură: nu mai contează dacă modelul a fost păcălit, pentru că modelul păcălit nu are cum să declanșeze acțiunea. Prețul este flexibilitatea, pentru că agentul poate face mai puține lucruri singur.
+
+## Atacurile adaptive și cifrele de robustețe
+
+Furnizorii publică rate de succes ale atacurilor tot mai mici. Ca să le citim corect, trebuie să știm împotriva cărui atac au fost măsurate.
+
+[The Attacker Moves Second](https://arxiv.org/abs/2510.09023) (Nasr, Carlini și colaboratorii, octombrie 2025) a testat 12 apărări publicate recent cu **atacuri adaptive** (_adaptive attacks_), care se ajustează după răspunsurile apărării, prin gradienți, învățare prin consolidare, căutare sau atacatori umani. Pentru cele mai multe apărări, rata de succes a atacurilor a trecut de 90%, deși majoritatea raportaseră inițial rate aproape de zero. [Willison](https://simonwillison.net/2025/Nov/2/new-prompt-injection-papers/) a comentat că evaluarea cu atacuri statice, formate dintr-un singur text fix, este un mod „aproape inutil” de a testa aceste apărări.
+
+O competiție publică organizată de Gray Swan și analizată de [Dziemian și colaboratorii](https://arxiv.org/abs/2603.15714) (martie 2026) a strâns 464 de participanți și 272.000 de atacuri asupra a 13 modele, în 41 de scenarii. Au reușit 8.648 de atacuri. Rata de succes a variat de la 0,5% (Claude Opus 4.5) la 8,5% (Gemini 2.5 Pro), toate modelele au fost vulnerabile, iar capabilitatea unui model a fost doar slab corelată cu robustețea.
+
+Cel mai detaliat set de cifre publicat de un furnizor până în noiembrie 2026 este în [fișa de sistem a Claude Opus 5.5](https://www-cdn.anthropic.com/fc1b44717c85dc068bc6ba5024219938094694bd/Claude%20Opus%205.5%20System%20Card.pdf) (septembrie 2026).
+
+| Test | Condiții | Claude Opus 5.5 |
+| :--- | :--- | :--- |
+| Gray Swan, injecții indirecte | 37 de scenarii, 1.804 atacuri care s-au transferat bine între modele, fără detectoarele de injecții. Rezultatul este probabilitatea ca atacatorul să găsească un atac reușit după _k_ încercări. | 0,1% la _k_ = 1, 0,7% la _k_ = 10, 1,0% la _k_ = 15 |
+| Atacator adaptiv, programare | Atacatorul automat Shade, antrenat pe aceleași 40 de scenarii pe care este testat, cu 200 de încercări pe scenariu | 54,61% din încercări fără protecții (37 din 40 de scenarii sparte), 11,13% cu detectoarele de injecții (36 din 40) |
+| Atacator adaptiv, utilizarea calculatorului | Shade, 14 cazuri de test | 0,07% fără protecții, 0,04% cu detectoarele |
+| Navigare web în Claude Cowork | 110 scenarii, 10 încercări fiecare, atacuri scrise de specialiști | 0,09% fără protecții, 0% cu modul automat |
+
+Același model are 0,1% într-un test și peste 50% în altul. Diferența ține de **modelul de amenințare** (_threat model_): câte încercări are atacatorul, dacă se adaptează și dacă protecțiile sunt active. Anthropic adaugă trei precizări.
+
+- Testele adaptive folosesc un model de amenințare „permisiv în mod deliberat”: atacatorul optimizează direct pe scenariile de test și are multe încercări, lucruri pe care un atacator real nu le are de obicei.
+- În testul de programare, reușitele au venit prin modelul de rezervă, Claude Opus 4.8, folosit după ce un clasificator de securitate cibernetică redirecționase cererea. Niciuna dintre cele 2.872 de cereri la care a răspuns direct Opus 5.5 nu a fost vulnerabilă.
+- Seturile fixe de atacuri cunoscute pot da un fals sentiment de siguranță. Tot fișa de sistem notează că Opus 5.5 este mai vulnerabil decât alte modele Claude recente la injecțiile din textul lipit chiar de utilizator în prompt.
+
+Există și un contraexemplu onest. În iunie 2026, [Fernando Irarrázaval](https://fernandoi.cl/posts/hackmyclaw/) a pus un asistent OpenClaw cu Claude Opus 4.6 să păzească un fișier cu secrete, cu câteva reguli scurte împotriva injecțiilor, și a invitat publicul să încerce. Peste 2.000 de oameni au trimis peste 6.000 de e-mailuri, iar nimeni nu a obținut secretul. Autorul notează că modelele mai slabe s-ar putea descurca mai rău și că un premiu mai mare ar fi atras atacatori mai buni. Chiar și așa, autorul tot nu își lasă agenții să trimită e-mailuri.
+
+Când citim o cifră de robustețe, ne uităm deci la câteva lucruri.
+
+- **Încercările**: câte a avut atacatorul (_k_) și dacă cifra este calculată pe încercare sau pe scenariu.
+- **Atacatorul**: static sau adaptiv și, dacă este adaptiv, dacă a putut optimiza pe aceleași scenarii pe care este testat.
+- **Protecțiile**: care erau active (detectoare, clasificatoare, mod automat).
+- **Contextul**: în ce harnașament a rulat modelul și cine a făcut măsurătoarea.
+
+O rată de 1% înseamnă, cum scrie chiar Anthropic, un risc important, iar un atacator răbdător are la dispoziție mult mai mult de o încercare.
+
+## Bibliografie
+
+- Anthropic (2025). [Making Claude Code safer with sandboxing](https://www.anthropic.com/engineering/claude-code-sandboxing). Blogul Anthropic.
+- Anthropic (2025). [Mitigating prompt injections in browser use](https://www.anthropic.com/research/prompt-injection-defenses). Blogul Anthropic.
+- Anthropic (2026). [Claude Opus 5.5 System Card](https://www-cdn.anthropic.com/fc1b44717c85dc068bc6ba5024219938094694bd/Claude%20Opus%205.5%20System%20Card.pdf). Anthropic.
+- Anthropic (2026). [How we built Claude Code auto mode](https://www.anthropic.com/engineering/claude-code-auto-mode). Blogul Anthropic.
+- Anthropic (2026). [How we contain Claude across products](https://anthropic.com/engineering/how-we-contain-claude). Blogul Anthropic.
+- Anthropic (2026). [Red-Teaming Auto Mode: Improving Blocking Classifiers Against Malign Coding Agents](https://alignment.anthropic.com/2026/red-teaming-auto-mode/). Blogul Anthropic Alignment Science.
+- Anthropic (2026). [Sandbox Escape via Git Worktree Path Confusion Allows Unsandboxed Code Execution](https://github.com/anthropics/claude-code/security/advisories/GHSA-7835-87q9-rgvv). Avizul de securitate GHSA-7835-87q9-rgvv (CVE-2026-55607).
+- Anthropic (f.a.). [Choose a permission mode](https://code.claude.com/docs/en/permission-modes). Documentația Claude Code.
+- Anthropic (f.a.). [Configure permissions](https://code.claude.com/docs/en/permissions). Documentația Claude Code.
+- Anthropic (f.a.). [Configure the sandboxed Bash tool](https://code.claude.com/docs/en/sandboxing). Documentația Claude Code.
+- Anthropic (f.a.). [Development containers](https://code.claude.com/docs/en/devcontainer). Documentația Claude Code.
+- Anthropic (f.a.). [sandbox-runtime](https://github.com/anthropic-experimental/sandbox-runtime). Cod sursă, GitHub.
+- Anthropic (f.a.). [Use Claude Code in the cloud](https://code.claude.com/docs/en/claude-code-on-the-web). Documentația Claude Code.
+- Beurer-Kellner, L. et al. (2025). [Design Patterns for Securing LLM Agents against Prompt Injections](https://arxiv.org/abs/2506.08837). Preprint arXiv:2506.08837.
+- bubblewrap (f.a.). [bubblewrap: Low-level unprivileged sandboxing tool used by Flatpak and similar projects](https://github.com/containers/bubblewrap). Cod sursă, GitHub.
+- Costa, M. et al. (2025). [Securing AI Agents with Information-Flow Control](https://arxiv.org/abs/2505.23643). Preprint arXiv:2505.23643.
+- Cox, S. (2025). [Code Execution Through Deception: Gemini AI CLI Hijack](https://tracebit.com/blog/code-exec-deception-gemini-ai-cli-hijack). Blogul Tracebit.
+- Cursor (2026). [Implementing a secure sandbox for local agents](https://cursor.com/blog/agent-sandboxing). Blogul Cursor.
+- Debenedetti, E. et al. (2024). [AgentDojo: A Dynamic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents](https://arxiv.org/abs/2406.13352). Preprint arXiv:2406.13352.
+- Debenedetti, E. et al. (2025). [Defeating Prompt Injections by Design](https://arxiv.org/abs/2503.18813). Preprint arXiv:2503.18813.
+- Docker (2026). [Docker Sandboxes: Run Claude Code and More Safely](https://www.docker.com/blog/docker-sandboxes-run-claude-code-and-other-coding-agents-unsupervised-but-safely/). Blogul Docker.
+- Docker (f.a.). [Security model](https://docs.docker.com/ai/sandboxes/security/). Documentația Docker Sandboxes.
+- Dziemian, M. et al. (2026). [How Vulnerable Are AI Agents to Indirect Prompt Injections? Insights from a Large-Scale Public Competition](https://arxiv.org/abs/2603.15714). Preprint arXiv:2603.15714.
+- Firecracker (f.a.). [Firecracker](https://firecracker-microvm.github.io/). Site-ul proiectului.
+- GitHub (f.a.). [Customizing or disabling the firewall for GitHub Copilot](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/customize-the-agent-firewall). GitHub Docs.
+- GitHub (f.a.). [Risks and mitigations for GitHub Copilot cloud agent](https://docs.github.com/en/copilot/concepts/agents/coding-agent/risks-and-mitigations). GitHub Docs.
+- Google (2025). [Architecting Security for Agentic Capabilities in Chrome](https://blog.google/security/architecting-security-for-agentic/). Blogul Google.
+- Google (2025). [Mitigating prompt injection attacks with a layered defense strategy](https://blog.google/security/mitigating-prompt-injection-attacks/). Blogul Google.
+- Google (f.a.). [Sandboxing in Gemini CLI](https://geminicli.com/docs/cli/sandbox/). Documentația Gemini CLI.
+- Google (f.a.). [Trusted Folders](https://geminicli.com/docs/cli/trusted-folders/). Documentația Gemini CLI.
+- gVisor (f.a.). [What is gVisor?](https://gvisor.dev/docs/). Documentația gVisor.
+- Hines, K. et al. (2024). [Defending Against Indirect Prompt Injection Attacks With Spotlighting](https://arxiv.org/abs/2403.14720). Preprint arXiv:2403.14720.
+- Irarrázaval, F. (2026). [What happened after 2,000 people tried to hack my AI assistant](https://fernandoi.cl/posts/hackmyclaw/). Blogul lui Fernando Irarrázaval.
+- Linux Kernel (f.a.). [Landlock: unprivileged access control](https://docs.kernel.org/userspace-api/landlock.html). Documentația nucleului Linux.
+- Meta (2025). [Agents Rule of Two: A Practical Approach to AI Agent Security](https://ai.meta.com/blog/practical-ai-agent-security/). Blogul Meta AI.
+- Nasr, M. et al. (2025). [The Attacker Moves Second: Stronger Adaptive Attacks Bypass Defenses Against LLM Jailbreaks and Prompt Injections](https://arxiv.org/abs/2510.09023). Preprint arXiv:2510.09023.
+- NCSC (2025). [Prompt injection is not SQL injection (it may be worse)](https://www.ncsc.gov.uk/blog-post/prompt-injection-is-not-sql-injection). National Cyber Security Centre.
+- OpenAI (2025). [Continuously hardening ChatGPT Atlas against prompt injection](https://openai.com/index/hardening-atlas-against-prompt-injection). Blogul OpenAI.
+- OpenAI (2025). [Sandbox bypass due to bug in path configuration logic](https://github.com/openai/codex/security/advisories/GHSA-w5fx-fh39-j5rw). Avizul de securitate GHSA-w5fx-fh39-j5rw (CVE-2025-59532).
+- OpenAI (2026). [Auto-review of agent actions without synchronous human oversight](https://alignment.openai.com/auto-review/). Blogul OpenAI Alignment.
+- OpenAI (f.a.). [Auto-review](https://learn.chatgpt.com/docs/sandboxing/auto-review). Documentația Codex.
+- OpenAI (f.a.). [Codex Cloud (Legacy): internet access](https://learn.chatgpt.com/docs/cloud/internet-access). Documentația Codex.
+- OpenAI (f.a.). [Sandbox](https://learn.chatgpt.com/docs/sandboxing). Documentația Codex.
+- OpenClaw (f.a.). [Modes, scope, and backend](https://docs.openclaw.ai/gateway/sandboxing/modes-scope-and-backend). Documentația OpenClaw.
+- OpenClaw (f.a.). [Security](https://docs.openclaw.ai/gateway/security). Documentația OpenClaw.
+- OWASP (2026). [OWASP GenAI LLM Top 10 2026](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/). OWASP GenAI Security Project.
+- Paverd, A. (2025). [How Microsoft defends against indirect prompt injection attacks](https://www.microsoft.com/msrc/blog/2025/07/how-microsoft-defends-against-indirect-prompt-injection-attacks). Blogul Microsoft Security Response Center.
+- Vandevanter, W. (2025). [Prompt injection to RCE in AI agents](https://blog.trailofbits.com/2025/10/22/prompt-injection-to-rce-in-ai-agents/). Blogul Trail of Bits.
+- Wallace, E. et al. (2024). [The Instruction Hierarchy: Training LLMs to Prioritize Privileged Instructions](https://arxiv.org/abs/2404.13208). Preprint arXiv:2404.13208.
+- Willison, S. (2023). [The Dual LLM pattern for building AI assistants that can resist prompt injection](https://simonwillison.net/2023/Apr/25/dual-llm-pattern/). Blogul lui Simon Willison.
+- Willison, S. (2025). [CaMeL offers a promising new direction for mitigating prompt injection attacks](https://simonwillison.net/2025/Apr/11/camel/). Blogul lui Simon Willison.
+- Willison, S. (2025). [Codex agent internet access](https://simonwillison.net/2025/Jun/3/codex-agent-internet-access/). Blogul lui Simon Willison.
+- Willison, S. (2025). [Dane Stuckey (OpenAI CISO) on prompt injection risks for ChatGPT Atlas](https://simonwillison.net/2025/Oct/22/openai-ciso-on-atlas/). Blogul lui Simon Willison.
+- Willison, S. (2025). [New prompt injection papers: Agents Rule of Two and The Attacker Moves Second](https://simonwillison.net/2025/Nov/2/new-prompt-injection-papers/). Blogul lui Simon Willison.
+- Yomtov, O. (2026). [Escaping the OpenAI Codex sandbox, twice](https://www.accomplish.ai/blog/escaping-the-openai-codex-sandbox-twice/). Blogul Accomplish.

@@ -1,0 +1,306 @@
+---
+title: 'Securitatea agenților: atacuri'
+description: Cum este păcălit un agent prin injecția de prompt, pe ce căi pleacă datele, ce au arătat repozitoriile, abilitățile și serverele MCP malițioase, memoria otrăvită și listele OWASP din 2025 și 2026.
+sidebar:
+  order: 12
+  label: 'Securitatea agenților: atacuri'
+level: intermediar
+tags:
+  - Sisteme agentice
+  - Modele de limbaj mari (LLM)
+---
+
+Un agent citește mult text scris de alții: pagini web, e-mailuri, documente, fișiere din repozitorii, tichete de pe GitHub, rezultatele instrumentelor. În același timp, agentul poate acționa. Rulează comenzi, modifică fișiere, trimite mesaje. Tot ce citește ajunge în aceeași [fereastră de context](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#limitări) ca instrucțiunile utilizatorului, iar modelul nu are un mecanism sigur prin care să deosebească o instrucțiune de o simplă informație.
+
+Pagina descrie clasele de atacuri documentate între 2022 și 2026, cu incidente reale prezentate la nivelul la care le-au publicat cercetătorii și furnizorii. Cele mai multe au fost corectate între timp. Ne interesează de ce funcționează atacurile, nu cum pot fi reproduse. Apărările, împreună cu ce pot și ce nu pot garanta, sunt descrise pe pagina [Securitatea agenților: apărări](/comportament-agentic/securitatea-agentilor-aparari/).
+
+## Injecția de prompt (prompt injection)
+
+Termenul **injecție de prompt** (_prompt injection_) a fost propus de [Simon Willison](https://simonwillison.net/2022/Sep/12/prompt-injection/) pe 12 septembrie 2022, cu o zi după ce Riley Goodside arătase că GPT-3 poate fi convins să ignore instrucțiunile primite, dacă textul pe care îl procesează îi cere asta. Numele vine de la injecția SQL. Ca și acolo, o aplicație pune instrucțiuni de încredere și text venit din afară în același șir, iar textul din afară ajunge să fie tratat ca instrucțiune.
+
+Diferența importantă este că injecția SQL are o soluție de fond: interogările parametrizate, care țin codul separat de date. Un model de limbaj primește o singură secvență de tokenuri. Lista [OWASP din 2026](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/) rezumă problema, citând centrul britanic de securitate cibernetică (NCSC): modelele de limbaj nu fac nicio distincție arhitecturală între instrucțiuni și date, așa că nu există un echivalent curat al interogărilor parametrizate.
+
+Willison face și o distincție utilă ([2024](https://simonwillison.net/2024/Mar/5/prompt-injection-jailbreaking/)). Injecția de prompt atacă **aplicația** construită peste model, care amestecă instrucțiuni de încredere cu text nesigur. **Ocolirea antrenării de siguranță** (_jailbreaking_) atacă **modelul**, ca să producă ceva ce nu ar trebui să producă. Nu toate sursele trasează granița la fel: OWASP include ocolirea antrenării de siguranță în categoria injecției de prompt.
+
+### Injecția directă și injecția indirectă
+
+- **Injecția directă** (_direct prompt injection_): atacatorul este chiar cel care scrie mesajul către model.
+- **Injecția indirectă** (_indirect prompt injection_): instrucțiunile sunt plantate în date pe care sistemul le citește mai târziu, de exemplu o pagină web, un e-mail, un document, un tichet (_issue_), rezultatul unui instrument sau memoria agentului.
+
+Termenul de injecție indirectă vine din lucrarea lui [Greshake și colaboratorii](https://arxiv.org/abs/2302.12173) (februarie 2023). Autorii au arătat că un atacator poate controla o aplicație cu LLM fără nicio interfață directă cu aplicația, doar plasând prompturi în date care vor fi probabil regăsite, și au demonstrat atacul pe Bing Chat (bazat pe GPT-4) și pe sisteme de completare a codului. Concluzia lor: aplicațiile cu LLM șterg granița dintre date și instrucțiuni. Lucrarea descria deja furtul de date, răspândirea de la un sistem la altul și contaminarea surselor de informații.
+
+Pentru agenți, injecția indirectă contează cel mai mult. Utilizatorul nu este atacatorul. Cere ceva obișnuit, cum ar fi _„rezumă pagina”_ sau _„rulează testele”_, iar agentul întâlnește pe drum textul plantat.
+
+Textul plantat nici nu trebuie să fie vizibil pentru om. [Unit 42](https://unit42.paloaltonetworks.com/ai-agent-prompt-injection/), echipa de cercetare a Palo Alto Networks, a publicat în martie 2026 un catalog de 22 de tehnici de injecție găsite pe pagini web reale. În cazurile analizate, 37,8% foloseau text vizibil, 19,8% ascundeau instrucțiunile în atribute HTML, iar 16,9% le ascundeau prin CSS: font de mărime zero, elemente mutate în afara ecranului sau ascunse, opacitate zero, text de aceeași culoare cu fundalul. În alte demonstrații, cercetătorii au folosit comentarii HTML din fișiere README, care nu apar pe pagina afișată de GitHub, și caractere Unicode invizibile.
+
+Cât de des apar astfel de texte? [Google](https://blog.google/security/prompt-injections-web/) a analizat paginile din Common Crawl (între 2 și 3 miliarde de pagini în fiecare instantaneu lunar) și a raportat în aprilie 2026 o creștere relativă de 32% a categoriei malițioase între noiembrie 2025 și februarie 2026. Tot Google apreciază că atacurile găsite au, deocamdată, o sofisticare limitată.
+
+Injecțiile se pot și răspândi, cum anticipaseră Greshake și colaboratorii. [AgentHopper](https://embracethered.com/blog/posts/2025/agenthopper-a-poc-ai-virus) (Johann Rehberger, august 2025) a fost o demonstrație de concept a unui „virus AI”. O injecție care exploata vulnerabilități din GitHub Copilot, Amazon Q, Kiro și Amp, corectate între timp, se copia apoi în alte repozitorii git de pe aceeași mașină și le trimitea pe server.
+
+## Triada letală (lethal trifecta)
+
+În iunie 2025, [Simon Willison](https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/) a descris condiția în care o injecție de prompt devine furt de date. Un agent este expus atunci când are în același timp trei capabilități, pe care Willison le numește **triada letală** (_lethal trifecta_).
+
+1. **Acces la date private**: e-mailuri, documente, fișiere cu chei, baze de date.
+2. **Expunere la conținut nesigur**: text pe care îl poate controla un atacator.
+3. **Comunicare în exterior**: orice cale prin care agentul poate trimite date în afară și care poate fi folosită pentru furt.
+
+Când toate trei sunt prezente, un atacator poate păcăli ușor agentul să-i trimită datele utilizatorului.
+
+Să considerăm un asistent care citește căsuța de e-mail a unui utilizator și poate trimite e-mailuri. Un necunoscut trimite un mesaj în care, printre rânduri, cere ca toate codurile de resetare a parolelor să fie redirecționate către o anumită adresă. Când utilizatorul cere _„rezumă e-mailurile de azi”_, modelul citește și mesajul atacatorului, ca pe orice alt text. Datele private sunt în căsuță, conținutul nesigur vine prin e-mail, iar trimiterea unui mesaj este canalul de ieșire.
+
+La un agent de programare, triada arată așa: agentul poate citi fișierul `.env` cu chei API, citește README-ul unui repozitoriu clonat de pe internet și poate rula `curl` sau deschide pagini web.
+
+Willison observă că produsele care promit să oprească „95% dintre atacuri” nu rezolvă problema, pentru că în securitatea aplicațiilor web 95% este o notă de picaj. Pentru cine își combină singur instrumentele, singura protecție sigură este evitarea combinației, adică renunțarea la cel puțin una dintre cele trei capabilități. Observația contează mai ales pentru [MCP](/comportament-agentic/protocoale-si-standarde/), care încurajează tocmai combinarea instrumentelor de la furnizori diferiți. După ce utilizatorul face combinația, niciun furnizor nu îl mai poate proteja.
+
+Postarea lui Willison listează și o serie lungă de scurgeri de date raportate între 2023 și 2025, în ChatGPT, Google Bard, Amazon Q, NotebookLM, GitHub Copilot Chat, Slack, Microsoft Copilot, Mistral Le Chat, Grok sau aplicația Claude pentru iOS. Cele mai multe au fost corectate prin închiderea canalului de ieșire, nu prin împiedicarea injecției.
+
+## Cum pleacă datele
+
+Odată păcălit, agentul mai are nevoie de un canal prin care datele să ajungă la atacator. Cercetările din 2023–2026 au găsit, din nou și din nou, aceleași câteva canale.
+
+| Canal | Cum funcționează | Exemple documentate |
+| :--- | :--- | :--- |
+| **Imagini Markdown** | Modelul scrie o imagine al cărei URL conține datele. Interfața descarcă imaginea automat, fără niciun clic. | Bing Chat (2023), EchoLeak (2025), CamoLeak (2025) |
+| **Domenii permise** | Datele pleacă spre un domeniu de pe lista de domenii permise, pe care atacatorul poate totuși să scrie. | ForcedLeak (2025), Google Antigravity (2025), Claude Cowork (2026) |
+| **Diagrame** | O diagramă Mermaid conține o imagine cu datele în URL. | Cursor, CVE-2025-54132 (2025) |
+| **Legături** | Datele stau în parametrii unei legături, iar utilizatorul trebuie să dea clic. | Frecvente, dar mai puțin automate |
+| **Cereri DNS** | Numele de domeniu căutat conține datele, iar serverul DNS al atacatorului le vede. | Claude Code, CVE-2025-55284 (2025) |
+| **Instrumentele agentului** | Agentul descarcă o pagină, face o căutare, trimite un e-mail sau deschide o cerere de integrare publică. | GitHub MCP (2025), ShadowLeak (2025) |
+
+[Johann Rehberger](https://embracethered.com/blog/posts/2023/bing-chat-data-exfiltration-poc-and-fix) a demonstrat canalul cu imagini Markdown pe Bing Chat în 2023. De atunci, canalul a revenit în forme tot mai ingenioase.
+
+**EchoLeak** (CVE-2025-32711), descris de Aim Labs în iunie 2025 și analizat apoi de [Reddy și Gujral](https://arxiv.org/abs/2509.10540), a fost un atac fără niciun clic asupra Microsoft 365 Copilot. Un singur e-mail ajungea în contextul folosit de Copilot pentru regăsire. Lanțul ocolea clasificatorul Microsoft pentru injecții, evita filtrarea legăturilor printr-o sintaxă Markdown mai puțin folosită și scotea datele prin imagini descărcate automat, printr-un domeniu Microsoft permis de politica de securitate a conținutului (CSP). Microsoft a corectat problema pe server.
+
+**CamoLeak** ([Legit Security](https://www.legitsecurity.com/blog/camoleak-critical-github-copilot-vulnerability-leaks-private-source-code), 2025) pornea de la comentarii invizibile din descrierea unei cereri de integrare (_pull request_). Când cineva îi cerea lui Copilot Chat să analizeze cererea, Copilot citea date din repozitoriile private ale acelei persoane și le scria ca un șir de imagini, câte una pentru fiecare caracter, cu adrese pre-semnate ale proxy-ului de imagini al GitHub (Camo). Adresele treceau de CSP pentru că aparțineau GitHub. Pe 14 august 2025, GitHub a dezactivat afișarea imaginilor în Copilot Chat.
+
+**ForcedLeak** ([Noma Labs](https://noma.security/blog/forcedleak-agent-risks-exposed-in-salesforce-agentforce/), septembrie 2025) a arătat cât de fragilă poate fi o listă de domenii permise. Instrucțiunile stăteau într-un câmp al unui formular public prin care Salesforce colectează clienți potențiali. Când un angajat întreba mai târziu agentul Agentforce despre acel client, agentul genera o imagine spre un domeniu aflat încă pe lista de domenii permise, dar expirat, pe care cercetătorii îl înregistraseră. Salesforce a introdus apoi verificarea strictă a adreselor de încredere (8 septembrie 2025).
+
+**Claude Cowork** ([PromptArmor](https://www.promptarmor.com/resources/claude-cowork-exfiltrates-files), ianuarie 2026) bloca traficul de ieșire, cu excepția unei liste scurte de domenii, printre care `api.anthropic.com`. Injecția a încărcat fișiere ale utilizatorului în contul atacatorului, prin API-ul de fișiere al Anthropic și cu cheia API a atacatorului. [Anthropic](https://anthropic.com/engineering/how-we-contain-claude) a confirmat în mai 2026 că lista a fost exploatată astfel. Soluția a fost un proxy în mașina virtuală, care lasă să treacă doar cererile autentificate cu credențialele sesiunii respective.
+
+Lecția care se repetă din 2023 este că o listă de domenii permise este la fel de sigură ca cel mai puțin sigur lucru pe care oricine îl poate scrie pe un domeniu din listă: un subdomeniu prins de o regulă cu asterisc (`*.exemplu.net`), un serviciu de stocare a fișierelor, un serviciu de webhook, un formular, un domeniu expirat sau chiar API-ul propriului furnizor. [Willison](https://simonwillison.net/2025/Aug/15/the-summer-of-johann/) adaugă că orice instrument care face o cerere în rețea, inclusiv o simplă rezolvare DNS, este un canal de exfiltrare.
+
+Pentru agenți, principalele canale sunt chiar instrumentele. [Rehberger](https://embracethered.com/blog/posts/2025/claude-code-exfiltration-via-dns-requests/) a arătat în august 2025 că o versiune de Claude Code aproba fără întrebare comenzi ca `ping`, `nslookup`, `host` și `dig`, considerate sigure, iar o injecție putea citi un fișier și trimite conținutul prin cereri DNS (CVE-2025-55284, corectată în versiunea 1.0.4). În cazul ShadowLeak, descoperit de Radware și făcut public în septembrie 2025 ([The Record](https://therecord.media/openai-fixes-zero-click-shadowleak-vulnerability)), un e-mail cu text ascuns făcea agentul de cercetare al ChatGPT (Deep Research) să trimită date personale direct de pe serverele OpenAI. Cererea nu trecea deloc prin calculatorul sau prin rețeaua victimei, așa că apărările de acolo nu o puteau vedea.
+
+## Repozitorii care rulează cod la deschidere
+
+La agenții de programare, conținutul nesigur este adesea chiar repozitoriul. Între 2025 și 2026 s-a repetat aceeași clasă de vulnerabilități: era suficient să clonăm un repozitoriu malițios și să pornim agentul în directorul respectiv ca să ruleze cod sau să plece o cheie API, uneori înainte ca utilizatorul să aprobe ceva. Calea era aproape mereu un fișier de configurare al proiectului, citit de [harnașament](/comportament-agentic/harnasamentul/) la pornire: scripturi rulate automat la anumite evenimente (_hooks_), liste de servere MCP, variabile de mediu sau configurația git.
+
+| Harnașament | Aviz | Publicat | Ce se întâmpla | Corectat în |
+| :--- | :--- | :--- | :--- | :--- |
+| Claude Code | [CVE-2025-59536](https://github.com/anthropics/claude-code/security/advisories/GHSA-4fgq-fpq9-mr3g) | octombrie 2025 | Codul din proiect putea rula înainte ca utilizatorul să accepte dialogul de încredere de la pornire. Check Point a descris varianta cu servere MCP pornite automat din configurația proiectului. | 1.0.111 |
+| Claude Code | [CVE-2026-21852](https://github.com/anthropics/claude-code/security/advisories/GHSA-jh7p-qr78-84p7) | ianuarie 2026 | Un fișier de setări din repozitoriu schimba adresa API-ului (`ANTHROPIC_BASE_URL`), iar cererile, cu cheia API a utilizatorului, plecau spre atacator înainte de dialogul de încredere. | 2.0.65 |
+| Codex CLI | [CVE-2025-61260](https://nvd.nist.gov/vuln/detail/CVE-2025-61260) | aprilie 2026 (NVD) | Codex încărca fără confirmare fișierele `.env` și `.codex/config.toml` din proiect, iar acestea puteau porni comenzi prin configurația MCP. | NVD: afectate versiunile până la 0.23.0 |
+| Cursor | [CVE-2025-54135](https://github.com/cursor/cursor/security/advisories/GHSA-4cxx-hrm3-49rm) (CurXecute) | august 2025 | Agentul putea crea fără aprobare fișiere din spațiul de lucru, inclusiv configurația MCP, așa că o injecție indirectă putea înregistra un server MCP care rula comenzi. | 1.3.9 |
+| Cursor | [CVE-2025-54136](https://github.com/cursor/cursor/security/advisories/GHSA-24mc-g4xr-4395) (MCPoison) | august 2025 | Un server MCP aprobat o dată putea fi modificat ulterior, de exemplu printr-un commit într-un repozitoriu comun, fără o nouă aprobare. | 1.3 |
+| Cursor | [CVE-2026-26268](https://github.com/cursor/cursor/security/advisories/GHSA-8pcm-8jpx-hv8r) | februarie 2026 | O injecție putea face agentul să scrie în setările `.git` insuficient protejate, inclusiv scripturi git, care rulau apoi în afara mediului izolat. | 2.5 |
+| GitHub Copilot (VS Code) | [CVE-2025-53773](https://embracethered.com/blog/posts/2025/github-copilot-remote-code-execution-via-prompt-injection/) | august 2025 | Injecția făcea agentul să activeze aprobarea automată a tuturor instrumentelor în `.vscode/settings.json` și apoi să ruleze comenzi. | actualizările Microsoft din august 2025 |
+| Gemini CLI în GitHub Actions | [GHSA-wpqr-6v78-jr5g](https://github.com/google-github-actions/run-gemini-cli/security/advisories/GHSA-wpqr-6v78-jr5g) | aprilie 2026 | În modul fără interfață, folosit în integrarea continuă (CI), spațiul de lucru era considerat automat de încredere, așa că setările și variabilele de mediu dintr-o cerere de integrare puteau duce la executarea de cod. Aviz critic, scor CVSS 10,0. | gemini-cli 0.39.1 |
+| Șapte agenți | [GitSpawn](https://www.manifold.security/blog/ai-coding-agents-git-hijack) | septembrie 2026 | Agenții rulau git în fundal pe repozitorii nesigure, iar configurația git a repozitoriului (de exemplu opțiunea `core.fsmonitor`) rula cod fără nicio întrebare. | 4 din 8 probleme nu erau corectate la publicare |
+
+GitSpawn (Manifold Security) a găsit 8 probleme în 7 agenți: Claude Code, Codex, Cursor, Goose, Hermes Agent, Qwen Code și Grok Build. Două au primit identificatori CVE (CVE-2026-72718 pentru Goose și CVE-2026-71963 pentru Hermes Agent).
+
+Alte cercetări au arătat aceeași clasă de probleme pe scară mai largă. [IDEsaster](https://maccarita.com/posts/idesaster/) (Ari Marzouk, decembrie 2025) a raportat peste 30 de probleme și 24 de CVE-uri în medii de programare cu AI. Toate cele peste 10 produse testate erau vulnerabile la același lanț: o injecție, apoi o scriere de fișier aprobată automat, apoi o funcție obișnuită a editorului, de exemplu descărcarea unei scheme JSON de la o adresă externă sau o setare care indică un program de rulat. În [Month of AI Bugs](https://embracethered.com/blog/posts/2025/wrapping-up-month-of-ai-bugs/) (august 2025), Rehberger a publicat pe blog 29 de texte despre vulnerabilități din produse precum ChatGPT, Codex, Cursor, Devin, OpenHands, Claude Code, Copilot, Jules, Amazon Q sau Windsurf, din care au rezultat doar două CVE-uri.
+
+Numărul avizelor de securitate arată cât de activă este zona. Pe 2 noiembrie 2026, pagina de avize a repozitoriului public Claude Code avea 36 de avize publicate din iunie 2025, cea a Cursor în jur de 33, iar cea a OpenClaw 722. Numerele mari spun și ceva bun: proiectele primesc rapoarte și le publică. [Peter Steinberger](https://openclaw.ai/blog/openclaw-security-in-public), autorul OpenClaw, scria în aprilie 2026 că, din 1.309 rapoarte primite din ianuarie, 535 fuseseră publicate și 746 închise ca nevalide.
+
+## Lanțul de aprovizionare (supply chain)
+
+Un agent își extinde capabilitățile cu pachete scrise de alții: abilități, servere MCP, extensii de editor, pachete npm sau PyPI. Fiecare pachet este cod sau text care ajunge pe calculatorul utilizatorului ori în contextul modelului, deci un loc bun pentru un atacator.
+
+### Abilități malițioase pe ClawHub
+
+**Abilitățile** (_skills_) sunt directoare cu un fișier `SKILL.md`, adică instrucțiuni în Markdown pe care agentul le încarcă atunci când are nevoie, plus eventual scripturi. ClawHub este registrul public de abilități pentru OpenClaw, un asistent personal open-source (vezi [Asistenți personali](/comportament-agentic/asistenti-personali/)).
+
+La începutul lui februarie 2026, Koi Security a verificat toate cele 2.857 de abilități de pe ClawHub și a găsit 341 malițioase, dintre care 335 veneau din aceeași campanie ([eSecurity Planet](https://www.esecurityplanet.com/threats/hundreds-of-malicious-skills-found-in-openclaws-clawhub)). Abilitățile se prezentau ca instrumente pentru criptomonede, Polymarket sau YouTube și cereau instalarea unei „dependențe”, care aducea de fapt un program de furt de parole și portofele (Atomic Stealer).
+
+Câteva zile mai târziu, [Snyk](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/) a scanat 3.984 de abilități de pe ClawHub și skills.sh. În tabelul din raport, 1.467 de abilități (36,82%) aveau cel puțin o problemă de securitate, 534 (13,4%) aveau o problemă critică, iar 76 conțineau cod malițios confirmat prin verificare umană. Dintre acestea, 8 erau încă disponibile la publicare. Titlul postării pomenește „1467 Malicious Payloads”, dar tabelul arată că 1.467 este numărul abilităților cu orice problemă de securitate, nu al celor malițioase.
+
+OpenClaw a introdus în februarie 2026 [scanarea tuturor abilităților cu VirusTotal](https://openclaw.ai/blog/virustotal-partnership), cu precizarea că măsura nu rezolvă singură problema.
+
+### Un server MCP malițios pe npm
+
+În septembrie 2025, Koi Security a descris ceea ce a numit primul server MCP malițios găsit în practică ([The Register](https://www.theregister.com/2025/09/29/postmark_mcp_server_code_hijacked/)): `postmark-mcp`, o copie publicată pe npm a serverului MCP pentru serviciul de e-mail Postmark. Începând cu versiunea 1.0.16, pachetul adăuga în secret o adresă a atacatorului în câmpul BCC al fiecărui e-mail trimis. Pachetul avea aproximativ 1.500 de descărcări pe săptămână, iar Koi estima că erau afectate în jur de 300 de organizații.
+
+### Agenții victimei, folosiți de malware
+
+Pe 26 august 2025, pe npm au apărut [versiuni malițioase ale pachetelor Nx](https://github.com/nrwl/nx/security/advisories/GHSA-cxm3-wv7p-598c), un sistem de build popular în ecosistemul JavaScript. Atacatorii obținuseră un token de acces pentru publicare printr-o automatizare GitHub Actions vulnerabilă. Scriptul rulat la instalare căuta pe calculatorul victimei agenții de linie de comandă Claude Code, Gemini CLI și Amazon Q și îi pornea cu verificările de siguranță dezactivate, prin opțiuni pe care aceste programe le oferă (`--dangerously-skip-permissions`, `--yolo`, `--trust-all-tools`), cerându-le să inventarieze fișierele cu secrete. Rezultatele erau publicate în repozitorii create chiar în conturile GitHub ale victimelor.
+
+[Wiz](https://www.wiz.io/blog/s1ngularity-supply-chain-attack) a numărat peste 1.000 de tokenuri de acces GitHub valide și aproximativ 20.000 de fișiere scurse și a observat că protecțiile furnizorilor de modele au intervenit uneori. Atacul arată că un agent instalat pe calculator, cu acces la fișiere și la rețea, poate fi folosit și de un program malițios care rulează cu drepturile utilizatorului.
+
+### Clinejection
+
+[Adnan Khan](https://adnanthekhan.com/posts/clinejection/) a arătat în februarie 2026 cum o injecție de prompt scrisă în titlul unui tichet GitHub ajungea la automatizarea care tria tichetele proiectului Cline, construită cu Claude Code și cu acces larg la instrumente. Pornind de acolo, un atacator putea face agentul să instaleze un pachet npm propriu în mediul de integrare continuă, putea otrăvi memoria cache a GitHub Actions și putea fura credențialele de publicare npm.
+
+Pe 17 februarie 2026, cineva neautorizat a folosit un token npm compromis pentru a publica [`cline@2.3.0`](https://github.com/cline/cline/security/advisories/GHSA-9ppg-jx86-fqw7). Singura modificare era un script rulat la instalare, care instala global pachetul `openclaw`, un pachet legitim, fără legătură cu Cline. Versiunea corectă 2.4.0 a apărut după aproximativ opt ore.
+
+### Extensii și fișiere compromise
+
+[Extensia Amazon Q Developer pentru VS Code](https://aws.amazon.com/security/security-bulletins/AWS-2025-015/), versiunea 1.84.0 (iulie 2025), a fost publicată cu un prompt adăugat de un atacator, care cerea agentului să șteargă directorul utilizatorului și resurse AWS. Atacatorul obținuse acces de scriere în repozitoriu printr-un token GitHub cu drepturi prea largi. Potrivit AWS, codul nu a rulat din cauza unei erori de sintaxă, iar versiunea 1.85.0 a eliminat problema.
+
+### Pachete inventate (slopsquatting)
+
+Modelele de limbaj inventează uneori nume de pachete care nu există (vezi [Halucinațiile în modelele de limbaj](/modele-lingvistice/halucinatii/)). Dacă un atacator înregistrează numele inventat, următorul agent care îl „inventează” instalează pachetul atacatorului. Fenomenul se numește _slopsquatting_. [Spracklen și colaboratorii](https://arxiv.org/abs/2406.10279) (USENIX Security 2025) au analizat 576.000 de exemple de cod generate de 16 modele. Proporția pachetelor inexistente a fost de cel puțin 5,2% la modelele comerciale și de 21,7% la modelele open-source, cu 205.474 de nume inventate unice.
+
+[Lasso Security](https://www.lasso.security/blog/ai-package-hallucinations) arătase încă din martie 2024 că riscul este real: un pachet gol, înregistrat pe PyPI sub un nume pe care modelele îl inventau des (`huggingface-cli`), a primit peste 30.000 de descărcări în trei luni.
+
+## Riscuri specifice MCP
+
+[Protocolul MCP](/comportament-agentic/protocoale-si-standarde/) (_Model Context Protocol_) conectează agentul la servere care oferă instrumente. Descrierile instrumentelor ajung în contextul modelului, iar modelul le citește ca pe orice alt text. În 2025 au fost descrise câteva clase de atacuri specifice.
+
+- **Otrăvirea instrumentelor** (_tool poisoning_): [Invariant Labs](https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks) (aprilie 2025) a ascuns instrucțiuni în descrierea unui instrument, invizibile pentru utilizator, dar vizibile pentru model. În exemplul lor, un instrument banal de adunare cerea modelului să citească fișierul de configurare MCP și cheia SSH a utilizatorului și să le trimită într-un parametru suplimentar, fără să spună nimic. Demonstrația a mers în Cursor, al cărui dialog de confirmare nu arăta argumentele complete.
+- **Schimbarea după aprobare** (_rug pull_): serverul își schimbă descrierile instrumentelor după ce utilizatorul l-a aprobat. MCPoison, din tabelul de mai sus, este aceeași idee aplicată configurației MCP din Cursor.
+- **Umbrirea instrumentelor** (_tool shadowing_): descrierea unui server schimbă felul în care agentul folosește instrumentele altui server, de încredere, fără ca instrumentul malițios să fie apelat vreodată. În [demonstrația Invariant cu WhatsApp](https://invariantlabs.ai/blog/whatsapp-mcp-exploited), un server malițios făcea agentul să trimită istoricul conversațiilor, prin serverul MCP legitim pentru WhatsApp, către numărul atacatorului.
+- **Influența de la conectare**: [Trail of Bits](https://blog.trailofbits.com/2025/04/21/jumping-the-line-how-mcp-servers-can-attack-you-before-you-ever-use-them/) (aprilie 2025) a numit-o _line jumping_. Descrierile intră în context imediat după conectarea serverului, deci serverul poate influența modelul înainte să fie folosit vreun instrument.
+- **Fluxuri toxice între instrumente**: în [demonstrația Invariant cu GitHub](https://invariantlabs.ai/blog/mcp-github-vulnerability) (mai 2025), un tichet public malițios a făcut Claude 4 Opus, folosit în Claude Desktop cu serverul MCP oficial al GitHub, să copieze date din repozitorii private într-o cerere de integrare publică. Invariant consideră problema una de arhitectură, nu un defect al serverului, și recomandă privilegiul minim, de exemplu un singur repozitoriu pe sesiune.
+
+### Adjunctul confuz (confused deputy)
+
+**Adjunctul confuz** (_confused deputy_) este o problemă clasică de securitate: un program cu privilegii este păcălit de cineva cu mai puține drepturi să-și folosească privilegiile în folosul acelei persoane. [Specificația MCP](https://modelcontextprotocol.io/specification/draft/basic/security_best_practices) descrie un caz concret. Un server MCP face legătura cu un serviciu terț prin OAuth, folosind un singur identificator de client static. Consimțământul dat anterior de utilizator poate fi refolosit de un client înregistrat de atacator, care primește coduri de autorizare fără un consimțământ nou. De aceea, specificația cere consimțământ separat pentru fiecare client și interzice ca un server să accepte tokenuri de acces care nu au fost emise chiar pentru serverul respectiv (_token passthrough_).
+
+Același document cere ca o aplicație client să arate comanda exactă înainte să instaleze local un server MCP și să obțină acordul utilizatorului, pentru că instalarea dintr-un clic poate rula orice comandă. [OX Security](https://www.ox.security/blog/the-mother-of-all-ai-supply-chains-critical-systemic-vulnerability-at-the-core-of-the-mcp/) a susținut în aprilie 2026 că transportul STDIO, prin care clientul pornește local comanda configurată pentru un server, este o slăbiciune sistemică, și a legat de acest transport peste zece CVE-uri în produse care folosesc MCP. Anthropic a răspuns că acesta este comportamentul așteptat și că verificarea comenzilor este responsabilitatea dezvoltatorilor ([The Register](https://www.theregister.com/2026/04/16/anthropic_mcp_design_flaw/)). Disputa, defect sau comportament prin design, a rămas deschisă.
+
+## Servicii expuse pe internet
+
+Asistenții personali de tipul OpenClaw rulează un serviciu local, numit _gateway_, care primește mesajele din aplicațiile de chat, păstrează sesiunile și pornește instrumentele. Documentația OpenClaw spune că, la o instalare obișnuită, serviciul ascultă doar pe interfața locală (_loopback_), dar că imaginile de container îl expun implicit, caz în care trebuie folosit cu autentificare. SecurityScorecard a scris, citat de The Register, că OpenClaw ascultă implicit pe toate interfețele. Sursele nu se potrivesc, iar valorile implicite pot diferi între versiuni și între instalarea directă și cea în container.
+
+Câte instanțe erau accesibile din internet depinde de cine a numărat și când.
+
+| Sursa | Data | Instanțe găsite | Metoda |
+| :--- | :--- | :--- | :--- |
+| [Censys](https://censys.com/blog/openclaw-in-the-wild-mapping-the-public-exposure-of-a-viral-ai-assistant/) | 31 ianuarie 2026 | 21.639 | După titlul paginii. Cele mai multe cereau încă un token de autentificare. |
+| [Hunt.io](https://hunt.io/blog/cve-2026-25253-openclaw-ai-agent-exposure) | 3 februarie 2026 | peste 17.500 | După titlul paginii |
+| [SecurityScorecard](https://securityscorecard.com/blog/how-exposed-openclaw-deployments-turn-agentic-ai-into-an-attack-surface/) | 9–11 februarie 2026 | peste 40.000 în primele 24 de ore | Scanare proprie, 35,4% marcate ca vulnerabile |
+| SecurityScorecard, citat de [The Register](https://www.theregister.com/2026/02/09/openclaw_instances_exposed_vibe_code/) | 9 februarie 2026 | peste 135.000 | Tabloul de bord al scanării, în creștere |
+
+Numerele diferă pentru că metodele diferă: căutare după titlul paginii, după iconiță sau după amprente, instanțe sau adrese IP, la date diferite. Ordinul de mărime, zeci de mii de instanțe, apare însă în toate măsurătorile.
+
+Expunerea nu era singura problemă. Prin [CVE-2026-25253](https://github.com/openclaw/openclaw/security/advisories/GHSA-g8p2-7wf7-98mq) (corectată în versiunea 2026.1.29, la 30 ianuarie 2026), interfața web de control a OpenClaw lua adresa serverului dintr-un parametru al URL-ului, se conecta automat și trimitea acolo tokenul de autentificare salvat. Un singur clic pe o legătură pregătită îi dădea atacatorului tokenul, cu care putea schimba regulile de izolare și de instrumente și putea rula comenzi pe calculatorul victimei. Faptul că serviciul asculta doar local nu proteja, pentru că browserul victimei făcea conexiunea.
+
+Tot atunci, [Wiz](https://www.wiz.io/blog/exposed-moltbook-database-reveals-millions-of-api-keys) (2 februarie 2026) a găsit baza de date a Moltbook, o rețea socială pentru agenți, deschisă pentru citire și scriere fără autentificare: o cheie Supabase era în codul paginii, iar baza de date nu avea reguli de securitate la nivel de rând. Erau expuse aproximativ 1,5 milioane de tokenuri de acces ale agenților și 4.060 de conversații private între agenți, unele cu chei OpenAI în clar. Problema a fost corectată în câteva ore.
+
+Și serverele MCP ajung pe internet. [Knostic](https://www.knostic.ai/blog/find-mcp-server-shodan) a găsit în iulie 2025, cu motorul de căutare Shodan, 1.862 de servere MCP expuse. Toate cele 119 verificate manual permiteau listarea instrumentelor fără autentificare.
+
+## Otrăvirea memoriei (memory poisoning)
+
+Agenții care țin minte între sesiuni (vezi [Memoria agenților](/comportament-agentic/memoria-agentilor/)) au o problemă în plus: o injecție scrisă în memorie nu dispare la sfârșitul conversației. Lista OWASP din 2026 spune că o injecție ajunsă în memoria persistentă, într-un corpus RAG sau într-un depozit vectorial afectează fiecare sesiune care citește ulterior din acel depozit. Lista OWASP pentru aplicații agentice are o categorie separată pentru **otrăvirea memoriei și a contextului** (_memory and context poisoning_, ASI06).
+
+Cazurile publicate arată câteva căi diferite.
+
+- **SpAIware** ([Rehberger](https://embracethered.com/blog/posts/2024/chatgpt-macos-app-persistent-data-exfiltration/), septembrie 2024): conținutul injectat apela instrumentul de memorie al ChatGPT și salva o instrucțiune care trimitea apoi fiecare conversație viitoare spre atacator, printr-o imagine. OpenAI a închis canalul de exfiltrare, dar Rehberger nota că un site sau un document nesigur putea în continuare să scrie amintiri arbitrare.
+- **Scrierea amânată** ([Rehberger](https://embracethered.com/blog/posts/2025/gemini-memory-persistence-prompt-injection/), februarie 2025): un document îi cerea lui Gemini să salveze anumite amintiri abia când utilizatorul răspunde „da” la orice, așa că scrierea părea inițiată de utilizator. Google a evaluat riscul ca scăzut.
+- **Windsurf** ([Rehberger](https://embracethered.com/blog/posts/2025/windsurf-spaiware-exploit-persistent-prompt-injection/), august 2025): instrumentul `create_memory` rula fără aprobare, deci un comentariu din cod putea planta instrucțiuni permanente în memoria pe termen lung.
+- **Recomandări otrăvite** ([Microsoft](https://www.microsoft.com/en-us/security/blog/2026/02/10/ai-recommendation-poisoning/), februarie 2026): butoane și legături de tipul „Rezumă cu AI” deschideau asistentul cu un prompt pregătit, care cerea ca o anumită firmă să fie ținută minte ca sursă de încredere. În aproximativ 60 de zile de trafic de e-mail, Microsoft a găsit peste 50 de prompturi diferite de la 31 de companii din 14 industrii, cu legături pentru Copilot, ChatGPT, Claude, Perplexity și Grok.
+- **Furtul memoriei** ([Ayush Paul](https://www.ayush.digital/blog/the-memory-heist), iulie 2026): instrumentul prin care Claude descărca pagini web putea urma legături găsite în paginile descărcate. O pagină pregătită, afișată doar agentului, l-a făcut pe Claude să dezvăluie, legătură cu legătură, informații din memorie: nume, oraș, angajator. Anthropic a eliminat urmărirea legăturilor din conținutul descărcat.
+
+Fișierele de instrucțiuni din repozitorii sunt tot o formă de memorie, încărcată automat. Atacul numit [Rules File Backdoor](https://www.pillar.security/blog/new-vulnerability-in-github-copilot-and-cursor-how-hackers-can-weaponize-code-agents) (Pillar Security, martie 2025) ascundea caractere Unicode invizibile în fișierele de reguli ale Cursor și în instrucțiunile pentru GitHub Copilot, iar codul generat se schimba fără ca un om să vadă ce citise agentul. GitHub a adăugat pe 1 mai 2025 un avertisment pentru textul Unicode ascuns. Cursor a răspuns că responsabilitatea este a utilizatorului.
+
+Cercetarea a măsurat și cât de ușor se face otrăvirea. [AgentPoison](https://arxiv.org/abs/2407.12784) (Chen și colaboratorii, 2024) plantează în memoria agentului sau într-o bază de cunoștințe RAG câteva intrări care conțin un declanșator secret. Autorii raportează un succes mediu al atacului de peste 80%, cu mai puțin de 0,1% intrări otrăvite și un efect de sub 1% asupra sarcinilor obișnuite. [MINJA](https://arxiv.org/abs/2503.03704) (Dong și colaboratorii, 2025) arată că un utilizator obișnuit poate planta înregistrări malițioase într-o memorie comună doar prin întrebări, fără acces direct de scriere, cu 98,2% succes la injectare și 76,8% succes al atacului.
+
+## Listele OWASP
+
+OWASP (_Open Worldwide Application Security Project_) publică liste cu cele mai importante riscuri pentru aplicațiile construite cu modele de limbaj. Ediția pentru 2025 a apărut în noiembrie 2024, iar [ediția pentru 2026](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/) în august 2026.
+
+| Loc | [Ediția 2025](https://genai.owasp.org/llm-top-10/) | Ediția 2026 |
+| :--- | :--- | :--- |
+| 1 | Injecția de prompt | Injecția de prompt |
+| 2 | Divulgarea informațiilor sensibile | Divulgarea informațiilor sensibile |
+| 3 | Lanțul de aprovizionare | **Autonomia excesivă** (_Excessive Agency_), urcată de pe locul 6 |
+| 4 | Otrăvirea datelor și a modelului | Lanțul de aprovizionare |
+| 5 | Tratarea nesigură a ieșirii (_Improper Output Handling_) | Otrăvirea datelor și a modelului |
+| 6 | Autonomia excesivă | **Consumul nelimitat** (_Unbounded Consumption_), urcat de pe locul 10 |
+| 7 | Scurgerea promptului de sistem (_System Prompt Leakage_) | Dezinformarea |
+| 8 | Slăbiciuni ale vectorilor și reprezentărilor vectoriale | **Expunerea contextului ascuns** (_Hidden Context Exposure_), fosta scurgere a promptului de sistem, cu sfera lărgită |
+| 9 | Dezinformarea (_Misinformation_) | Slăbiciuni ale vectorilor și reprezentărilor vectoriale |
+| 10 | Consumul nelimitat | Tratarea nesigură a ieșirii, coborâtă de pe locul 5 |
+
+Ediția din 2026 schimbă și metoda. Până acum, ordinea venea doar din votul specialiștilor. De data aceasta, votul (trei sferturi din pondere) a fost confruntat cu un corpus de 7.714 incidente reale, dintre care 6.639 au avut destule detalii ca să fie clasificate (un sfert din pondere). Scrisoarea coordonatorilor proiectului, Steve Wilson și Rock Lambros, explică principalele mutări.
+
+- **Injecția de prompt**: ordonată doar după incidente, categoria iese cu totul din primele zece. Autorii explică diferența printr-un „efect al apărărilor”. Echipele luptă intens cu injecția, așa că puține exploatări curate ajung în bazele de date publice, iar numărătoarea publică subestimează riscul. Injecția a rămas pe primul loc, pentru că suprafața de atac există oriunde un model citește text nesigur.
+- **Autonomia excesivă** a urcat pe locul 3, mutarea cu cele mai mari consecințe, pentru că votul și incidentele arată același lucru: pagubele apar în aplicațiile agentice.
+- **Dezinformarea** a urcat datorită incidentelor, deși votanții o puseseră aproape de final.
+
+Scrisoarea trasează și o graniță. Lista pentru aplicații LLM tratează modelul ca pe o componentă a aplicației. Din momentul în care modelul devine un actor, cu instrumente pe care le poate apela și cu memorie pe care o duce de la o sesiune la alta, riscul trece în [lista pentru aplicații agentice](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/), publicată în decembrie 2025.
+
+| Cod | Riscul agentic |
+| :--- | :--- |
+| ASI01 | Deturnarea obiectivului agentului (_Agent Goal Hijack_) |
+| ASI02 | Folosirea abuzivă a instrumentelor (_Tool Misuse & Exploitation_) |
+| ASI03 | Abuzul de identitate și de privilegii (_Identity & Privilege Abuse_) |
+| ASI04 | Vulnerabilități în lanțul de aprovizionare agentic (_Agentic Supply Chain Vulnerabilities_) |
+| ASI05 | Executarea neașteptată de cod (_Unexpected Code Execution_) |
+| ASI06 | Otrăvirea memoriei și a contextului (_Memory & Context Poisoning_) |
+| ASI07 | Comunicarea nesigură între agenți (_Insecure Inter-Agent Communication_) |
+| ASI08 | Eșecuri în cascadă (_Cascading Failures_) |
+| ASI09 | Exploatarea încrederii dintre om și agent (_Human-Agent Trust Exploitation_) |
+| ASI10 | Agenți scăpați de sub control (_Rogue Agents_) |
+
+Aproape fiecare incident de pe această pagină se potrivește în una sau mai multe categorii din tabel. Repozitoriile care rulează cod la deschidere sunt executare neașteptată de cod, abilitățile malițioase sunt lanț de aprovizionare, iar SpAIware este otrăvirea memoriei.
+
+## Bibliografie
+
+- Anthropic (2025). [Command execution prior to Claude Code startup trust dialog](https://github.com/anthropics/claude-code/security/advisories/GHSA-4fgq-fpq9-mr3g). Avizul de securitate GHSA-4fgq-fpq9-mr3g (CVE-2025-59536).
+- Anthropic (2026). [How we contain Claude across products](https://anthropic.com/engineering/how-we-contain-claude). Blogul Anthropic.
+- Anthropic (2026). [Malicious repo configuration can trigger data leakage via environment configuration used before trust confirmation](https://github.com/anthropics/claude-code/security/advisories/GHSA-jh7p-qr78-84p7). Avizul de securitate GHSA-jh7p-qr78-84p7 (CVE-2026-21852).
+- AWS (2025). [Security Update for Amazon Q Developer Extension for Visual Studio Code (Version #1.84)](https://aws.amazon.com/security/security-bulletins/AWS-2025-015/). Buletinul de securitate AWS-2025-015.
+- Beurer-Kellner, L. și Fischer, M. (2025). [MCP Security Notification: Tool Poisoning Attacks](https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks). Blogul Invariant Labs.
+- Beurer-Kellner, L. și Fischer, M. (2025). [WhatsApp MCP Exploited: Exfiltrating your message history via MCP](https://invariantlabs.ai/blog/whatsapp-mcp-exploited). Blogul Invariant Labs.
+- Censys (2026). [OpenClaw in the Wild: Mapping the Public Exposure of a Viral AI Assistant](https://censys.com/blog/openclaw-in-the-wild-mapping-the-public-exposure-of-a-viral-ai-assistant/). Blogul Censys.
+- Chen, Z. et al. (2024). [AgentPoison: Red-teaming LLM Agents via Poisoning Memory or Knowledge Bases](https://arxiv.org/abs/2407.12784). Preprint arXiv:2407.12784.
+- Cline (2026). [Unauthorized npm publish of Cline CLI cline@2.3.0 with modified postinstall script to install openclaw](https://github.com/cline/cline/security/advisories/GHSA-9ppg-jx86-fqw7). Avizul de securitate GHSA-9ppg-jx86-fqw7.
+- Cursor (2025). [Arbitrary code execution from Cursor Agent through a prompt injection via MCP Special Files](https://github.com/cursor/cursor/security/advisories/GHSA-4cxx-hrm3-49rm). Avizul de securitate GHSA-4cxx-hrm3-49rm (CVE-2025-54135).
+- Cursor (2025). [Modification of MCP Server Definitions Bypasses Manual Re-approval](https://github.com/cursor/cursor/security/advisories/GHSA-24mc-g4xr-4395). Avizul de securitate GHSA-24mc-g4xr-4395 (CVE-2025-54136).
+- Cursor (2026). [Sandbox escape via Git hooks](https://github.com/cursor/cursor/security/advisories/GHSA-8pcm-8jpx-hv8r). Avizul de securitate GHSA-8pcm-8jpx-hv8r (CVE-2026-26268).
+- Donenfeld, A. și Vanunu, O. (2026). [Caught in the Hook: RCE and API Token Exfiltration Through Claude Code Project Files](https://research.checkpoint.com/2026/rce-and-api-token-exfiltration-through-claude-code-project-files-cve-2025-59536/). Check Point Research.
+- Dong, S. et al. (2025). [Memory Injection Attacks on LLM Agents via Query-Only Interaction](https://arxiv.org/abs/2503.03704). Preprint arXiv:2503.03704.
+- eSecurity Planet (2026). [Hundreds of Malicious Skills Found in OpenClaw’s ClawHub](https://www.esecurityplanet.com/threats/hundreds-of-malicious-skills-found-in-openclaws-clawhub).
+- Google (2026). [AI threats in the wild: The current state of prompt injections on the web](https://blog.google/security/prompt-injections-web/). Blogul Google.
+- Google (2026). [Update to Gemini CLI and run-gemini-cli Trust Model](https://github.com/google-github-actions/run-gemini-cli/security/advisories/GHSA-wpqr-6v78-jr5g). Avizul de securitate GHSA-wpqr-6v78-jr5g.
+- Greshake, K. et al. (2023). [Not what you’ve signed up for: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection](https://arxiv.org/abs/2302.12173). _AISec 2023_.
+- Hunt.io (2026). [Hunting OpenClaw Exposures: CVE-2026-25253 in Internet-Facing AI Agent Gateways](https://hunt.io/blog/cve-2026-25253-openclaw-ai-agent-exposure). Blogul Hunt.io.
+- Karliner, Z. (2025). [New Vulnerability in GitHub Copilot and Cursor: How Hackers Can Weaponize Code Agents](https://www.pillar.security/blog/new-vulnerability-in-github-copilot-and-cursor-how-hackers-can-weaponize-code-agents). Blogul Pillar Security.
+- Khan, A. (2026). [Clinejection: Compromising Cline’s Production Releases just by Prompting an Issue Triager](https://adnanthekhan.com/posts/clinejection/). Blogul lui Adnan Khan.
+- Knostic (2025). [How to Find an MCP Server with Shodan](https://www.knostic.ai/blog/find-mcp-server-shodan). Blogul Knostic.
+- Lasso Security (2024). [Lasso Research: AI Package Hallucinations](https://www.lasso.security/blog/ai-package-hallucinations). Blogul Lasso Security.
+- Levi, S. (2025). [ForcedLeak: AI agent risks exposed in Salesforce Agentforce](https://noma.security/blog/forcedleak-agent-risks-exposed-in-salesforce-agentforce/). Blogul Noma Security.
+- Marzouk, A. (2025). [IDEsaster: A Novel Vulnerability Class in AI IDEs](https://maccarita.com/posts/idesaster/). Blogul MaccariTA.
+- Mayraz, O. (2025). [CamoLeak: Critical GitHub Copilot Vulnerability Leaks Private Source Code](https://www.legitsecurity.com/blog/camoleak-critical-github-copilot-vulnerability-leaks-private-source-code). Blogul Legit Security.
+- Microsoft (2026). [Manipulating AI memory for profit: The rise of AI Recommendation Poisoning](https://www.microsoft.com/en-us/security/blog/2026/02/10/ai-recommendation-poisoning/). Microsoft Security Blog.
+- Milanta, M. și Beurer-Kellner, L. (2025). [GitHub MCP Exploited: Accessing private repositories via MCP](https://invariantlabs.ai/blog/mcp-github-vulnerability). Blogul Invariant Labs.
+- Model Context Protocol (f.a.). [Security Best Practices](https://modelcontextprotocol.io/specification/draft/basic/security_best_practices). Specificația MCP, versiunea de lucru.
+- Nagli, G. (2026). [Hacking Moltbook: AI Social Network Reveals 1.5M API Keys](https://www.wiz.io/blog/exposed-moltbook-database-reveals-millions-of-api-keys). Blogul Wiz.
+- NVD (2026). [CVE-2025-61260](https://nvd.nist.gov/vuln/detail/CVE-2025-61260). National Vulnerability Database, NIST.
+- Nx (2025). [Malicious versions of Nx and some supporting plugins were published](https://github.com/nrwl/nx/security/advisories/GHSA-cxm3-wv7p-598c). Avizul de securitate GHSA-cxm3-wv7p-598c.
+- OpenClaw (2026). [1-Click RCE via Authentication Token Exfiltration From gatewayUrl](https://github.com/openclaw/openclaw/security/advisories/GHSA-g8p2-7wf7-98mq). Avizul de securitate GHSA-g8p2-7wf7-98mq (CVE-2026-25253).
+- OpenClaw (2026). [OpenClaw Partners with VirusTotal for Skill Security](https://openclaw.ai/blog/virustotal-partnership). Blogul OpenClaw.
+- OWASP (2024). [OWASP Top 10 for LLM Applications 2025](https://genai.owasp.org/llm-top-10/). OWASP GenAI Security Project.
+- OWASP (2025). [OWASP Top 10 for Agentic Applications for 2026](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/). OWASP GenAI Security Project.
+- OWASP (2026). [OWASP GenAI LLM Top 10 2026](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/). OWASP GenAI Security Project.
+- OX Security (2026). [The Architectural Flaw at the Core of Anthropic’s MCP](https://www.ox.security/blog/the-mother-of-all-ai-supply-chains-critical-systemic-vulnerability-at-the-core-of-the-mcp/). Blogul OX Security.
+- Paul, A. (2026). [The Memory Heist](https://www.ayush.digital/blog/the-memory-heist). Blogul lui Ayush Paul.
+- PromptArmor (2026). [Claude Cowork Exfiltrates Files](https://www.promptarmor.com/resources/claude-cowork-exfiltrates-files). PromptArmor.
+- Reddy, P. și Gujral, A. S. (2025). [EchoLeak: The First Real-World Zero-Click Prompt Injection Exploit in a Production LLM System](https://arxiv.org/abs/2509.10540). Preprint arXiv:2509.10540.
+- Rehberger, J. (2023). [Bing Chat: Data Exfiltration Exploit Explained](https://embracethered.com/blog/posts/2023/bing-chat-data-exfiltration-poc-and-fix). Blogul Embrace The Red.
+- Rehberger, J. (2024). [Spyware Injection Into Your ChatGPT’s Long-Term Memory (SpAIware)](https://embracethered.com/blog/posts/2024/chatgpt-macos-app-persistent-data-exfiltration/). Blogul Embrace The Red.
+- Rehberger, J. (2025). [AgentHopper: An AI Virus](https://embracethered.com/blog/posts/2025/agenthopper-a-poc-ai-virus). Blogul Embrace The Red.
+- Rehberger, J. (2025). [Claude Code: Data Exfiltration with DNS (CVE-2025-55284)](https://embracethered.com/blog/posts/2025/claude-code-exfiltration-via-dns-requests/). Blogul Embrace The Red.
+- Rehberger, J. (2025). [GitHub Copilot: Remote Code Execution via Prompt Injection (CVE-2025-53773)](https://embracethered.com/blog/posts/2025/github-copilot-remote-code-execution-via-prompt-injection/). Blogul Embrace The Red.
+- Rehberger, J. (2025). [Hacking Gemini’s Memory with Prompt Injection and Delayed Tool Invocation](https://embracethered.com/blog/posts/2025/gemini-memory-persistence-prompt-injection/). Blogul Embrace The Red.
+- Rehberger, J. (2025). [Windsurf: Memory-Persistent Data Exfiltration (SpAIware Exploit)](https://embracethered.com/blog/posts/2025/windsurf-spaiware-exploit-persistent-prompt-injection/). Blogul Embrace The Red.
+- Rehberger, J. (2025). [Wrap Up: The Month of AI Bugs](https://embracethered.com/blog/posts/2025/wrapping-up-month-of-ai-bugs/). Blogul Embrace The Red.
+- Rosales, F. (2026). [GitSpawn: A Single Flaw Lets Untrusted Repos Run Code in Claude Code, Codex, Cursor, and Grok](https://www.manifold.security/blog/ai-coding-agents-git-hijack). Blogul Manifold Security.
+- SecurityScorecard (2026). [How Exposed OpenClaw Deployments Turn Agentic AI Into an Attack Surface](https://securityscorecard.com/blog/how-exposed-openclaw-deployments-turn-agentic-ai-into-an-attack-surface/). Blogul SecurityScorecard.
+- Snyk (2026). [Snyk Finds Prompt Injection in 36%, 1467 Malicious Payloads in a ToxicSkills Study of Agent Skills Supply Chain Compromise](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/). Blogul Snyk.
+- Spracklen, J. et al. (2025). [We Have a Package for You! A Comprehensive Analysis of Package Hallucinations by Code Generating LLMs](https://arxiv.org/abs/2406.10279). _USENIX Security 2025_.
+- Steinberger, P. (2026). [How OpenClaw Got Safer in Public](https://openclaw.ai/blog/openclaw-security-in-public). Blogul OpenClaw.
+- The Record (2025). [OpenAI fixes zero-click ShadowLeak vulnerability affecting ChatGPT Deep Research agent](https://therecord.media/openai-fixes-zero-click-shadowleak-vulnerability). Recorded Future News.
+- The Register (2025). [Fake Postmark MCP npm package stole emails with one-liner](https://www.theregister.com/2025/09/29/postmark_mcp_server_code_hijacked/).
+- The Register (2026). [MCP ‘design flaw’ puts 200k servers at risk: Researcher](https://www.theregister.com/2026/04/16/anthropic_mcp_design_flaw/).
+- The Register (2026). [OpenClaw instances open to the internet present ripe targets](https://www.theregister.com/2026/02/09/openclaw_instances_exposed_vibe_code/).
+- Trail of Bits (2025). [Jumping the line: How MCP servers can attack you before you ever use them](https://blog.trailofbits.com/2025/04/21/jumping-the-line-how-mcp-servers-can-attack-you-before-you-ever-use-them/). Blogul Trail of Bits.
+- Unit 42 (2026). [Fooling AI Agents: Web-Based Indirect Prompt Injection Observed in the Wild](https://unit42.paloaltonetworks.com/ai-agent-prompt-injection/). Palo Alto Networks.
+- Willison, S. (2022). [Prompt injection attacks against GPT-3](https://simonwillison.net/2022/Sep/12/prompt-injection/). Blogul lui Simon Willison.
+- Willison, S. (2024). [Prompt injection and jailbreaking are not the same thing](https://simonwillison.net/2024/Mar/5/prompt-injection-jailbreaking/). Blogul lui Simon Willison.
+- Willison, S. (2025). [The lethal trifecta for AI agents: private data, untrusted content, and external communication](https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/). Blogul lui Simon Willison.
+- Willison, S. (2025). [The Summer of Johann: prompt injections as far as the eye can see](https://simonwillison.net/2025/Aug/15/the-summer-of-johann/). Blogul lui Simon Willison.
+- Wiz (2025). [s1ngularity: supply chain attack leaks secrets on GitHub: everything you need to know](https://www.wiz.io/blog/s1ngularity-supply-chain-attack). Blogul Wiz.

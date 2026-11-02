@@ -1,0 +1,212 @@
+---
+title: O hartă a harnașamentelor
+description: Harnașamentele pentru agenți în noiembrie 2026, grupate după locul în care lucrează (terminal, editor, cloud, biblioteci) și comparate după licență, aprobări, fișiere de instrucțiuni, MCP și modele.
+sidebar:
+  order: 3
+  label: 'Harnașamente: o hartă'
+level: intermediar
+tags:
+  - Sisteme agentice
+  - Modele de limbaj mari (LLM)
+---
+
+Pagina despre [harnașament](/comportament-agentic/harnasamentul/) a descris sistemul construit în jurul unui model de limbaj: pregătește contextul, rulează instrumentele cerute de model și îi trimite modelului rezultatele, până când sarcina este gata. În noiembrie 2026 există zeci de astfel de sisteme. Unele rulează în terminal, altele sunt editoare de cod, altele lucrează singure în cloud, iar câteva sunt biblioteci din care ne putem construi propriul agent.
+
+Multe dintre aceste sisteme pot folosi aceleași modele, așa că o bună parte din diferențe vine din harnașament. Se vede și în evaluări: clasamentul [Terminal-Bench](https://www.tbench.ai/news/terminal-bench-4-0) nu ordonează modele, ci perechi formate dintr-un agent și un model, iar același model obține scoruri diferite în harnașamente diferite. Pagina [Modele pentru agenți](/comportament-agentic/modele-pentru-agenti/) discută aceste cifre.
+
+Peisajul se schimbă repede. Numai în 2026, Windsurf a devenit Devin Desktop, Gemini CLI a rămas doar pentru clienții plătitori ai Google, iar Roo Code și Continue au fost oprite. De aceea, tot ce urmează descrie situația de la 2 noiembrie 2026, după documentația și repozitoriile fiecărui proiect.
+
+## Ce diferă, de fapt, între harnașamente
+
+Toate proiectele de pe această pagină rulează același proces: trimit modelului contextul și descrierile instrumentelor, execută [apelurile de instrumente](/comportament-agentic/apelul-de-instrumente/) pe care le primesc și adaugă rezultatele în context, până când modelul răspunde fără să mai ceară nimic. Earendil, compania care întreține harnașamentul pi, [descrie un harnașament](https://earendil.com/posts/what-is-a-harness/) prin patru piese: promptul de sistem, instrumentele, procesul agentic care repetă pașii până la terminarea sarcinii și un strat de traducere către API-ul fiecărui furnizor de modele. Harnașamentele se deosebesc prin felul în care este construită fiecare piesă și prin regulile puse în jurul acestor piese.
+
+### Instrumentele
+
+Setul de bază este aproape peste tot același: căutarea și citirea fișierelor, editarea fișierelor și rularea comenzilor în terminal. Diferă forma instrumentelor. Codex cere modificările ca petice de text, prin instrumentul `apply_patch`. Aider nici nu folosește apelul de instrumente: modelul scrie modificările direct în răspuns, în [formate de editare](https://aider.chat/docs/more/edit-formats.html) precum blocurile de căutare și înlocuire, iar Aider le aplică și le salvează automat într-un commit git. Alte harnașamente adaugă un browser, căutarea pe web, subagenți sau informațiile serverelor de limbaj (_Language Server Protocol_, LSP), aceleași care dau completările și erorile din editoare.
+
+Lucrarea care a prezentat [SWE-agent](https://arxiv.org/abs/2405.15793) (Yang și colaboratorii, 2024) a numit acest strat **interfața agent-calculator** (_agent-computer interface_, ACI) și a arătat că, la același model, forma comenzilor și a mesajelor primite de agent schimbă mult rezultatele.
+
+Când instrumentele sunt multe, de exemplu zeci de instrumente aduse prin [MCP](/comportament-agentic/protocoale-si-standarde/), descrierile instrumentelor ocupă o parte mare din fereastra de context. De aceea, Claude Code, Codex, pi și OpenClaw pot încărca descrierile doar la nevoie, printr-un instrument de **căutare a instrumentelor** (_tool search_).
+
+### Permisiunile
+
+Harnașamentul decide ce apeluri rulează direct și pentru care cere acordul utilizatorului. Aproape toate harnașamentele acceptă reguli pe tipare de comenzi, de exemplu `Bash(npm run *)` în Claude Code, dar valorile implicite diferă mult și se împart în trei familii.
+
+- **Întreabă înainte de acțiunile cu risc**: Cline cere aprobare pentru fiecare modificare de fișier și pentru fiecare comandă din terminal, dacă aprobarea automată nu este pornită. La fel procedează Crush (care rulează singur doar comenzile care nu schimbă nimic, precum `ls` sau `git status`), Copilot CLI, Gemini CLI și Antigravity CLI.
+- **Rulează fără să întrebe**: în [OpenCode](https://opencode.ai/docs/permissions/), cele mai multe permisiuni au implicit valoarea `allow`, Goose pornește în modul autonom, iar [Amp](https://ampcode.com/docs/tools) nu cere aprobare înainte de a rula instrumentele. Harnașamentul pi nu are deloc un sistem de permisiuni și lasă izolarea pe seama unui container sau a unei mașini virtuale.
+- **Lasă un alt model să decidă**: un **clasificator** (_classifier_), adică un model separat, citește acțiunea propusă și o aprobă sau o blochează. Este modul implicit în Claude Code (modul `auto`, din versiunea 2.1.283, în sesiunile interactive din terminal și din VS Code), în Cursor (Auto-review, din versiunea 3.6) și în Qwen Code. Documentația [Cursor](https://cursor.com/docs/agent/security/run-modes) spune explicit că acest clasificator nu este o barieră de securitate (_is not a security boundary_), iar documentația [Claude Code](https://code.claude.com/docs/en/permission-modes) avertizează că modul auto reduce numărul cererilor de aprobare, dar nu garantează siguranța.
+
+Pagina [Securitatea agenților: apărări](/comportament-agentic/securitatea-agentilor-aparari/) explică de ce nici regulile, nici clasificatorii nu ajung singuri.
+
+### Izolarea execuției
+
+O permisiune decide dacă o comandă rulează. **Izolarea execuției** (_sandboxing_) decide ce poate atinge comanda după ce pornește: ce fișiere poate citi sau scrie și la ce adrese din rețea poate ajunge. Harnașamentele locale folosesc mecanisme ale sistemului de operare (pe Linux, bubblewrap în Claude Code și Codex, Landlock și seccomp în Cursor), altele un container Docker sau Podman (Gemini CLI, OpenHands), iar agenții din cloud primesc o mașină virtuală sau un container separat pentru fiecare sarcină.
+
+Valorile implicite diferă și aici. [Codex](https://learn.chatgpt.com/docs/sandboxing) lucrează implicit în modul `workspace-write`: comenzile rulează izolat și pot scrie doar în directorul proiectului, iar cu politica de aprobare `on-request` agentul cere voie când trebuie să treacă de aceste limite. În [Claude Code](https://code.claude.com/docs/en/sandboxing), izolarea comenzilor din terminal este oprită implicit și se pornește cu comanda `/sandbox`. Gemini CLI oferă izolarea la cerere, iar documentația OpenCode nu descrie niciun mecanism de izolare.
+
+### Contextul și memoria
+
+La începutul fiecărei sesiuni, harnașamentul pune în context un fișier de instrucțiuni scris de oameni, cu regulile și convențiile proiectului. Este cea mai simplă formă de [memorie sub formă de text](/comportament-agentic/memoria-agentilor/#memoria-ca-text-în-harnașamentele-de-azi). Formatul comun a devenit `AGENTS.md`, citit de aproape toate harnașamentele din tabelul de mai jos. Excepțiile sunt trei:
+
+- [Claude Code](https://code.claude.com/docs/en/memory) citește `CLAUDE.md`. Din versiunea 2.1.277 (18 septembrie 2026) citește și `AGENTS.md`, dar implicit doar când proiectul nu are un `CLAUDE.md`.
+- Gemini CLI citește `GEMINI.md` și citește `AGENTS.md` doar dacă este configurat pentru asta.
+- Aider nu are o convenție proprie: fișierul cu reguli se încarcă explicit, cu opțiunea `--read`.
+
+Fișierul de instrucțiuni crește odată cu proiectul. Mitchell Hashimoto a numit **ingineria harnașamentului** (_harness engineering_) obiceiul de a repara o dată pentru totdeauna fiecare greșeală a agentului, printr-o regulă nouă în `AGENTS.md` sau printr-un script care verifică automat acel tip de greșeală ([Hashimoto, 2026](https://mitchellh.com/writing/my-ai-adoption-journey)).
+
+Diferă apoi felul în care harnașamentul își administrează fereastra de context: compactarea automată a conversației când contextul se apropie de limită, subagenții care lucrează într-un context separat și întorc doar un rezumat, harta repozitoriului pe care Aider o construiește din structura codului. [Amp](https://ampcode.com/docs/the-dial) merge până la a fixa modelul pentru tot firul de discuție, pentru că schimbarea modelului la mijlocul conversației ar pierde avantajul dat de [_prompt caching_](/comportament-agentic/memoria-agentilor/#promptul-ca-memorie).
+
+### Modelele
+
+Unele harnașamente lucrează doar cu modelele unui singur furnizor. Gemini CLI folosește doar Gemini, Kiro doar modele servite de AWS, iar Claude Code, oficial, doar modele Claude (totuși, [Ollama documentează](https://docs.ollama.com/integrations/claude-code) cum poate fi legat Claude Code de modele locale). Altele lasă alegerea deschisă. [OpenCode](https://opencode.ai/docs/providers/) lucrează cu peste 75 de furnizori, Aider și OpenHands ajung la aproape orice model prin biblioteca LiteLLM, iar Cline, Goose, Crush, pi și Qwen Code pot folosi direct un model rulat local, prin programe precum Ollama, LM Studio, llama.cpp sau vLLM.
+
+Contează și de unde pleacă cererile către model. Cursor acceptă chei API proprii (_bring your own key_, BYOK), dar trimite toate cererile prin serverele Cursor, iar Amp și Warp folosesc tot propriile servere. Un model care rulează doar pe calculatorul nostru nu este vizibil pentru aceste servere, de aceea Warp cere ca modelul local să fie expus printr-un tunel HTTPS public.
+
+## În terminal
+
+Cele mai multe harnașamente noi au pornit ca programe pentru linia de comandă (CLI) sau ca interfețe text în terminal (TUI). Același motor ajunge apoi, de obicei, și în extensii pentru editoare, în aplicații desktop și pe web. Împărțirea de pe această pagină arată deci unde este folosit un harnașament mai des, nu singurul loc în care rulează.
+
+- **Claude Code** (Anthropic) rulează în terminal, în extensii pentru VS Code și JetBrains, într-o aplicație desktop și pe web, iar [documentația](https://code.claude.com/docs/en/overview) spune că toate aceste variante folosesc același motor. Codul sursă nu este public: repozitoriul de pe GitHub conține doar tichetele, pluginurile și notele de versiune.
+- **OpenAI Codex** are un [CLI open source](https://github.com/openai/codex) (Apache-2.0), scris în Rust, plus extensii pentru editoare, o aplicație desktop și un agent în cloud, care nu este open source.
+- **Antigravity CLI** (comanda `agy`, Google) a luat locul Gemini CLI pentru cei mai mulți utilizatori. Google lansase [Gemini CLI](https://blog.google/innovation-and-ai/technology/developers-tools/introducing-gemini-cli-open-source-ai-agent/) pe 25 iunie 2025, ca agent open source (Apache-2.0). Pe 19 mai 2026, Google a [anunțat](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/) Antigravity CLI, scris în Go, care folosește același harnașament ca aplicația desktop Antigravity 2.0. De la 18 iunie 2026, Gemini CLI nu mai servește abonamentele individuale Google AI Pro și Ultra și nici utilizatorii gratuiți ai Gemini Code Assist. Rămâne pentru clienții Gemini Code Assist Standard și Enterprise și pentru cheile API plătite, iar fișierul README avertizează că nu este optimizat pentru Gemini 4. Antigravity CLI nu este open source.
+- **OpenCode** (Anomaly, compania din spatele SST) este open source (MIT) și rulează în terminal, ca aplicație desktop și ca extensie de editor, cu doi agenți de bază, `build` și `plan`. La 2 noiembrie 2026, repozitoriul avea aproximativ 224.000 de stele pe GitHub, cele mai multe dintre harnașamentele de pe această pagină. Versiunea 2, rescrisă, a apărut în octombrie 2026, iar versiunea 1 primește în continuare actualizări.
+- **Aider** ([Paul Gauthier](https://github.com/Aider-AI/aider), Apache-2.0) este cel mai vechi harnașament de pe această pagină: repozitoriul a pornit în mai 2023. Construiește o hartă a repozitoriului din structura codului și salvează fiecare modificare într-un commit git. Dezvoltarea a încetinit: ultima versiune publicată pe GitHub, 0.86.0, este din august 2025.
+- **Crush** ([Charm](https://github.com/charmbracelet/crush)) continuă, sub alt nume, proiectul opencode original, scris în Go. Nu este același proiect cu OpenCode de azi. Codul este public, dar licența FSL-1.1-MIT (_Functional Source License_) nu este o licență open source: codul trece sub licența MIT abia după o perioadă de timp.
+- **Goose** a fost creat de Block și, din 9 decembrie 2025, este unul dintre proiectele fondatoare ale [Agentic AI Foundation](https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation) (AAIF), la Linux Foundation, alături de MCP și `AGENTS.md`. Este open source (Apache-2.0), scris în Rust, are o aplicație desktop, un CLI și un API și este gândit ca agent de uz general, nu doar pentru cod. Instrumentele vin din extensii, iar fiecare extensie este un server MCP.
+- **pi**, scris de Mario Zechner și [preluat](https://earendil.com/posts/announcing-pi-and-lefos/) pe 8 aprilie 2026 de Earendil, compania lui Armin Ronacher, este un harnașament minimal, open source (MIT). Nu are un sistem de permisiuni, iar [versiunea 1.0](https://earendil.com/posts/pi-1-0/), din 1 octombrie 2026, a adăugat suport pentru MCP. OpenClaw, descris pe pagina [Asistenți personali](/comportament-agentic/asistenti-personali/), și-a construit procesul agentic pornind de la pi.
+- **GitHub Copilot CLI** este [disponibil general](https://github.blog/changelog/2026-02-25-github-copilot-cli-is-now-generally-available/) din 25 februarie 2026. Are cod închis și citește, pe lângă instrucțiunile proprii GitHub, fișierele `AGENTS.md`, `CLAUDE.md` și `GEMINI.md`.
+
+Câteva harnașamente de terminal mai noi sau mai mici, pe scurt:
+
+- **Qwen Code** (Alibaba, Apache-2.0) a pornit de la Gemini CLI 0.8.2 și folosește implicit un clasificator pentru aprobări.
+- **Mistral Vibe** (Mistral, Apache-2.0) este un CLI minimal, care poate rula complet offline, cu modele locale.
+- **Kimi Code CLI** (Moonshot AI, MIT) a înlocuit vechiul Kimi CLI, arhivat între timp.
+- **Factory Droid** (Factory) dă fiecărei comenzi un nivel de risc și rulează automat doar comenzile care nu depășesc pragul ales de utilizator.
+- **Warp**, un terminal cu agent integrat, și-a publicat [codul clientului](https://www.warp.dev/blog/warp-is-now-open-source) sub licența AGPL-3.0 pe 28 aprilie 2026. Poate găzdui și alți agenți de terminal, precum Claude Code, Codex sau Gemini CLI.
+- **Junie** (JetBrains) are un CLI, integrare în mediile de dezvoltare JetBrains și o acțiune pentru GitHub, folosită în integrarea continuă.
+
+## În editor
+
+Al doilea grup lucrează în editorul de cod. Agentul vede aceleași fișiere ca programatorul, iar modificările apar ca diferențe între versiuni, pe care programatorul le poate accepta sau respinge.
+
+- **Cursor** (Anysphere) este un editor construit pe VS Code, cu cod închis. [Cursor 3](https://cursor.com/blog/cursor-3), lansat pe 2 aprilie 2026, a adăugat o fereastră construită de la zero în jurul agenților, în care agenții locali și cei din cloud stau unul lângă altul. Cursor are și un CLI, agenți în cloud, un SDK și modele proprii: [Composer 2.5](https://cursor.com/blog/composer-2-5) (18 mai 2026) pornește de la modelul cu ponderi deschise Kimi K2.5 al Moonshot AI, antrenat apoi suplimentar prin [învățare prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/).
+- **Devin Desktop** (Cognition) este fostul Windsurf. Cognition a semnat [acordul de cumpărare](https://cognition.com/blog/windsurf) a Windsurf pe 14 iulie 2025, iar pe 2 iunie 2026 editorul a fost [redenumit](https://docs.devin.ai/desktop/devin-desktop-faq) Devin Desktop, printr-o actualizare automată. Agentul local se numește acum Devin Local și are aceeași arhitectură ca Devin CLI.
+- **GitHub Copilot în VS Code** are un mod agent din aprilie 2025. Între timp, VS Code a separat editorul de harnașament: utilizatorul [alege](https://code.visualstudio.com/docs/agents/run/agent-harnesses) între harnașamentul Copilot, harnașamentul local al VS Code, Claude (prin Claude Agent SDK) și Codex. Este cel mai clar exemplu că editorul și harnașamentul sunt piese diferite.
+- **Cline** ([Cline Bot Inc.](https://github.com/cline/cline)) a pornit ca extensie pentru VS Code, inițial cu numele „Claude Dev”, și este open source (Apache-2.0), cu excepția pluginului pentru JetBrains. Are un mod de planificare și unul de execuție (_Plan_ și _Act_), poate folosi un browser și cere aprobare pentru fiecare modificare și pentru fiecare comandă. Același nucleu rulează și într-un CLI, într-o aplicație desktop și într-un SDK, iar comanda `cline connect` face agentul accesibil din Telegram, Slack sau Discord.
+- **Kilo Code** (Kilo, MIT) a pornit în 2025 ca fork al Roo Code, care era la rândul său un fork al Cline. În 2026, Kilo și-a [reconstruit extensia](https://blog.kilo.ai/p/new-kilo-for-vs-code-is-live) pentru VS Code pe serverul OpenCode, astfel încât extensia, CLI-ul și agenții din cloud folosesc același motor. Prin Kilo Gateway oferă peste 500 de modele, la prețul furnizorilor.
+- **Zed** este un editor open source (GPL) cu agent propriu, care tratează `AGENTS.md` drept fișierul principal de instrucțiuni. Pe 27 august 2025, Zed a [lansat](https://zed.dev/blog/bring-your-own-agent-to-zed) Agent Client Protocol (ACP), prin care orice agent poate lucra în editor. Primul agent conectat așa a fost Gemini CLI. Protocolul este descris pe pagina [Protocoale și standarde](/comportament-agentic/protocoale-si-standarde/).
+- **Antigravity** (Google) a [apărut](https://antigravity.google/blog/introducing-google-antigravity) pe 18 noiembrie 2025, odată cu Gemini 3, ca platformă gândită de la început pentru agenți, cu o vedere de editor și o suprafață din care sunt administrați mai mulți agenți care lucrează în paralel. Agenții produc artefacte (liste de sarcini, planuri, capturi de ecran, înregistrări din browser), ca utilizatorul să poată verifica munca agenților. Versiunea 2.0, prezentată la Google I/O pe [19 mai 2026](https://techcrunch.com/2026/05/19/google-launches-antigravity-2-0-with-an-updated-desktop-app-and-cli-tool-at-io-2026/), este o aplicație desktop separată, însoțită de Antigravity CLI și de un SDK pentru Python. La 2 noiembrie 2026, Antigravity oferea [modelele](https://antigravity.google/docs/models) Gemini 4 Argon (în planurile plătite), Gemini 3.8 Flash, Claude Sonnet 5.5 și Claude Opus 5.5, iar documentația nu menționa posibilitatea de a folosi chei API proprii.
+- **Kiro** (AWS) are un mediu de dezvoltare, un CLI și o variantă web, toate construite pe [un singur harnașament](https://kiro.dev/docs/). Pune accent pe dezvoltarea pornind de la specificații: întâi cerințele, apoi designul, apoi sarcinile. Regulile proiectului stau în directorul `.kiro/steering/`.
+
+## În cloud
+
+Agenții din cloud primesc o sarcină, de obicei un tichet, lucrează singuri într-o mașină virtuală sau într-un container și la sfârșit propun modificările, de cele mai multe ori ca _pull request_. Pagina [Exemple de sisteme agentice](/comportament-agentic/exemple-de-sisteme-agentice/#agenți-autonomi-de-mentenanță-de-la-tichet-la-pr) descrie pașii tipici.
+
+- **Codex Cloud** (OpenAI): fiecare sarcină are [propriul spațiu de lucru](https://learn.chatgpt.com/docs/cloud) și poate continua cât timp calculatorul nostru este în repaus. Accesul la rețea se configurează pentru fiecare mediu de lucru.
+- **Agentul Copilot din cloud** (GitHub) a devenit [disponibil general](https://github.blog/changelog/2025-09-25-copilot-coding-agent-is-now-generally-available/) pe 25 septembrie 2025, sub numele de _coding agent_: primește un tichet, lucrează într-un mediu GitHub Actions și deschide un _pull request_ de tip ciornă (_draft_). Din 28 octombrie 2026 poate rula și într-un mediu izolat în cloud, care lucrează cu mai multe repozitorii.
+- **Agenții din cloud ai Cursor** rulează în mașini virtuale și pot fi porniți de pe web, de pe telefon, din Slack, GitHub, Linear sau Jira.
+- **Amp** poate rula fiecare fir de discuție pe o mașină separată în cloud, numită _Orb_, pe care o companie o poate găzdui și pe propriul cluster Kubernetes.
+- **OpenHands** (All Hands AI, MIT) a trecut la Agent Canvas, un centru de control pentru agenți pe care utilizatorul îl găzduiește singur, cu o variantă comercială în cloud. [CLI-ul OpenHands](https://docs.openhands.dev/overview/introduction) nu mai este întreținut activ.
+- **Devin**, [anunțat](https://cognition.ai/blog/introducing-devin) de Cognition în 2024, este agentul în cloud al companiei care face acum și Devin Desktop.
+- **Jules** (Google Labs) se închide: devine doar pentru citire după 11 noiembrie 2026 și se oprește pe 31 decembrie 2026, iar munca echipei continuă în Antigravity.
+
+## Biblioteci pentru agenți proprii
+
+Unele harnașamente pot fi folosite și ca biblioteci (SDK), ca să construim un agent propriu peste același proces, cu instrumentele și regulile noastre.
+
+- **Claude Agent SDK** (Anthropic) oferă [procesul din Claude Code](https://code.claude.com/docs/en/agent-sdk/agent-loop): limite de pași și de cost (`max_turns`, `max_budget_usd`), modurile de permisiuni, compactarea automată a contextului și funcții de tip _hook_, care pot bloca un apel înainte să ruleze.
+- **OpenHands Software Agent SDK** (Python, MIT) are instrumente pentru terminal, editarea fișierelor și urmărirea sarcinilor și poate lucra local sau în containere Docker și Kubernetes.
+- **pi** este împărțit în pachete separate: un API unic pentru mai mulți furnizori de modele, procesul agentic, interfața din terminal și agentul de programare. Pachetele pot fi folosite și independent.
+- Mai există Copilot SDK (GitHub, MIT, din ianuarie 2026), Cursor Agent SDK (disponibil general din 20 octombrie 2026), Antigravity SDK (Google, pentru Python) și `@cline/sdk`.
+
+## Tabel comparativ
+
+Tabelul rezumă situația de la 2 noiembrie 2026. Coloana „Aprobare implicită” arată ce face harnașamentul cu o comandă din terminal sau cu o modificare de fișier atunci când utilizatorul nu a schimbat setările.
+
+| Harnașament | Producător | Cod sursă și licență | Aprobare implicită | Fișier de instrucțiuni | MCP | Modele terțe și locale |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Claude Code | Anthropic | închis | clasificator (modul `auto`) în sesiunile interactive | `CLAUDE.md`, `AGENTS.md` doar fără `CLAUDE.md` | da | Claude prin Anthropic, Bedrock, Google Cloud sau Microsoft Foundry, modele locale prin Ollama |
+| OpenAI Codex | OpenAI | CLI Apache-2.0, cloud închis | izolare `workspace-write`, întreabă la ieșirea din izolare | `AGENTS.md` | da | orice API compatibil OpenAI, Ollama și LM Studio (`--oss`) |
+| Antigravity CLI | Google | închis | întreabă (`request-review`) | `AGENTS.md` sau `GEMINI.md` | da | Gemini și Claude, fără chei API proprii |
+| Gemini CLI | Google | Apache-2.0 | întreabă | `GEMINI.md` | da | doar Gemini |
+| OpenCode | Anomaly | MIT | nu întreabă | `AGENTS.md` | da | peste 75 de furnizori, Ollama, LM Studio, llama.cpp |
+| Aider | Paul Gauthier | Apache-2.0 | aplică direct modificările, cu commit git | niciunul (`--read`) | nedocumentat | aproape orice model, prin LiteLLM |
+| Cline | Cline Bot Inc. | Apache-2.0, pluginul JetBrains închis | întreabă | `.clinerules/`, `AGENTS.md` | da | mulți furnizori, Ollama, LM Studio |
+| Kilo Code | Kilo | MIT | nedocumentat | `AGENTS.md` | da | Kilo Gateway, chei proprii, Ollama, LM Studio |
+| Goose | Block, acum AAIF | Apache-2.0 | nu întreabă | `AGENTS.md`, `.goosehints` | da | peste 15 furnizori, Ollama |
+| OpenHands | All Hands AI | MIT, cloud comercial | nedocumentat | `AGENTS.md` | da | orice model prin LiteLLM, Ollama, LM Studio |
+| Cursor | Anysphere | închis | clasificator (Auto-review) | `.cursor/rules/`, `AGENTS.md` | da | chei proprii, trimise prin serverele Cursor |
+| Devin Desktop | Cognition | închis | întreabă înaintea instrumentelor MCP | `.devin/rules/`, `AGENTS.md` | da | nedocumentat |
+| Amp | Amp Inc. | închis | nu întreabă | `AGENTS.md` | da | OpenRouter și API-uri compatibile, prin serverele Amp |
+| Crush | Charm | FSL-1.1-MIT (cod public) | întreabă | `AGENTS.md`, `CRUSH.md` și altele | da | mulți furnizori, găsește singur Ollama, LM Studio, llama.cpp |
+| GitHub Copilot | GitHub (Microsoft) | extensia VS Code MIT, CLI închis | întreabă | `.github/copilot-instructions.md`, `AGENTS.md` | da | chei proprii, server compatibil, Ollama |
+| pi | Earendil | MIT | fără sistem de permisiuni | `AGENTS.md`, `SYSTEM.md` | da, din versiunea 1.0 | peste 15 furnizori, Ollama, OpenRouter |
+| Warp | Warp | client AGPL-3.0 | întreabă | `AGENTS.md` | da | chei proprii, modele locale doar prin tunel public |
+| Kiro | AWS | închis | nedocumentat | `.kiro/steering/`, `AGENTS.md` | nedocumentat | doar modele servite de AWS |
+| Qwen Code | Alibaba (Qwen) | Apache-2.0 | clasificator (modul `auto`) | `QWEN.md` | da | API-uri OpenAI, Anthropic, Gemini, OpenRouter, Ollama, vLLM |
+| Zed | Zed Industries | GPL | nedocumentat | `AGENTS.md` și altele | da | Ollama, LM Studio, llama.cpp, OpenRouter |
+
+„Închis” înseamnă că sursa nu este publică, iar „nedocumentat”, că informația nu apare în documentația consultată. „Clasificator” înseamnă că un model separat aprobă sau blochează acțiunile. Multe harnașamente care citesc `AGENTS.md` citesc și fișierele altor harnașamente, de exemplu `CLAUDE.md` sau regulile Cursor.
+
+## Familii și proiecte oprite
+
+Multe harnașamente pornesc unele din altele, iar câteva au dispărut în 2026.
+
+- **Cline, Roo Code, Kilo Code, OpenCode**: Roo Code a pornit ca fork al Cline, Kilo Code ca fork al Roo Code, iar în 2026 Kilo a trecut pe motorul OpenCode.
+- **opencode și Crush**: proiectul opencode original, scris în Go, a continuat la Charm sub numele Crush, cu autorul inițial. OpenCode de azi este alt proiect.
+- **Gemini CLI și Qwen Code**: Qwen Code a pornit de la Gemini CLI 0.8.2 și s-a despărțit de proiectul original încă de la versiunea 0.1.
+- **Roo Code** a fost oprit pe 15 mai 2026, iar [repozitoriul](https://github.com/RooCodeInc/Roo-Code) a fost arhivat în aceeași zi. Fișierul README trimite utilizatorii la ZooCode, un fork al comunității, și la Cline.
+- **Continue** nu mai este întreținut: [repozitoriul](https://github.com/continuedev/continue) este doar pentru citire, după o ultimă versiune 2.0.0, publicată în iunie 2026, iar site-ul continue.dev anunță că proiectul a fost cumpărat de Cursor.
+- **Gemini CLI** a rămas doar pentru clienții plătitori, **Jules** se închide la sfârșitul anului, **CLI-ul OpenHands** nu mai este întreținut activ, iar vechiul **Kimi CLI** a fost arhivat în favoarea Kimi Code CLI.
+
+Dincolo de nume, licențe și fuziuni, toate aceste proiecte implementează aceleași câteva idei: un proces care alternează apelurile modelului cu apelurile de instrumente, un set de instrumente, reguli de permisiuni, un mecanism de izolare și un fișier de instrucțiuni. Laboratorul [Un agent de la zero](/laboratoare/un-agent-de-la-zero/prezentare/) construiește, pas cu pas, un harnașament minimal cu aceste piese.
+
+## Bibliografie
+
+- Agentic AI Foundation (f.a.). [goose](https://github.com/aaif-goose/goose). Cod sursă, GitHub.
+- Aider (f.a.). [Edit formats](https://aider.chat/docs/more/edit-formats.html). Documentația Aider.
+- Alibaba Qwen (f.a.). [Qwen Code](https://github.com/QwenLM/qwen-code). Cod sursă, GitHub.
+- Amazon Web Services (f.a.). [Kiro Docs](https://kiro.dev/docs/). Documentația Kiro.
+- Amp (f.a.). [The Dial](https://ampcode.com/docs/the-dial). Documentația Amp.
+- Amp (f.a.). [Tools](https://ampcode.com/docs/tools). Documentația Amp.
+- Anomaly (f.a.). [Permissions](https://opencode.ai/docs/permissions/). Documentația OpenCode.
+- Anomaly (f.a.). [Providers](https://opencode.ai/docs/providers/). Documentația OpenCode.
+- Anthropic (f.a.). [Choose a permission mode](https://code.claude.com/docs/en/permission-modes). Documentația Claude Code.
+- Anthropic (f.a.). [Claude Code overview](https://code.claude.com/docs/en/overview). Documentația Claude Code.
+- Anthropic (f.a.). [Configure the sandboxed Bash tool](https://code.claude.com/docs/en/sandboxing). Documentația Claude Code.
+- Anthropic (f.a.). [How Claude remembers your project](https://code.claude.com/docs/en/memory). Documentația Claude Code.
+- Anthropic (f.a.). [How the agent loop works](https://code.claude.com/docs/en/agent-sdk/agent-loop). Documentația Claude Agent SDK.
+- Anysphere (2026). [Introducing Composer 2.5](https://cursor.com/blog/composer-2-5). Blogul Cursor.
+- Anysphere (2026). [Meet the new Cursor](https://cursor.com/blog/cursor-3). Blogul Cursor.
+- Anysphere (f.a.). [Run Modes](https://cursor.com/docs/agent/security/run-modes). Documentația Cursor.
+- Charm (f.a.). [Crush](https://github.com/charmbracelet/crush). Cod sursă, GitHub.
+- Cline Bot Inc. (f.a.). [Cline](https://github.com/cline/cline). Cod sursă, GitHub.
+- Cognition (2024). [Introducing Devin, the first AI software engineer](https://cognition.ai/blog/introducing-devin). Blogul Cognition.
+- Cognition (f.a.). [Devin Desktop FAQ](https://docs.devin.ai/desktop/devin-desktop-faq). Documentația Devin.
+- Continue (f.a.). [continue](https://github.com/continuedev/continue). Cod sursă, GitHub.
+- Earendil (2026). [Announcing Pi & Lefos](https://earendil.com/posts/announcing-pi-and-lefos/). Blogul Earendil.
+- Earendil (2026). [Pi 1.0](https://earendil.com/posts/pi-1-0/). Blogul Earendil.
+- Earendil (2026). [What is a Harness?](https://earendil.com/posts/what-is-a-harness/) Blogul Earendil.
+- Gauthier, P. (2023). [aider](https://github.com/Aider-AI/aider). Cod sursă, GitHub.
+- GitHub (2025). [Copilot coding agent is now generally available](https://github.blog/changelog/2025-09-25-copilot-coding-agent-is-now-generally-available/). GitHub Changelog.
+- GitHub (2026). [GitHub Copilot CLI is now generally available](https://github.blog/changelog/2026-02-25-github-copilot-cli-is-now-generally-available/). GitHub Changelog.
+- Google (2025). [Google announces Gemini CLI: your open-source AI agent](https://blog.google/innovation-and-ai/technology/developers-tools/introducing-gemini-cli-open-source-ai-agent/). Blogul Google.
+- Google (2025). [Introducing Google Antigravity, a new era in AI-assisted software development](https://antigravity.google/blog/introducing-google-antigravity). Blogul Google Antigravity.
+- Google (f.a.). [Choose a model](https://antigravity.google/docs/models). Documentația Google Antigravity.
+- Hashimoto, M. (2026). [My AI Adoption Journey](https://mitchellh.com/writing/my-ai-adoption-journey).
+- Linux Foundation (2025). [Linux Foundation Announces the Formation of the Agentic AI Foundation (AAIF), Anchored by New Project Contributions Including Model Context Protocol (MCP), goose and AGENTS.md](https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation).
+- Lyalin, D. și Mullen, T. (2026). [An important update: Transitioning Gemini CLI to Antigravity CLI](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/). Google Developers Blog.
+- Microsoft (f.a.). [Choose an agent harness](https://code.visualstudio.com/docs/agents/run/agent-harnesses). Documentația Visual Studio Code.
+- Ollama (f.a.). [Claude Code](https://docs.ollama.com/integrations/claude-code). Documentația Ollama.
+- OpenAI (f.a.). [Codex](https://github.com/openai/codex). Cod sursă, GitHub.
+- OpenAI (f.a.). [Codex Cloud](https://learn.chatgpt.com/docs/cloud). ChatGPT Learn.
+- OpenAI (f.a.). [Sandbox](https://learn.chatgpt.com/docs/sandboxing). ChatGPT Learn.
+- OpenHands (f.a.). [Introduction](https://docs.openhands.dev/overview/introduction). Documentația OpenHands.
+- Rietbergen, J. (2026). [The New Kilo Code for VS Code Is Now Generally Available](https://blog.kilo.ai/p/new-kilo-for-vs-code-is-live). Blogul Kilo.
+- Roo Code (f.a.). [Roo-Code](https://github.com/RooCodeInc/Roo-Code). Cod sursă, GitHub.
+- Terminal-Bench (2026). [Terminal-Bench 4.0](https://www.tbench.ai/news/terminal-bench-4-0).
+- Warp (2026). [Warp is now open-source](https://www.warp.dev/blog/warp-is-now-open-source). Blogul Warp.
+- Wu, S. (2025). [Cognition's acquisition of Windsurf](https://cognition.com/blog/windsurf). Blogul Cognition.
+- Yang, J. et al. (2024). [SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering](https://arxiv.org/abs/2405.15793). _NeurIPS 2024_.
+- Zechner, M. (2025). [pi](https://github.com/earendil-works/pi). Cod sursă, GitHub.
+- Zed Industries (2025). [Bring Your Own Agent to Zed](https://zed.dev/blog/bring-your-own-agent-to-zed). Blogul Zed.

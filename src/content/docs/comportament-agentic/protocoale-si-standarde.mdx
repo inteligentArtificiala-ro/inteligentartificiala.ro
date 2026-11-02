@@ -1,0 +1,224 @@
+---
+title: Protocoale și standarde pentru agenți
+description: MCP leagă agenții de instrumente și date, A2A leagă agenții unii de alții, iar AGENTS.md și Agent Skills le dau instrucțiuni. Ce face fiecare standard și cine îl administrează, în noiembrie 2026.
+sidebar:
+  order: 5
+  label: Protocoale și standarde
+level: intermediar
+tags:
+  - Sisteme agentice
+  - Modele de limbaj mari (LLM)
+---
+
+Un agent devine util când ajunge la date și la servicii reale: un repozitoriu GitHub, o bază de date, un calendar, alți agenți. Fără un standard comun, fiecare aplicație AI trebuie să scrie separat integrarea cu fiecare serviciu, deci $N$ aplicații și $M$ servicii cer până la $N \times M$ integrări. Cu un protocol comun, numărul scade la $N + M$: fiecare aplicație învață protocolul o singură dată, iar fiecare serviciu îl implementează o singură dată.
+
+Pe această pagină trecem prin cinci standarde: **MCP**, pentru instrumente și date, **A2A**, pentru comunicarea dintre agenți, **AGENTS.md** și **Agent Skills**, pentru instrucțiunile date agenților, și, pe scurt, **ACP**, pentru legătura dintre editoarele de cod și agenți. Cele mai multe sunt administrate acum de aceeași organizație neutră, Agentic AI Foundation.
+
+## MCP (Model Context Protocol)
+
+**MCP** (_Model Context Protocol_) a fost publicat ca proiect open-source de Anthropic pe 25 noiembrie 2024, ca „un standard nou pentru conectarea asistenților AI la sistemele în care se află datele”. Specificația definește cum descoperă și cum folosește o aplicație AI instrumentele și datele oferite de un program separat, numit server MCP. Mesajele folosesc formatul JSON-RPC 2.0, iar autorii spun că s-au inspirat din Language Server Protocol (LSP), standardul prin care editoarele de cod comunică cu serverele care analizează limbajele de programare.
+
+### Gazdă, client și server
+
+Specificația numește trei roluri.
+
+- **Gazda** (_host_) este aplicația AI care pornește conexiunile, de exemplu un harnașament de programare sau un asistent conversațional.
+- **Clientul** (_client_) este componenta din gazdă care ține legătura cu un singur server. O gazdă conectată la cinci servere are cinci clienți.
+- **Serverul** (_server_) este programul care oferă instrumente, date sau prompturi, de exemplu un server pentru GitHub, unul pentru o bază de date sau unul pentru sistemul de fișiere.
+
+Modelul nu vorbește direct cu serverele MCP. [Harnașamentul](/comportament-agentic/harnasamentul/) cere fiecărui server lista de instrumente, traduce fiecare instrument în formatul API-ului modelului (câmpul `inputSchema` din MCP devine, după furnizor, `parameters` sau `input_schema`) și pune descrierile în context, alături de instrumentele proprii. Când modelul cere un apel, harnașamentul trimite cererea serverului potrivit și pune rezultatul înapoi în context, exact ca la [orice apel de instrument](/comportament-agentic/apelul-de-instrumente/).
+
+### Instrumente, resurse și prompturi
+
+Un server poate oferi trei feluri de lucruri.
+
+- **Instrumente** (_tools_): funcții pe care modelul le poate apela, de exemplu căutarea comenzilor unui client sau crearea unui tichet. Specificația le descrie ca fiind controlate de model: modelul decide când le apelează.
+- **Resurse** (_resources_): date identificate printr-un URI, de exemplu un fișier sau o înregistrare dintr-o bază de date. Resursele sunt controlate de aplicație: gazda decide ce resurse ajung în context.
+- **Prompturi** (_prompts_): șabloane de mesaje pregătite de server, pe care utilizatorul le alege explicit, de exemplu ca o comandă cu bară oblică (_slash command_).
+
+În sens invers, serverul îi poate cere utilizatorului o informație care lipsește, de exemplu o confirmare sau un câmp dintr-un formular. Mecanismul se numește **cerere de informații** (_elicitation_). Versiunea din iulie 2026 a specificației a declarat depreciate trei funcții mai vechi: _Roots_ (directoarele la care are acces serverul), _Sampling_ (serverul folosește modelul gazdei pentru o generare) și _Logging_ (mesajele de jurnal trimise de server).
+
+### Cum arată un instrument MCP
+
+La cererea `tools/list`, serverul întoarce lista instrumentelor. Fiecare instrument are un nume, o descriere pentru model, o schemă JSON pentru argumente și, opțional, un titlu pentru interfață și adnotări despre comportament.
+
+```json
+{
+  "name": "search_orders",
+  "title": "Căutarea comenzilor",
+  "description": "Caută comenzile unui client după adresa de e-mail.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "email": { "type": "string", "description": "Adresa de e-mail a clientului." },
+      "limit": { "type": "integer", "minimum": 1, "maximum": 50 }
+    },
+    "required": ["email"]
+  },
+  "annotations": { "readOnlyHint": true }
+}
+```
+
+Apelul este o cerere JSON-RPC `tools/call`. De la versiunea din iulie 2026, fiecare cerere își poartă singură versiunea protocolului și capabilitățile clientului, în câmpul `_meta`.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "method": "tools/call",
+  "params": {
+    "name": "search_orders",
+    "arguments": { "email": "ana@example.com", "limit": 5 },
+    "_meta": {
+      "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+      "io.modelcontextprotocol/clientCapabilities": {}
+    }
+  }
+}
+```
+
+Serverul răspunde cu un rezultat sub formă de text pentru model. Opțional, rezultatul poate conține și date structurate, în câmpul `structuredContent`.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "result": {
+    "resultType": "complete",
+    "content": [{ "type": "text", "text": "2 comenzi: #1042 (livrată), #1077 (în curs de livrare)." }],
+    "isError": false
+  }
+}
+```
+
+Adnotarea `readOnlyHint` spune că instrumentul doar citește date. Specificația le cere însă clienților să trateze adnotările ca neverificate, cu excepția serverelor de încredere, pentru că un server rău-intenționat poate declara orice.
+
+### Transporturi
+
+Mesajele pot circula în două feluri, numite **transporturi** (_transports_).
+
+- **stdio**: clientul pornește serverul ca proces separat, pe același calculator, iar mesajele trec prin intrarea și ieșirea standard ale procesului. Așa rulează serverele locale, de exemplu cel pentru sistemul de fișiere. Credențialele vin din variabilele de mediu.
+- **Streamable HTTP**: fiecare mesaj este o cerere HTTP POST către o singură adresă a serverului, iar răspunsul vine ca obiect JSON sau ca flux de evenimente (SSE). Așa rulează serverele aflate la distanță, cu autorizare prin OAuth. Streamable HTTP a înlocuit, în martie 2025, transportul mai vechi HTTP+SSE.
+
+### Versiunile specificației
+
+Fiecare versiune a specificației poartă data ultimei schimbări incompatibile cu versiunile anterioare. Schimbările compatibile păstrează aceeași dată.
+
+| Versiune | Principalele schimbări |
+| :--- | :--- |
+| 2024-11-05 | Prima specificație publică: instrumente, resurse, prompturi și _Sampling_, cu transporturile stdio și HTTP+SSE. |
+| 2025-03-26 | Autorizare cu OAuth 2.1, transportul Streamable HTTP în locul HTTP+SSE și adnotări pentru instrumente (doar citire, distructiv). |
+| 2025-06-18 | Rezultate structurate pentru instrumente, cererea de informații de la utilizator, legături către resurse. Serverele MCP devin servere de resurse OAuth. |
+| 2025-11-25 | Sarcini de lungă durată (_tasks_), experimentale, pictograme, JSON Schema 2020-12 și o guvernanță formală, cu grupuri de lucru. |
+| 2026-07-28 (actuală) | Un nucleu fără stare (_stateless_): dispar negocierea de la început (`initialize`) și sesiunile (`Mcp-Session-Id`), iar fiecare cerere își poartă versiunea și capabilitățile. Cererile pornite de server sunt înlocuite de cereri cu mai multe runde (_Multi Round-Trip Requests_). Sarcinile de lungă durată trec într-o extensie. _Roots_, _Sampling_ și _Logging_ devin depreciate. |
+
+Fără sesiuni, orice instanță a unui server poate răspunde la orice cerere. Pe transportul HTTP, metoda și numele instrumentului sunt copiate și în antetele cererii, așa că porțile (_gateways_) din fața serverelor pot ruta cererile fără să citească mesajul. Versiunea 2026-07-28 este suportată de SDK-urile oficiale pentru TypeScript, Python, Go și C#, iar cel pentru Rust este în versiune beta. Odată cu această versiune, specificația a adoptat și o regulă pentru funcțiile depreciate: rămân în specificație cel puțin 12 luni înainte de a fi scoase.
+
+### Cine conduce MCP
+
+Pe 9 decembrie 2025, Anthropic a donat MCP fundației Agentic AI Foundation, înființată atunci de Linux Foundation (vezi [mai jos](#agentic-ai-foundation)). Specificația și codul sunt sub licența Apache 2.0. Deciziile tehnice le iau responsabilii principali (_lead maintainers_), David Soria Parra și Den Delimarsky, iar orice schimbare a specificației trece printr-o propunere publică, numită SEP (_Specification Enhancement Proposal_). Locul în echipa de bază aparține persoanei, nu companiei la care lucrează.
+
+Serverele publice sunt adunate în [registrul oficial MCP](https://registry.modelcontextprotocol.io), lansat în septembrie 2025. Pe 2 noiembrie 2026, repozitoriul registrului îl descria încă drept versiune preliminară (_preview_).
+
+### Riscurile
+
+Descrierile instrumentelor ajung direct în contextul modelului, iar modelul le poate lua drept instrucțiuni. Invariant Labs a arătat în aprilie 2025 că un server rău-intenționat poate ascunde în descrierea unui instrument instrucțiuni pe care utilizatorul nu le vede (**otrăvirea instrumentelor**, _tool poisoning_) sau poate schimba descrierea după ce utilizatorul a aprobat serverul (_rug pull_). Serverele pornite prin stdio rulează, în plus, cu drepturile utilizatorului. Paginile despre [atacurile asupra agenților](/comportament-agentic/securitatea-agentilor-atacuri/) și despre [apărări](/comportament-agentic/securitatea-agentilor-aparari/) tratează aceste riscuri pe larg.
+
+## A2A (Agent2Agent)
+
+MCP leagă un agent de instrumente și de date. **A2A** (_Agent2Agent_) leagă un agent de alți agenți. Fiecare agent publică un **card de agent** (_agent card_), o descriere a capabilităților în format JSON. Pe baza cardurilor, agenții se descoperă unii pe alții, își delegă sarcini și primesc rezultatele. Spre deosebire de un server MCP, un agent A2A nu își expune instrumentele: primește o sarcină, lucrează singur și întoarce rezultatul.
+
+Google a lansat A2A în aprilie 2025. Pe 23 iunie 2025, protocolul a devenit proiect Linux Foundation, cu AWS, Cisco, Google, Microsoft, Salesforce, SAP și ServiceNow ca membri fondatori. În august 2025, protocolul ACP al IBM (_Agent Communication Protocol_) a fost unificat cu A2A. Prima versiune stabilă, 1.0, a apărut pe 12 martie 2026, cu carduri de agent semnate, negocierea versiunii și legături pentru mai multe protocoale de transport. Pe 17 august 2026, A2A a intrat în Agentic AI Foundation, care spune că protocolul este susținut de peste 150 de organizații.
+
+## AGENTS.md
+
+**AGENTS.md** este un fișier Markdown obișnuit, pus în rădăcina repozitoriului, cu instrucțiunile de care are nevoie un agent de programare: cum se instalează dependențele, cum se rulează testele, ce convenții de cod are proiectul, ce nu trebuie atins. Site-ul oficial descrie fișierul ca pe „un README pentru agenți”. Formatul nu are câmpuri obligatorii.
+
+```markdown
+# AGENTS.md
+
+## Comenzi
+- Instalare: `npm ci`
+- Teste: `npm test`, înainte de fiecare commit
+
+## Reguli
+- Codul nou vine cu teste.
+- Fișierele din `migrations/` nu se modifică.
+```
+
+Un repozitoriu poate avea mai multe fișiere AGENTS.md, de exemplu câte unul pentru fiecare pachet dintr-un monorepo. Regula este simplă: contează fișierul cel mai apropiat de fișierul editat, iar instrucțiunile date explicit de utilizator în conversație au prioritate. Harnașamentul încarcă fișierul în context la începutul sesiunii, așa că AGENTS.md este și o formă de [memorie procedurală](/comportament-agentic/memoria-agentilor/#tipuri-de-memorie) a proiectului.
+
+Formatul a fost lansat public în august 2025, ca efort comun al echipelor OpenAI Codex, Amp, Google Jules, Cursor și Factory, iar OpenAI l-a donat fundației Agentic AI Foundation în decembrie 2025. Site-ul agents.md listează peste 20 de instrumente care citesc fișierul, de la Codex, Cursor și GitHub Copilot la OpenCode, goose și Zed, și spune că peste 60.000 de proiecte open-source îl folosesc. Câteva harnașamente au propriul fișier: Claude Code citește CLAUDE.md și folosește AGENTS.md doar când CLAUDE.md lipsește, iar Gemini CLI citește AGENTS.md doar dacă este configurat să o facă.
+
+Mitchell Hashimoto numește _harness engineering_ obiceiul de a transforma fiecare greșeală a unui agent într-o regulă sau într-un instrument, ca agentul să nu mai repete greșeala. AGENTS.md este locul cel mai simplu pentru astfel de reguli.
+
+## Agent Skills (SKILL.md)
+
+AGENTS.md se încarcă întreg, la fiecare sesiune. Pentru cunoștințe de care agentul are nevoie doar uneori, de exemplu cum se scrie un raport într-un anumit format sau cum se publică o versiune nouă, există **abilitățile** (_skills_). Anthropic a introdus Agent Skills pe 16 octombrie 2025, a publicat formatul ca standard deschis pe 18 decembrie 2025, la agentskills.io, și l-a donat fundației Agentic AI Foundation pe 22 octombrie 2026.
+
+O abilitate este un director cu un fișier `SKILL.md`: un antet YAML, cu numele și descrierea abilității, urmat de instrucțiuni în Markdown. Directorul poate conține și scripturi (`scripts/`), documente de referință (`references/`) și alte fișiere (`assets/`). Abilitatea de mai jos ar sta în fișierul `release-notes/SKILL.md`:
+
+```markdown
+---
+name: release-notes
+description: Scrie notele unei versiuni noi din commiturile de la ultima etichetă Git. Se folosește când utilizatorul cere notele de versiune sau pregătește o lansare.
+---
+
+# Notele de versiune
+
+1. Rulează `scripts/commits.sh` pentru lista commiturilor de la ultima etichetă.
+2. Grupează schimbările în trei categorii: funcționalități noi, corecturi, altele.
+3. Scrie notele în `CHANGELOG.md`, deasupra versiunii anterioare.
+```
+
+Câmpul `name` are cel mult 64 de caractere (litere mici, cifre și cratime) și trebuie să coincidă cu numele directorului. Câmpul `description`, de cel mult 1.024 de caractere, spune ce face abilitatea și când trebuie folosită. Opțional, antetul mai poate avea câmpurile `license`, `compatibility`, `metadata` și, experimental, `allowed-tools`.
+
+Ideea principală este **dezvăluirea progresivă** (_progressive disclosure_). La pornire, harnașamentul încarcă doar numele și descrierea fiecărei abilități, în jur de 100 de tokenuri. Când o sarcină se potrivește cu o descriere, agentul citește tot fișierul `SKILL.md` corespunzător, pentru care specificația recomandă sub 5.000 de tokenuri, iar scripturile și documentele de referință sunt citite doar dacă este nevoie. Un agent poate avea astfel zeci de abilități instalate fără să-și umple contextul.
+
+Formatul este citit de harnașamente de tipul Claude Code, Codex, Gemini CLI, GitHub Copilot, Cursor, OpenCode, OpenHands sau goose și de asistenți personali ca OpenClaw sau Hermes Agent (vezi [Asistenți personali](/comportament-agentic/asistenti-personali/)). Diferența față de MCP este că o abilitate este text și scripturi pe care agentul le rulează cu propriile instrumente, nu un program separat care vorbește un protocol. Tocmai de aceea, instalarea unei abilități dintr-o sursă necunoscută înseamnă, de fapt, rularea codului altcuiva (vezi [atacurile asupra agenților](/comportament-agentic/securitatea-agentilor-atacuri/)).
+
+## ACP (Agent Client Protocol)
+
+**ACP** (_Agent Client Protocol_), lansat de Zed pe 27 august 2025, standardizează legătura dintre un editor de cod și un agent de programare, după modelul LSP, astfel încât același agent să poată rula în mai multe editoare, fără o extensie separată pentru fiecare. Editorul pornește agentul ca subproces, iar cele două programe comunică prin JSON-RPC, pe intrarea și ieșirea standard. Unde poate, ACP refolosește tipurile JSON din MCP. Primul agent compatibil a fost Gemini CLI, iar JetBrains s-a alăturat în octombrie 2025. Acest ACP nu are legătură cu protocolul IBM cu aceleași inițiale, unificat cu A2A.
+
+## Agentic AI Foundation
+
+**Agentic AI Foundation** (AAIF) a fost înființată de Linux Foundation pe 9 decembrie 2025, ca loc neutru pentru standardele deschise ale sistemelor agentice. Proiectele fondatoare au fost MCP (de la Anthropic), goose (de la Block) și AGENTS.md (de la OpenAI). La înființare, membrii de nivel platinum erau AWS, Anthropic, Block, Bloomberg, Cloudflare, Google, Microsoft și OpenAI.
+
+Pe 22 octombrie 2026, fundația a primit încă patru proiecte și a ajuns la zece.
+
+| Proiect | Ce este |
+| :--- | :--- |
+| MCP | Protocolul prin care aplicațiile AI se conectează la instrumente și la date (Anthropic, decembrie 2025). |
+| goose | Un agent open-source extensibil, care poate rula cu orice LLM (Block, decembrie 2025). |
+| AGENTS.md | Formatul comun pentru instrucțiunile agenților de programare (OpenAI, decembrie 2025). |
+| A2A | Protocolul prin care agenții comunică și colaborează (în AAIF din august 2026). |
+| Agent Router | O poartă AI open-source, construită pe Envoy, care leagă aplicațiile de modele și de instrumente MCP. |
+| agentgateway | Conexiuni securizate între agenți, modele, instrumente și API-uri. |
+| Agent Skills | Formatul deschis pentru abilitățile agenților (Anthropic, octombrie 2026). |
+| Open Responses | O specificație deschisă pentru interfețe LLM care funcționează la mai mulți furnizori, bazată pe Responses API de la OpenAI (OpenAI, octombrie 2026). |
+| OpenEnv | Un cadru deschis pentru medii de [învățare prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/), construite ca servicii în containere și accesibile prin MCP (Hugging Face, octombrie 2026). |
+| OpenSandbox | O platformă de izolare (_sandbox_) pentru aplicații AI, cu SDK-uri pentru mai multe limbaje și rulare pe Docker sau Kubernetes (Alibaba, octombrie 2026). |
+
+## Bibliografie
+
+- a2aproject (2026). [A2A releases](https://github.com/a2aproject/A2A/releases). Cod sursă, GitHub.
+- Agent Client Protocol (f.a.). [Introduction](https://agentclientprotocol.com/overview/introduction). Documentația Agent Client Protocol.
+- Agentic AI Foundation (2026). [A2A joins AAIF’s open agentic stack](https://aaif.io/blog/a2a-joins-aaif). Blogul AAIF.
+- Agentic AI Foundation (2026). [Agentic AI Foundation Announces Four New Projects: Agent Skills, Open Responses, OpenEnv, and OpenSandbox](https://aaif.io/news/agentic-ai-foundation-announces-four-new-projects). Comunicat AAIF.
+- Agentic AI Foundation (f.a.). [Projects](https://aaif.io/projects/). aaif.io.
+- Agent Skills (f.a.). [Specification](https://agentskills.io/specification). agentskills.io.
+- AGENTS.md (f.a.). [AGENTS.md](https://agents.md/). agents.md.
+- Anthropic (2024). [Introducing the Model Context Protocol](https://www.anthropic.com/news/model-context-protocol). Blogul Anthropic.
+- Anthropic (2025). [Equipping agents for the real world with Agent Skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills). Blogul de inginerie Anthropic.
+- Beurer-Kellner, L. și Fischer, M. (2025). [MCP Security Notification: Tool Poisoning Attacks](https://invariantlabs.ai/blog/mcp-security-notification-tool-poisoning-attacks). Blogul Invariant Labs.
+- Hashimoto, M. (2026). [My AI Adoption Journey](https://mitchellh.com/writing/my-ai-adoption-journey). Blogul autorului.
+- Linux Foundation (2025). [Linux Foundation Announces the Formation of the Agentic AI Foundation (AAIF), Anchored by New Project Contributions Including Model Context Protocol (MCP), goose and AGENTS.md](https://linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation). Comunicat de presă.
+- Linux Foundation (2025). [Linux Foundation Launches the Agent2Agent Protocol Project to Enable Secure, Intelligent Communication Between AI Agents](https://linuxfoundation.org/press/linux-foundation-launches-the-agent2agent-protocol-project-to-enable-secure-intelligent-communication-between-ai-agents). Comunicat de presă.
+- Model Context Protocol (2025). [Introducing the MCP Registry](https://blog.modelcontextprotocol.io/posts/2025-09-08-mcp-registry-preview/). Blogul MCP.
+- Model Context Protocol (2026). [Key Changes, versiunea 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/changelog). Specificația MCP.
+- Model Context Protocol (2026). [Specification, versiunea 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28). Specificația MCP.
+- Model Context Protocol (2026). [Tools, versiunea 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/server/tools). Specificația MCP.
+- Model Context Protocol (f.a.). [Governance and Stewardship](https://modelcontextprotocol.io/community/governance). Documentația MCP.
+- Model Context Protocol (f.a.). [Versioning](https://modelcontextprotocol.io/specification/versioning). Documentația MCP.
+- Zed Industries (2025). [Agent Client Protocol](https://zed.dev/acp). zed.dev.

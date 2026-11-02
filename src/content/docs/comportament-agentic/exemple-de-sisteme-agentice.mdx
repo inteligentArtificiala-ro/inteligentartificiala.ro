@@ -2,7 +2,7 @@
 title: Exemple de sisteme agentice
 description: Cum folosesc Google Antigravity, Claude Code, asistenții OpenAI, Cursor și agenții autonomi de mentenanță aceeași arhitectură agentică și ce adaptează fiecare la mediul în care lucrează.
 sidebar:
-  order: 7
+  order: 11
 level: incepator
 tags:
   - Sisteme agentice
@@ -12,23 +12,23 @@ tags:
 import TicketToPrDiagram from '@components/diagrams/TicketToPrDiagram.astro';
 import { Steps } from '@astrojs/starlight/components';
 
-Comportamentul agentic și [harnașamentele](/comportament-agentic/harnasamentul/) stau la baza celor mai capabile medii de lucru cu inteligență artificială de azi. Arhitectura de bază este aceeași, dar fiecare sistem își alege instrumentele și gradul de autonomie după mediul în care lucrează.
+Comportamentul agentic și [harnașamentele](/comportament-agentic/harnasamentul/) stau la baza celor mai capabile medii de lucru cu inteligență artificială de azi. Arhitectura de bază este aceeași, dar fiecare sistem își alege instrumentele și gradul de autonomie după mediul în care lucrează. Pagina [O hartă a harnașamentelor](/comportament-agentic/harnasamente-o-harta/) compară mai multe astfel de sisteme, după licență, permisiuni, izolare și modele.
 
 ## Google Antigravity
 
-Antigravity este un mediu agentic de dezvoltare software, gândit să lucreze în permanență alături de programator.
+Antigravity este un mediu agentic de dezvoltare software, gândit să lucreze în permanență alături de programator. Google a [lansat](https://antigravity.google/blog/introducing-google-antigravity) Antigravity pe 18 noiembrie 2025, odată cu Gemini 3. Din mai 2026, Antigravity 2.0 este o aplicație desktop separată, însoțită de un SDK pentru Python și de Antigravity CLI (comanda `agy`), care a [înlocuit Gemini CLI](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/) pentru utilizatorii individuali.
 
 - **Arhitectura harnașamentului**: controlează strict spațiul de lucru și gestionează terminale persistente, procese asincrone în fundal și jurnale structurate.
 - **Subagenți și ierarhie**: permite pornirea unor subagenți specializați (de exemplu agenți de cercetare care doar citesc sau agenți independenți pe ramuri de lucru paralele), care comunică unii cu alții prin mesaje.
-- **Artefacte și interacțiune**: pe lângă text și comenzi, harnașamentul poate produce artefacte Markdown interactive, diagrame, rapoarte structurate și întrebări (`ask_question`), ca deciziile importante de design să fie lămurite înainte de modificarea codului.
+- **Artefacte și interacțiune**: pe lângă text și comenzi, harnașamentul poate produce artefacte (liste de sarcini, planuri, documente Markdown, diagrame, capturi de ecran, înregistrări din browser), prin care programatorul verifică munca agentului, și întrebări (`ask_question`), ca deciziile importante de design să fie lămurite înainte de modificarea codului.
 
 ## Claude Code
 
-Claude Code este un instrument de linie de comandă (CLI) dezvoltat de Anthropic, prin care modelul Claude lucrează ca asistent direct în terminalul programatorului.
+Claude Code este un instrument de linie de comandă (CLI) dezvoltat de Anthropic, prin care modelul Claude lucrează ca asistent direct în terminalul programatorului. Același motor rulează azi și în extensii pentru VS Code și JetBrains, într-o aplicație desktop și pe web.
 
-- **Filozofia harnașamentului**: în loc de o interfață grafică, rulează în consolă ca un proces REPL, legat direct de repozitoriul local de cod.
+- **Filozofia harnașamentului**: în terminal, în loc de o interfață grafică, rulează în consolă ca un proces REPL, legat direct de repozitoriul local de cod.
 - **Instrumente native**: harnașamentul oferă acces la utilitare de sistem rapide, precum `ripgrep` pentru căutare, la instrumente de editare atomică și la comenzi shell obișnuite.
-- **Control uman strict**: înainte de comenzile care pot distruge date sau de modificările ample, harnașamentul afișează comanda propusă și cere aprobarea explicită a programatorului.
+- **Control asupra acțiunilor**: în modul manual, înainte de modificări și de comenzi, harnașamentul afișează acțiunea propusă și cere aprobarea explicită a programatorului. Din versiunea 2.1.283, sesiunile interactive pornesc implicit în [modul `auto`](https://code.claude.com/docs/en/permission-modes), în care un clasificator, adică un model separat, verifică fiecare acțiune în locul programatorului și le blochează pe cele riscante.
 
 ## OpenAI Codex, Canvas și Code Interpreter
 
@@ -37,17 +37,18 @@ Evoluția asistenților OpenAI arată bine trecerea de la un model simplu la un 
 - **Codex (2021)**: genera completări de cod direct în editor, dar nu avea cum să știe dacă acel cod conține erori sau dacă bibliotecile folosite chiar există.
 - **Code Interpreter (Advanced Data Analysis)**: a adăugat un harnașament cu un mediu de execuție Python, izolat într-un container securizat (_sandbox_). Dacă un script se oprește cu un `ZeroDivisionError`, harnașamentul prinde eroarea și i-o trimite modelului, iar modelul rescrie codul până obține rezultatul corect sau graficul cerut.
 - **Canvas**: oferă un harnașament vizual bidirecțional, în care modelul poate lucra pe porțiuni selectate de text sau cod, poate porni revizuiri automate de stil și poate face modificări fără să rescrie tot documentul.
+- **Codex (din 2025)**: OpenAI a refolosit numele pentru agentul de programare: un [CLI open source](https://github.com/openai/codex) (Apache-2.0), scris în Rust, extensii pentru editoare, o aplicație desktop și un agent în cloud, în care fiecare sarcină are propriul spațiu de lucru. Local, comenzile rulează implicit izolat și pot scrie doar în directorul proiectului.
 
 ## Cursor
 
-Cursor este un editor de cod gândit de la început pentru lucrul cu AI (construit pe baza VS Code), care a popularizat modul de lucru agentic direct în IDE, prin funcția _Composer_ / _Agent Mode_.
+Cursor este un editor de cod gândit de la început pentru lucrul cu AI (construit pe baza VS Code), care a popularizat modul de lucru agentic direct în IDE, prin funcția _Composer_ / _Agent Mode_. Din aprilie 2026, [Cursor 3](https://cursor.com/blog/cursor-3) are o fereastră construită în jurul agenților, în care agenții locali și cei din cloud lucrează unul lângă altul, iar Cursor are și un CLI și un SDK.
 
 - **Indexare semantică**: harnașamentul ține la zi un index al întregului cod, construit din reprezentări vectoriale (_embeddings_) și grafuri de simboluri. Așa, agentul găsește fișierele relevante chiar dacă utilizatorul nu i le indică.
 - **Modificări în mai multe fișiere**: agentul planifică modificări care ating zeci de fișiere deodată, arată diferențele de cod înainte să le aplice și folosește mesajele compilatorului ca să verifice, după fiecare pas, că tipurile se potrivesc.
 
 ## Agenți autonomi de mentenanță (de la tichet la PR)
 
-Un domeniu care atrage mult interes este cel al agenților care lucrează în fundal și rezolvă sarcini fără ca un om să intervină pe parcurs, cum sunt SWE-agent sau Devin. Pașii tipici ai acestor agenți arată astfel.
+Un domeniu care atrage mult interes este cel al agenților care lucrează în fundal și rezolvă sarcini fără ca un om să intervină pe parcurs, cum sunt SWE-agent sau Devin. Cognition, compania care face Devin, a [cumpărat](https://cognition.com/blog/windsurf) în 2025 și editorul Windsurf, [redenumit](https://docs.devin.ai/desktop/devin-desktop-faq) Devin Desktop pe 2 iunie 2026. Între timp, au apărut agenți de acest fel la majoritatea marilor furnizori, de la Codex Cloud la agentul Copilot din cloud al GitHub (lista completă este pe [harta harnașamentelor](/comportament-agentic/harnasamente-o-harta/#în-cloud)). Pașii tipici ai acestor agenți arată astfel.
 
 <Steps>
 1. **Declanșare automată**: agentul preia singur un tichet (_issue_) nou deschis pe GitHub.
@@ -63,12 +64,19 @@ Un domeniu care atrage mult interes este cel al agenților care lucrează în fu
 
 ## Bibliografie
 
+- Anthropic (f.a.). [Choose a permission mode](https://code.claude.com/docs/en/permission-modes). Documentația Claude Code.
 - Anthropic (f.a.). [Claude Code overview](https://code.claude.com/docs/en/overview). Documentația Claude.
+- Anysphere (2026). [Meet the new Cursor](https://cursor.com/blog/cursor-3). Blogul Cursor.
 - Anysphere (f.a.). [Cursor Docs](https://cursor.com/docs).
 - Chen, M. et al. (2021). [Evaluating Large Language Models Trained on Code](https://arxiv.org/abs/2107.03374). Preprint arXiv:2107.03374.
 - Cognition (2024). [Introducing Devin, the first AI software engineer](https://cognition.ai/blog/introducing-devin).
+- Cognition (f.a.). [Devin Desktop FAQ](https://docs.devin.ai/desktop/devin-desktop-faq). Documentația Devin.
 - Google (2025). [Google Antigravity](https://antigravity.google/).
+- Google (2025). [Introducing Google Antigravity, a new era in AI-assisted software development](https://antigravity.google/blog/introducing-google-antigravity). Blogul Google Antigravity.
 - Jimenez, C. E. et al. (2024). [SWE-bench: Can Language Models Resolve Real-World GitHub Issues?](https://arxiv.org/abs/2310.06770) _ICLR 2024_.
+- Lyalin, D. și Mullen, T. (2026). [An important update: Transitioning Gemini CLI to Antigravity CLI](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/). Google Developers Blog.
 - OpenAI (2023). [ChatGPT plugins](https://openai.com/index/chatgpt-plugins/). Blogul OpenAI.
 - OpenAI (2024). [Introducing canvas](https://openai.com/index/introducing-canvas/). Blogul OpenAI.
+- OpenAI (f.a.). [Codex](https://github.com/openai/codex). Cod sursă, GitHub.
+- Wu, S. (2025). [Cognition's acquisition of Windsurf](https://cognition.com/blog/windsurf). Blogul Cognition.
 - Yang, J. et al. (2024). [SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering](https://arxiv.org/abs/2405.15793). _NeurIPS 2024_.

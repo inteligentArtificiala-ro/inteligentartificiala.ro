@@ -1,0 +1,388 @@
+---
+title: Modele de limbaj pentru agenți
+description: Ce cere un harnașament de la model, prin ce diferă modelele închise de cele cu ponderi deschise, ce măsoară benchmarkurile agentice și cum ajungem la modele prin OpenRouter sau local, cu Ollama.
+sidebar:
+  order: 6
+  label: Modele pentru agenți
+level: intermediar
+tags:
+  - Sisteme agentice
+  - Modele de limbaj mari (LLM)
+---
+
+import DeepDive from '@components/DeepDive.astro';
+import { Steps } from '@astrojs/starlight/components';
+
+[Harnașamentul](/comportament-agentic/harnasamentul/) construiește contextul, rulează instrumentele și ține evidența pașilor, dar fiecare decizie a agentului vine de la model. Cele mai multe harnașamente lasă modelul la alegere. Același program poate lucra cu un model închis, apelat prin interfața de programare (API) a furnizorului, sau cu un model cu ponderi deschise, rulat pe propriul calculator. [Harta harnașamentelor](/comportament-agentic/harnasamente-o-harta/) arată ce modele acceptă fiecare harnașament.
+
+Modelul decide cât de des nimerește agentul instrumentul potrivit, cât timp lucrează fără să piardă firul și cât costă o sarcină. Pe această pagină vedem ce cere un harnașament de la model, ce modele închise și deschise existau în noiembrie 2026, cum citim **benchmarkurile agentice** (_agentic benchmarks_) și cum ajungem efectiv la un model: printr-un serviciu care adună mai mulți furnizori, de tipul OpenRouter, sau local.
+
+## Ce cere harnașamentul de la model
+
+Un model bun la conversație nu este automat un model bun pentru agenți. Harnașamentul are nevoie de patru lucruri.
+
+- **Apeluri de instrumente corecte**: modelul alege instrumentul potrivit și scrie apelul exact în formatul cerut, cu argumente valide pentru schema JSON a instrumentului (vezi [Apelul de instrumente](/comportament-agentic/apelul-de-instrumente/)). Într-o sarcină cu zeci de pași, chiar și puține apeluri greșite ajung să oprească lucrul. Formatul se învață la ajustarea fină, prin tokenurile speciale din [șablonul de chat](/laboratoare/model-local-transformers/tokenizator-si-generare/). Un model neantrenat pentru apeluri de instrumente poate primi descrierea formatului în prompt, dar greșește atunci formatul mai ușor (vezi mai jos, la [modelele locale](#apelurile-de-instrumente-pe-un-server-local)).
+- **Un context lung, folosit bine**: un agent adună în context fișierele citite, rezultatele comenzilor și mesajele de eroare, iar o sesiune lungă poate ajunge la sute de mii de tokenuri. Modelele închise actuale au o [fereastră de context](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#limitări) de aproximativ un milion de tokenuri. O fereastră mare nu garantează însă că modelul folosește la fel de bine tot ce se află în context: [Liu și colaboratorii](https://arxiv.org/abs/2307.03172) au arătat în 2023 că modelele de atunci găseau mai greu o informație aflată la mijlocul unui context lung decât una de la început sau de la sfârșit. De aceea, harnașamentele [compactează contextul](/comportament-agentic/memoria-agentilor/) și țin notițe în fișiere.
+- **Urmarea instrucțiunilor**: promptul de sistem, regulile proiectului din fișiere ca [AGENTS.md](/comportament-agentic/protocoale-si-standarde/#agentsmd) și limitele de permisiuni trebuie respectate și la pasul o sută, nu doar la primul.
+- **Cost și latență**: harnașamentul apelează modelul la fiecare pas și retrimite de fiecare dată tot contextul. Tokenurile de intrare și cele de ieșire au prețuri separate, iar diferențele dintre modele sunt mari. În noiembrie 2026, Claude Opus 5.5 costa 4 dolari pe milion de tokenuri de intrare, iar Claude Haiku 5.5, de la 0,10 dolari. _Prompt caching_ (furnizorul păstrează începutul promptului deja procesat) ieftinește mult pașii care încep cu același context: la Anthropic, tokenurile citite din cache costă între 2,5% și 10% din prețul obișnuit. Pașii rulează unul după altul, așa că și timpul de răspuns al modelului se adună la fiecare pas.
+
+Modelele de raționament mai au un reglaj, **nivelul de efort** (_effort_): cât de mult „gândește” modelul înainte să răspundă (vezi [bugetul de gândire](/modele-lingvistice/rationament-si-gandire/#bugetul-de-gândire)). Un efort mai mare dă de obicei rezultate mai bune, în schimbul mai multor tokenuri și al unei latențe mai mari. Același model, la niveluri de efort diferite, poate avea scoruri foarte diferite, după cum se vede mai jos, la benchmarkuri.
+
+## Modele închise
+
+Un **model închis** (_closed model_), numit și proprietar, poate fi folosit doar prin API-ul furnizorului, iar ponderile nu sunt publice. Pagina despre [ChatGPT, Gemini și Claude](/concepte-de-baza/chatgpt-gemini-claude-grok-deepseek/#ponderi-deschise-și-modele-închise) explică diferența practică dintre modelele închise și cele deschise. Cele trei familii din tabel sunt exemple ale categoriei. Și xAI, cu modelele Grok, oferă modele închise.
+
+| Companie | Modele (noiembrie 2026) | Fereastră de context | Preț pe milion de tokenuri (intrare / ieșire) |
+| :--- | :--- | :--- | :--- |
+| Anthropic | Claude Fable 5.1, Claude Opus 5.5, Claude Sonnet 5.5, Claude Haiku 5.5 | 1 milion de tokenuri, la toate patru | de la 10 / 50 de dolari (Fable 5.1) la 0,10 / 0,50 dolari (Haiku 5.5) |
+| OpenAI | GPT-6 Astra, GPT-6.1 Sol, GPT-6.1 Terra | 1,05 milioane la GPT-6 Astra | 10 / 50 de dolari la GPT-6 Astra |
+| Google | Gemini 4 Argon, Gemini 3.8 Flash | 1 milion la Gemini 4 Argon | 2 / 10 dolari la Gemini 4 Argon până la 30 noiembrie 2026, apoi 4 / 20 de dolari |
+
+Fiecare familie are mai multe trepte: un model mare, mai lent și mai scump, pentru sarcinile grele, și modele mai mici, rapide și ieftine, pentru pașii simpli. Anthropic, de exemplu, recomandă Opus 5.5 pentru majoritatea sarcinilor și Fable 5.1 pentru raționamentele dificile și munca agentică de lungă durată.
+
+Numele se schimbă repede. GPT-6.1 Terra a apărut pe 26 octombrie 2026, Gemini 4 Argon a devenit disponibil tuturor pe 13 octombrie 2026, iar documentația Anthropic trece deja Claude Opus 4.x printre modelele mai vechi (_legacy_). Principiile de pe această pagină rămân valabile și după ce tabelul se învechește.
+
+## Modele cu ponderi deschise
+
+Un model cu **ponderi deschise** (_open weights_) poate fi descărcat și rulat pe hardware propriu sau la orice furnizor care îl găzduiește. Multe dintre cele mai mari modele deschise din 2026 vin de la companii din China.
+
+| Model (companie) | Parametri totali / activi (miliarde) | Licență |
+| :--- | :--- | :--- |
+| Kimi K3 (Moonshot AI) | 2.800 / 104 | Kimi K3 License, derivată din MIT |
+| Qwen3.8-2.4T-A95B (Alibaba) | 2.400 / 95 | Qwen3.8-Max License, derivată din MIT |
+| Qwen3.8-27B (Alibaba) | 27,8, dens | Apache 2.0 |
+| GLM-5.3 (Z.ai) | aproximativ 750, fără număr publicat de parametri activi | GLM-5.3 License, derivată din MIT |
+| GLM-5.3-Flash (Z.ai) | 320 / 18 | MIT |
+| DeepSeek-V4-Pro (DeepSeek) | 1.600 / 49 | MIT |
+| MiniMax-M3 (MiniMax) | aproximativ 428 / 23 | MiniMax Community License |
+| gpt-oss-120b și gpt-oss-20b (OpenAI) | 117 / 5,1 și 21 / 3,6 | Apache 2.0 |
+| Devstral 2 și Devstral Small 2 (Mistral AI) | 123 și 24, ambele dense | licență MIT modificată, respectiv Apache 2.0 |
+| Mistral Large 4 (Mistral AI) | aproximativ 1.000 / 52 | Mistral Ecosystem Open-Weight License |
+| Gemma 4 (Google) | 31, dens, și 26 / 4 | Apache 2.0 |
+| Muse Spark Open și Muse Glimmer 30B (Meta) | 816 / 42 și aproximativ 30 | Muse Model License, respectiv Apache 2.0 |
+
+Perechile de numere vin de la arhitectura numită **amestec de experți** (_mixture of experts_, MoE). În fiecare strat, [rețeaua feed-forward](/modele-lingvistice/arhitectura-transformer/#rețeaua-feed-forward-swiglu) este înlocuită de mai multe rețele mai mici, numite experți, iar pentru fiecare token un mic strat de rutare alege doar câțiva experți. Kimi K3 are 2.800 de miliarde de parametri, dar folosește doar 104 miliarde pentru fiecare token. Memoria necesară depinde de numărul total de parametri, iar viteza generării depinde mai ales de parametrii activi. Un model **dens** (_dense_) folosește toți parametrii pentru fiecare token.
+
+Meta nu a mai publicat niciun model Llama după Llama 4, din aprilie 2025. Modelele deschise ale companiei fac acum parte din familia Muse.
+
+### Ce înseamnă „deschis” în practică
+
+Despre un model se pot publica trei lucruri diferite: ponderile, codul (de antrenare și de inferență) și datele de antrenare. Pentru cele mai multe modele deschise se publică doar ponderile, uneori și codul de inferență. Modelele complet deschise sunt rare. Un exemplu este Olmo 3.1 32B Think, publicat de Ai2 în decembrie 2025 sub licența Apache 2.0, cu datele și codul de antrenare. [Definiția Open Source AI](https://opensource.org/ai/open-source-ai-definition), publicată de Open Source Initiative în 2024, cere, pe lângă ponderi, codul complet și informații suficient de detaliate despre datele de antrenare. De aceea, „ponderi deschise” nu înseamnă automat „open source”.
+
+Licența contează la fel de mult ca ponderile. Licențele permisive, Apache 2.0 și MIT, permit și folosirea comercială, cu condiții minime. Multe modele mari din 2025–2026 folosesc însă licențe proprii, derivate din MIT, cu clauze pentru companiile mari sau pentru cei care oferă modelul ca serviciu, prin API (_Model as a Service_).
+
+- **Kimi K3**: un produs cu peste 100 de milioane de utilizatori activi lunar sau cu venituri de peste 20 de milioane de dolari pe lună trebuie să afișeze vizibil „Kimi K3” în interfață. O companie care oferă modele ca serviciu și are venituri de peste 20 de milioane de dolari pe 12 luni are nevoie de un acord separat cu Moonshot AI. Folosirea internă este scutită de ambele condiții.
+- **MiniMax-M3**: licența permite implicit doar folosirea necomercială. Folosirea comercială cere mențiunea „Built with MiniMax M3” și o notificare către MiniMax, iar pentru un venit anual de peste 20 de milioane de dolari, o autorizare scrisă.
+- **Devstral 2**: o companie cu venituri lunare de peste 20 de milioane de dolari nu primește niciun drept prin această licență și trebuie să ceară o licență comercială.
+- **Qwen Community License** și **Mistral Ecosystem Open-Weight License**: companiile care oferă modelul ca serviciu au nevoie de o licență separată.
+- **Muse Spark Open**: modelul are acces restricționat, iar descărcarea cere aprobarea manuală a cererii de acces pe Hugging Face.
+
+Pe Hugging Face, aceste licențe apar de obicei doar ca „other”. Înainte de a folosi un model într-un produs, merită citit fișierul LICENSE din repozitoriul modelului.
+
+## Benchmarkuri agentice
+
+Un benchmark agentic dă agentului o sarcină completă într-un mediu real, de exemplu un repozitoriu de cod, un terminal sau o conversație cu un client, și verifică automat rezultatul final. Scorul este, de obicei, procentul de sarcini rezolvate. Pe paginile modelelor apar mai ales benchmarkurile de mai jos.
+
+### SWE-bench
+
+[SWE-bench](https://arxiv.org/abs/2310.06770) (Jimenez și colaboratorii, 2024) folosește probleme reale (_issues_) din repozitorii Python de pe GitHub. Agentul primește codul și descrierea problemei și trebuie să scrie o modificare pe care o validează testele adăugate odată cu corectura originală, teste pe care agentul nu le vede. **SWE-bench Verified**, publicat de OpenAI în august 2024, păstrează 500 de probleme verificate de programatori, ca enunțurile să fie clare și testele corecte.
+
+În februarie 2026, OpenAI a anunțat că nu mai raportează scoruri pe SWE-bench Verified, din trei motive. Problemele vin din repozitorii publice, pe care modelele au fost deja antrenate (**contaminare**, _contamination_). O verificare a problemelor dificile a găsit teste și enunțuri greșite. Iar progresul încetinise: cel mai bun scor crescuse doar de la 74,9% la 80,9% în șase luni. OpenAI recomandă în schimb **SWE-bench Pro** ([Deng și colaboratorii](https://arxiv.org/abs/2509.16941), 2025): 1.865 de probleme din 41 de repozitorii, împărțite într-un set public, unul păstrat deoparte și unul comercial, cu cod privat, ca problemele să nu ajungă în datele de antrenare. Un detaliu contează: echipa Qwen spune pe paginile modelelor că a corectat unele probleme din setul public, deci scorurile Qwen pe SWE-bench Pro sunt obținute pe un set modificat.
+
+În 2026, paginile modelelor raportează mai ales SWE-bench Pro, Terminal-Bench, DeepSWE (113 sarcini scrise de la zero, din 91 de repozitorii, în cinci limbaje de programare), Toolathlon și MCP-Atlas.
+
+### Terminal-Bench
+
+**Terminal-Bench** (Stanford și Laude Institute) pune agentul în fața unor sarcini rezolvate din linia de comandă, într-un container, iar teste automate verifică starea finală. Benchmarkul a devenit „continuu”, cu versiuni numerotate. Versiunea 4.0, din 26 august 2026, a scos 8 sarcini (rezolvate deja de aproape toate modelele, refuzate de modele, cu soluții publice sau de calitate slabă), a corectat 19 și dă agentului cel mult 8 ore pentru fiecare sarcină.
+
+Scorurile de pe versiuni diferite nu se pot compara. Pe pagina modelului, Kimi K3 are 88,3% pe Terminal-Bench 2.1, cu harnașamentul propriu, Kimi Code. În tabelul publicat de DeepSeek pentru Terminal-Bench 4.0, rulat cu harnașamentul Claude Code, același model are 12,6%. Clasamentul oficial ordonează de altfel perechi formate dintr-un agent și un model, nu modele.
+
+### τ-bench și fiabilitatea
+
+**τ-bench** ([Yao și colaboratorii](https://arxiv.org/abs/2406.12045), 2024), creat la Sierra, simulează conversații de relații cu clienții, în comerțul online și la o companie aeriană. Un model joacă rolul clientului, agentul folosește instrumente care citesc și modifică o bază de date, iar la final starea bazei de date este comparată cu starea așteptată.
+
+τ-bench a introdus măsura **pass^k**: șansa ca agentul să rezolve aceeași sarcină în toate cele _k_ încercări, nu doar într-una. Pentru un agent care lucrează cu clienți reali, contează să reușească de fiecare dată. În lucrarea originală, gpt-4o cu apel de funcții rezolva în medie peste 60% din sarcinile din comerțul online, dar pass^8 scădea sub 25%. **τ²-bench** ([Barres și colaboratorii](https://arxiv.org/abs/2506.07982), 2025) adaugă **controlul dublu** (_dual control_), în care și clientul simulat folosește instrumente, de exemplu în domeniul telecomunicațiilor. Scorurile depind și de modelul care joacă rolul clientului. Paginile unor modele din 2026 raportează deja și τ³-bench.
+
+<DeepDive title="Formulele pass@k și pass^k">
+
+Fiecare sarcină este rulată de $n$ ori, iar $c$ dintre rulări reușesc. **pass@k** este șansa ca măcar una din $k$ încercări să reușească, măsura folosită pentru generarea de cod de [Chen și colaboratorii](https://arxiv.org/abs/2107.03374) (2021). **pass^k** este șansa ca toate cele $k$ încercări să reușească. Media $\mathbb{E}$ se face peste toate sarcinile benchmarkului:
+
+$$
+\text{pass@}k = 1 - \mathbb{E}\left[\binom{n-c}{k} \Big/ \binom{n}{k}\right]
+$$
+
+$$
+\text{pass}^k = \mathbb{E}\left[\binom{c}{k} \Big/ \binom{n}{k}\right]
+$$
+
+Pentru $k = 1$, cele două măsuri coincid, iar diferența crește repede cu $k$. Dacă un agent reușește la fiecare încercare, independent, cu probabilitatea 0,8, pass^8 este 0,8 la puterea a opta, adică aproximativ 0,17, în timp ce pass@8 este practic 1.
+
+</DeepDive>
+
+### Același model, scoruri diferite
+
+Un scor agentic aparține perechii formate din model și harnașament, plus setărilor: nivelul de efort, numărul de încercări, limita de timp. Anthropic spune explicit, în [ghidul despre evaluarea agenților](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents), că atunci când evaluăm „un agent” evaluăm harnașamentul și modelul împreună.
+
+Diferențele se văd și la același benchmark. Pe Terminal-Bench 4.0, Anthropic raportează un scor de 66,4% pentru Claude Opus 5.5, la nivelul de efort „xhigh” și cu propria configurație. Tabelul publicat de Google, cu rulări atribuite Artificial Analysis, dă aceluiași model 59,6%. Pentru Claude Fable 5.1, cifrele sunt 55,8% și 52,0%. Pe paginile modelelor Kimi K3 și Qwen3.8, modelul propriu rulează în harnașamentul propriu, iar pentru concurenți apare cel mai bun scor publicat, din orice harnașament.
+
+Artificial Analysis rulează toate modelele în același harnașament (mini-swe-agent), de trei ori, pe toate cele 66 de sarcini din Terminal-Bench 4.0. Pe 2 noiembrie 2026, primul loc pe pagina publică îl ocupa Kimi K3.1 Pro (67,2%), un model Moonshot AI ale cărui ponderi nu erau încă publicate pe Hugging Face.
+
+Pentru alegerea unui model, cele mai utile rezultate sunt cele obținute cu aceeași versiune de benchmark, în același harnașament, de cineva care nu produce modelul. Cel mai mult contează însă câteva sarcini reale din propriul proiect, rulate cu harnașamentul pe care îl vom folosi.
+
+## Accesul la modele prin OpenRouter
+
+Fiecare furnizor are propriul API, propriile chei și propria factură. **OpenRouter** pune un singur API în fața modelelor de la mulți furnizori. API-ul este compatibil cu cel al OpenAI: **adresa de bază** (_base URL_) este `https://openrouter.ai/api/v1`, cu rutele `/chat/completions` și `/responses`, iar OpenRouter aduce cererile și răspunsurile tuturor furnizorilor la schema OpenAI, inclusiv apelurile de instrumente. Un harnașament care știe să vorbească cu API-ul OpenAI poate folosi astfel orice model din listă, schimbând doar adresa și cheia. Pentru Claude Code există și o adresă compatibilă cu API-ul Anthropic, pe care documentația o garantează doar pentru modelele servite chiar de Anthropic.
+
+Modelele au identificatori de forma `companie/model`, de exemplu `moonshotai/kimi-k3` sau `qwen/qwen3.6-35b-a3b`. Lista mai conține aliasuri care trec singure la cea mai nouă versiune, ca `~anthropic/claude-sonnet-latest`, și rutere, ca `openrouter/auto`. Ruterul `openrouter/auto` încadrează promptul într-unul dintre aproximativ 30 de tipuri de sarcini și alege modelele pe care utilizatorii OpenRouter au cheltuit cel mai mult pentru acel tip de sarcină în ultimele 7 zile.
+
+### Rutare și modele de rezervă
+
+Același model deschis este oferit adesea de mai mulți furnizori, la prețuri și viteze diferite. Implicit, **rutarea** (_routing_) OpenRouter alege furnizorul după preț, viteză, timpul până la primul token, fiabilitate și calitatea apelurilor de instrumente, toate măsurate de OpenRouter. O cerere eșuată este reîncercată la alt furnizor, iar cât timp memoria cache a promptului este încă validă la un furnizor, cererile rămân la acel furnizor.
+
+Comportamentul se schimbă din obiectul `provider` al cererii.
+
+- `order`, `only` și `ignore` aleg furnizorii, iar `sort` îi ordonează după preț (`"price"`), debit (`"throughput"`) sau latență (`"latency"`).
+- `data_collection: "deny"` exclude furnizorii care pot păstra datele.
+- `zdr: true` păstrează doar furnizorii care nu rețin deloc datele (_Zero Data Retention_).
+- `quantizations` și `max_price` limitează cuantizarea și prețul.
+
+Lista `models` adaugă **modele de rezervă** (_fallbacks_): dacă primul model dă o eroare, de exemplu context prea lung, limită de cereri atinsă sau furnizor indisponibil, cererea trece la următorul. Costul este cel al modelului care a răspuns efectiv.
+
+```json
+{
+  "models": ["~anthropic/claude-sonnet-latest", "moonshotai/kimi-k3"],
+  "provider": { "data_collection": "deny" },
+  "messages": [{ "role": "user", "content": "Ce teste eșuează în proiect?" }],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "run_tests",
+        "description": "Rulează testele proiectului și întoarce rezultatul.",
+        "parameters": { "type": "object", "properties": {}, "additionalProperties": false }
+      }
+    }
+  ]
+}
+```
+
+Corpul de mai sus se trimite cu `POST` la `https://openrouter.ai/api/v1/chat/completions`, cu antetul `Authorization: Bearer` urmat de cheia OpenRouter. Dacă cererea către modelul Anthropic eșuează, aceeași cerere, cu aceleași mesaje și aceleași instrumente, ajunge la Kimi K3.
+
+### Costuri, chei proprii și modele gratuite
+
+OpenRouter nu adaugă nimic peste prețul de inferență al furnizorilor. Taxa se plătește la cumpărarea creditelor: 5,5% în planul Standard și 8% în planul Business, în noiembrie 2026.
+
+Cu o **cheie proprie** (_bring your own key_, BYOK), cererile merg la furnizor pe contul nostru, iar furnizorul ne facturează direct. Primii 25.000 de dolari pe lună, la prețul de listă, nu au taxă OpenRouter. Peste această sumă, OpenRouter reține 5% din cât ar fi costat același model prin OpenRouter. Planul gratuit nu permite chei proprii. Dacă cheia proprie eșuează, OpenRouter trece implicit pe capacitatea comună, comportament care poate fi oprit.
+
+Modelele gratuite au sufixul `:free` și limite stricte: 20 de cereri pe minut și 50 de cereri pe zi, care cresc la 1.000 pe zi după ce contul a cumpărat cel puțin 10 credite. Un agent face câte un apel la model pentru fiecare pas, așa că 50 de cereri pe zi ajung doar pentru câteva sarcini mici. Pagina de prețuri anunța peste 25 de modele gratuite, dar API-ul lista pe 2 noiembrie 2026 doar 14, plus ruterul `openrouter/free`. Lista modelelor gratuite se schimbă des.
+
+Implicit, OpenRouter nu păstrează prompturile și răspunsurile. De la 27 octombrie 2026, tot traficul, inclusiv cel trimis doar la furnizori care nu rețin datele, este verificat automat pentru materiale de abuz sexual asupra copiilor, iar conținutul semnalat poate fi păstrat pentru analiză.
+
+### Câte modele are, de fapt
+
+Pagina de prețuri OpenRouter vorbește despre peste 600 de modele și peste 80 de furnizori. API-ul public întorcea pe 2 noiembrie 2026 alte cifre: 451 de modele, dintre care 387 acceptă instrumente, și 117 furnizori. Cifrele de marketing și cele din API diferă, iar lista se schimbă des. Pentru a număra din nou modelele, rulați:
+
+```bash
+# Numărul total de modele
+curl -s https://openrouter.ai/api/v1/models | jq '.data | length'
+
+# Modelele care acceptă apeluri de instrumente
+curl -s https://openrouter.ai/api/v1/models \
+  | jq '[.data[] | select((.supported_parameters // []) | index("tools"))] | length'
+```
+
+### Alternative
+
+Serviciile de mai jos au, toate, un API compatibil cu cel al OpenAI.
+
+- **Hugging Face Inference Providers**: un singur token Hugging Face pentru mai mulți furnizori, fără adaos la prețurile furnizorilor, cu sufixe ca `:fastest` sau `:cheapest` pentru alegerea furnizorului.
+- **Together AI, Fireworks AI și DeepInfra**: găzduiesc modele deschise.
+- **Groq și Cerebras**: rulează modele deschise pe cipuri proprii, construite pentru inferență.
+- **LiteLLM Proxy**: o poartă (_gateway_) instalată pe propriul server, cu o singură adresă pentru peste 100 de furnizori, chei virtuale, evidența cheltuielilor și modele de rezervă.
+- **Vercel AI Gateway și Cloudflare AI Gateway**: porți administrate de aceste companii, cu modele de rezervă, bugete sau memorie cache.
+
+## Modele rulate local
+
+Un model rulat local nu trimite codul sau datele nicăieri, nu costă nimic pe token și funcționează fără internet. Limita este memoria: pe un calculator personal încap modele cu zeci de miliarde de parametri, nu cu mii de miliarde, ca cele mai mari modele deschise din tabelul de mai sus.
+
+Laboratorul [Un model de limbaj local cu Transformers](/laboratoare/model-local-transformers/prezentare/) rulează un model direct din Python. Un harnașament are nevoie de altceva: un server care ține modelul încărcat în memorie și răspunde la cereri prin același tip de API ca un furnizor din cloud.
+
+### Programe pentru rularea locală
+
+| Program | Ce este | Adresa compatibilă cu API-ul OpenAI |
+| :--- | :--- | :--- |
+| [Ollama](https://ollama.com) | aplicație și server care descarcă și rulează modele cu o singură comandă (licență MIT) | `http://localhost:11434/v1` |
+| [LM Studio](https://lmstudio.ai) | aplicație desktop, cu cod închis, care rulează modele GGUF prin llama.cpp și, pe cipurile Apple Silicon, modele MLX | `http://localhost:1234/v1` |
+| [llama.cpp](https://github.com/ggml-org/llama.cpp) (`llama-server`) | motor de inferență în C/C++, pentru modele cuantizate în formatul GGUF (licență MIT) | `http://localhost:9931/v1`, din octombrie 2026 |
+| [vLLM](https://github.com/vllm-project/vllm) | server pentru plăcile grafice din centrele de date (licență Apache 2.0) | `http://localhost:8000/v1` |
+| [MLX LM](https://github.com/ml-explore/mlx-lm) (`mlx_lm.server`) | biblioteca Apple pentru cipurile Apple Silicon (licență MIT) | `http://localhost:8080/v1` |
+
+Câteva detalii fac diferența în practică.
+
+- **Ollama** oferă din ianuarie 2026 și un API compatibil, parțial, cu cel al Anthropic, pentru harnașamentele care așteaptă acest API. Comanda `ollama launch` configurează singură harnașamente de tipul OpenCode, Claude Code sau Codex, fără variabile de mediu sau fișiere de configurare. Modelele cu eticheta `:cloud` nu rulează local, ci pe serverele Ollama, iar variabila `OLLAMA_NO_CLOUD=1` le dezactivează.
+- **LM Studio** este gratuit și pentru folosirea la serviciu din iulie 2025 și oferă și un API compatibil cu cel al Anthropic.
+- **llama-server** și-a schimbat portul implicit din 8080 în 9931 pe 9 octombrie 2026. Multe documentații, inclusiv cea a OpenCode, folosesc încă portul 8080, așa că fie pornim serverul cu `--port 8080`, fie schimbăm adresa. Opțiunea `-hf` descarcă un model direct de pe Hugging Face.
+- **vLLM** acceptă apeluri de instrumente doar cu opțiunile `--enable-auto-tool-choice` și `--tool-call-parser <nume>`. Parserul depinde de familia de modele: `hermes`, `mistral`, `openai` pentru gpt-oss, `kimi_k2`, `glm45` și altele.
+- **MLX LM**: documentația spune că serverul nu este recomandat în producție, pentru că face doar verificări de securitate de bază.
+
+### Apelurile de instrumente pe un server local
+
+Un model scrie apelul de instrument în formatul învățat la antrenare, cu tokenurile speciale din șablonul de chat. Serverul trebuie să recunoască acest format și să îl transforme în câmpul `tool_calls` al răspunsului compatibil OpenAI. Fiecare program rezolvă problema altfel.
+
+- În biblioteca Ollama, modelele care pot face apeluri au eticheta `tools`. Eticheta spune doar că șablonul de chat acceptă instrumente, nu cât de bine le folosește modelul. O cerere cu instrumente către un model fără această etichetă eșuează cu mesajul „does not support tools”. Comanda `ollama show <model>` listează capabilitățile modelului.
+- LM Studio marchează cu o pictogramă în formă de ciocan modelele cu suport nativ. Pentru celelalte modele, LM Studio descrie instrumentele în promptul de sistem, iar documentația avertizează că modelele mici sau neantrenate pentru instrumente pot produce apeluri greșit formate.
+- `llama-server` folosește șablonul Jinja al modelului (opțiunea `--jinja`, activă implicit), cu rutine dedicate pentru familiile de modele cunoscute și una generică pentru restul.
+- vLLM are nevoie de parserul potrivit, ales la pornire.
+
+Simptomul tipic al unei probleme este un apel de instrument care apare ca text JSON în conversație, în loc să fie executat. Cauzele obișnuite sunt un model fără suport pentru instrumente în șablon sau un context prea mic.
+
+### Lungimea contextului
+
+Ollama alege lungimea implicită a contextului după memoria plăcii grafice: 4.096 de tokenuri sub 24 GiB, 32.768 între 24 și 48 GiB și 262.144 de la 48 GiB în sus, după documentația și codul din octombrie 2026. Pagina de întrebări frecvente a Ollama și documentațiile unor harnașamente pomenesc încă 4.096 sau chiar 2.048 de tokenuri. Valoarea reală apare în jurnalul serverului, în linia `vram-based default context`.
+
+Ollama recomandă cel puțin 64.000 de tokenuri pentru agenți și instrumente de programare, iar pagina Ollama despre OpenCode cere 64.000 sau mai mult. Când contextul este prea mic, mesajele vechi ies din context, iar apelurile de instrumente nu mai funcționează corect.
+
+API-ul compatibil OpenAI nu are niciun câmp pentru lungimea contextului, așa că valoarea se stabilește la server: din glisorul din setările aplicației Ollama sau cu variabila `OLLAMA_CONTEXT_LENGTH`, la pornirea serverului. Comanda `ollama ps` arată, în coloana CONTEXT, contextul alocat efectiv și, în coloana PROCESSOR, cât din model a încăput pe placa grafică.
+
+Un context mai mare cere mai multă memorie pentru [memoria cache pentru chei și valori](/modele-lingvistice/arhitectura-transformer/#memoria-cache-pentru-chei-și-valori-kv-cache). Variabila `OLLAMA_KV_CACHE_TYPE=q8_0`, cu Flash Attention activat, cuantizează această memorie cache pe 8 biți și o reduce aproximativ la jumătate.
+
+### Ce încape în memorie
+
+Memoria ocupată de un model este aproximativ numărul de parametri înmulțit cu numărul de octeți pe parametru (vezi tabelul din laboratorul despre [memorie și cuantizare](/laboratoare/model-local-transformers/memorie-si-dispozitive/#de-câtă-memorie-are-nevoie-un-model)), plus memoria cache a contextului. Modelele din biblioteca Ollama sunt cuantizate implicit pe aproximativ 4 biți, deci un model de 30 de miliarde de parametri ocupă în jur de 18–20 GB. Primele șase modele din tabelul de mai jos au eticheta `tools` în biblioteca Ollama.
+
+| Model (eticheta Ollama) | Arhitectură | Descărcare | Licență |
+| :--- | :--- | :--- | :--- |
+| `gpt-oss:20b` | MoE, 21 de miliarde de parametri, 3,6 miliarde activi | 14 GB | Apache 2.0 |
+| `devstral-small-2` | dens, 24 de miliarde | 15 GB | Apache 2.0 |
+| `gemma4:26b` | MoE, 26 de miliarde, 4 miliarde activi | 16 GB | Apache 2.0 |
+| `qwen3.6:27b` | dens, 27 de miliarde | 17–18 GB | Apache 2.0 |
+| `glm-4.7-flash` | MoE, 30 de miliarde, 3 miliarde activi | 19 GB | MIT |
+| `qwen3.6:35b` | MoE, 35 de miliarde, 3 miliarde activi | 23 GB | Apache 2.0 |
+| `qwen3-coder-next` | MoE, 80 de miliarde, 3 miliarde activi | 52 GB | Apache 2.0 |
+| `gpt-oss:120b` | MoE, 117 miliarde, 5,1 miliarde activi | 65 GB | Apache 2.0 |
+
+Pe o placă grafică cu 24 GB de memorie, modelele de până la aproximativ 19 GB lasă câțiva GB pentru context. `qwen3.6:35b` umple aproape toată memoria plăcii, așa că Ollama mută o parte din straturi pe procesor, iar generarea încetinește.
+
+Pe un calculator cu 64 GB de memorie unificată, folosită în comun de procesor și de placa grafică, încap primele șase modele, cu un context de 64.000 de tokenuri. `qwen3-coder-next`, cu 52 GB, lasă prea puțin loc pentru sistemul de operare, pentru celelalte programe și pentru memoria cache a contextului, iar `gpt-oss:120b` nu încape deloc.
+
+La generare contează mai ales viteza memoriei. Pentru fiecare token nou, modelul citește din memorie toți parametrii activi, așa că un model MoE cu 3 miliarde de parametri activi generează de câteva ori mai repede decât un model dens de 27 de miliarde, pe același calculator. Pentru un agent interactiv, modelele MoE de tipul `qwen3.6:35b` sau `glm-4.7-flash` sunt de aceea un compromis bun: încap cu un context mare și răspund repede. Scorurile de pe paginile acestor modele sunt raportate de producători, cu harnașamentele alese de producători, iar cuantizarea pe 4 biți poate scădea calitatea.
+
+<DeepDive title="Un plafon pentru viteza de generare">
+
+Notăm cu $B$ lățimea de bandă a memoriei, în GB/s, și cu $M$ numărul de GB citiți pentru fiecare token generat, adică aproximativ dimensiunea parametrilor activi după cuantizare. Numărul de tokenuri generate pe secundă, $v$, nu poate depăși raportul dintre cele două:
+
+$$
+v \le \frac{B}{M}
+$$
+
+Pentru o memorie cu $B = 273$ GB/s și un model dens de 27 de miliarde de parametri cuantizat pe 4 biți ($M \approx 17$ GB), plafonul este de aproximativ 16 tokenuri pe secundă. Un model MoE cu 3 miliarde de parametri activi citește în jur de 2 GB pentru fiecare token, deci plafonul urcă la peste 100 de tokenuri pe secundă. Este o estimare de sus, nu o măsurătoare: calculul propriu-zis, memoria cache a contextului și procesarea promptului mai adaugă timp.
+
+</DeepDive>
+
+### Exemplu: OpenCode cu un model din Ollama
+
+OpenCode este un harnașament open-source pentru terminal, care acceptă orice API compatibil cu cel al OpenAI. Pașii de mai jos îl leagă de `qwen3.6:35b`, rulat de Ollama, fără nicio cheie API.
+
+<Steps>
+
+1. Pentru a porni serverul Ollama cu un context de 65.536 de tokenuri, rulați:
+
+   ```bash
+   OLLAMA_CONTEXT_LENGTH=65536 ollama serve
+   ```
+
+   Dacă aplicația Ollama rulează deja, serverul este pornit, iar `ollama serve` ar eșua, pentru că portul 11434 este ocupat. Contextul se setează atunci din setările aplicației.
+
+2. Într-un alt terminal, descărcați modelul (aproximativ 23 GB):
+
+   ```bash
+   ollama pull qwen3.6:35b
+   ```
+
+3. Salvați configurația de mai jos în fișierul `opencode.json`, în directorul proiectului, sau în `~/.config/opencode/opencode.json`, pentru toate proiectele:
+
+   ```json
+   {
+     "$schema": "https://opencode.ai/config.json",
+     "model": "ollama/qwen3.6:35b",
+     "provider": {
+       "ollama": {
+         "npm": "@ai-sdk/openai-compatible",
+         "name": "Ollama (local)",
+         "options": { "baseURL": "http://localhost:11434/v1" },
+         "models": {
+           "qwen3.6:35b": {
+             "name": "Qwen3.6 35B-A3B (local)",
+             "limit": { "context": 65536, "output": 8192 }
+           }
+         }
+       }
+     }
+   }
+   ```
+
+4. Porniți OpenCode în directorul proiectului, cu comanda `opencode`, și dați-i o primă sarcină. Apoi, comanda `ollama ps` trebuie să arate 65536 în coloana CONTEXT și, ideal, „100% GPU” în coloana PROCESSOR.
+
+</Steps>
+
+În configurație, `npm` alege adaptorul pentru API-urile compatibile OpenAI, `baseURL` este adresa serverului local, iar `model` alege modelul implicit, sub forma `furnizor/model`. Câmpul `limit` îi spune lui OpenCode câte tokenuri acceptă modelul la intrare și câte poate scrie într-un răspuns.
+
+Comanda `ollama launch opencode --model qwen3.6:35b` înlocuiește pașii 3 și 4. Comanda pornește OpenCode cu o configurație temporară, fără să modifice `opencode.json`, și pune ca limită de context exact contextul încărcat de server.
+
+Ce face un harnașament cu un astfel de server, cerere cu cerere, se vede cel mai bine construind unul. Laboratorul [Un agent de la zero](/laboratoare/un-agent-de-la-zero/prezentare/) scrie pas cu pas un agent mic.
+
+## Bibliografie
+
+- Ai2 (2025). [Olmo 3.1 32B Think](https://huggingface.co/allenai/Olmo-3.1-32B-Think). Pagina modelului, Hugging Face.
+- Anthropic (2026). [Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents). Blogul de inginerie Anthropic.
+- Anthropic (2026). [Introducing Claude Opus 5.5](https://www.anthropic.com/news/claude-opus-5-5). Blogul Anthropic.
+- Anthropic (f.a.). [Models overview](https://platform.claude.com/docs/en/about-claude/models/overview). Documentația Claude.
+- Artificial Analysis (f.a.). [Terminal-Bench 4.0 Benchmark](https://artificialanalysis.ai/evaluations/terminalbench-v4-0). Artificial Analysis.
+- Barres, V. et al. (2025). [τ²-Bench: Evaluating Conversational Agents in a Dual-Control Environment](https://arxiv.org/abs/2506.07982). Preprint arXiv:2506.07982.
+- Chen, M. et al. (2021). [Evaluating Large Language Models Trained on Code](https://arxiv.org/abs/2107.03374). Preprint arXiv:2107.03374.
+- Datacurve (2026). [DeepSWE v1.1: A revision of DeepSWE v1](https://deepswe.datacurve.ai/blog/deepswe-v1-1). Blogul Datacurve.
+- DeepSeek-AI (2026). [DeepSeek-V4-Pro](https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro). Pagina modelului, Hugging Face.
+- DeepSeek-AI (2026). [DeepSeek-V4.1-Flash-1017](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017). Pagina modelului, Hugging Face.
+- Deng, X. et al. (2025). [SWE-Bench Pro: Can AI Agents Solve Long-Horizon Software Engineering Tasks?](https://arxiv.org/abs/2509.16941) Preprint arXiv:2509.16941.
+- ggml-org (f.a.). [llama.cpp HTTP Server](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md). Cod sursă, GitHub.
+- Google (2026). [Gemini 4 Argon is now available for everyone](https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-argon/). Blogul Google.
+- Google (2026). [Gemma 4 31B IT](https://huggingface.co/google/gemma-4-31B-it). Pagina modelului, Hugging Face.
+- Google DeepMind (f.a.). [Gemini](https://deepmind.google/models/gemini/). Google DeepMind.
+- Hugging Face (f.a.). [Inference Providers](https://huggingface.co/docs/inference-providers/index). Documentația Hugging Face.
+- Jimenez, C. E. et al. (2024). [SWE-bench: Can Language Models Resolve Real-World GitHub Issues?](https://arxiv.org/abs/2310.06770) _ICLR 2024_.
+- Liu, N. F. et al. (2024). [Lost in the Middle: How Language Models Use Long Contexts](https://arxiv.org/abs/2307.03172). _Transactions of the Association for Computational Linguistics_.
+- LM Studio (2025). [LM Studio is free for use at work](https://lmstudio.ai/blog/free-for-work). Blogul LM Studio.
+- LM Studio (f.a.). [Tool Use](https://lmstudio.ai/docs/developer/openai-compat/tools). Documentația LM Studio.
+- Meta (2026). [Muse Glimmer 30B](https://huggingface.co/meta-models/Muse-Glimmer-30B). Pagina modelului, Hugging Face.
+- Meta (2026). [Muse Spark Open 816B-A42B](https://huggingface.co/meta-models/Muse-Spark-Open-816B-A42B). Pagina modelului, Hugging Face.
+- MiniMax (2026). [MiniMax-M3](https://huggingface.co/MiniMaxAI/MiniMax-M3). Pagina modelului, Hugging Face.
+- Mistral AI (2025). [Devstral 2 123B Instruct 2512](https://huggingface.co/mistralai/Devstral-2-123B-Instruct-2512). Pagina modelului, Hugging Face.
+- Mistral AI (2025). [Devstral Small 2 24B Instruct 2512](https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512). Pagina modelului, Hugging Face.
+- Mistral AI (2026). [Mistral Large 4 1T-A52B](https://huggingface.co/mistralai/Mistral-Large-4-1T-A52B). Pagina modelului, Hugging Face.
+- ml-explore (f.a.). [MLX LM server](https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/SERVER.md). Cod sursă, GitHub.
+- Moonshot AI (2026). [Kimi K3](https://huggingface.co/moonshotai/Kimi-K3). Pagina modelului, Hugging Face.
+- Ollama (2026). [Claude Code with Anthropic API compatibility](https://ollama.com/blog/claude). Blogul Ollama.
+- Ollama (2026). [ollama launch](https://ollama.com/blog/launch). Blogul Ollama.
+- Ollama (f.a.). [Context length](https://docs.ollama.com/context-length). Documentația Ollama.
+- Ollama (f.a.). [Models with tool support](https://ollama.com/search?c=tools). Biblioteca Ollama.
+- Ollama (f.a.). [OpenAI compatibility](https://docs.ollama.com/api/openai-compatibility). Documentația Ollama.
+- Ollama (f.a.). [OpenCode](https://docs.ollama.com/integrations/opencode). Documentația Ollama.
+- OpenAI (2024). [Introducing SWE-bench Verified](https://openai.com/index/introducing-swe-bench-verified/). Blogul OpenAI.
+- OpenAI (2025). [gpt-oss-120b & gpt-oss-20b Model Card](https://arxiv.org/abs/2508.10925). Preprint arXiv:2508.10925.
+- OpenAI (2026). [Why we no longer evaluate SWE-bench Verified](https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/). Blogul OpenAI.
+- OpenAI (f.a.). [Models](https://developers.openai.com/api/docs/models). Documentația API OpenAI.
+- OpenCode (f.a.). [Providers](https://opencode.ai/docs/providers/). Documentația OpenCode.
+- OpenRouter (f.a.). [API Credit & Rate Limits](https://openrouter.ai/docs/api/reference/limits). Documentația OpenRouter.
+- OpenRouter (f.a.). [Model Fallbacks](https://openrouter.ai/docs/guides/routing/model-fallbacks). Documentația OpenRouter.
+- OpenRouter (f.a.). [Pricing](https://openrouter.ai/pricing). OpenRouter.
+- OpenRouter (f.a.). [Provider Routing](https://openrouter.ai/docs/features/provider-routing). Documentația OpenRouter.
+- OpenRouter (f.a.). [Quickstart](https://openrouter.ai/docs/quickstart). Documentația OpenRouter.
+- Open Source Initiative (2024). [The Open Source AI Definition 1.0](https://opensource.org/ai/open-source-ai-definition). Open Source Initiative.
+- Qwen Team (2026). [Qwen3.6-35B-A3B](https://huggingface.co/Qwen/Qwen3.6-35B-A3B). Pagina modelului, Hugging Face.
+- Qwen Team (2026). [Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B). Pagina modelului, Hugging Face.
+- Qwen Team (2026). [Qwen3.8-2.4T-A95B](https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B). Pagina modelului, Hugging Face.
+- Terminal-Bench (2026). [Terminal-Bench 4.0](https://www.tbench.ai/news/terminal-bench-4-0). tbench.ai.
+- vLLM (f.a.). [Tool Calling](https://docs.vllm.ai/en/latest/features/tool_calling/). Documentația vLLM.
+- Yao, S. et al. (2024). [τ-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains](https://arxiv.org/abs/2406.12045). Preprint arXiv:2406.12045.
+- Z.ai (2026). [GLM-5.3](https://huggingface.co/zai-org/GLM-5.3). Pagina modelului, Hugging Face.
+- Z.ai (2026). [GLM-5.3-Flash](https://huggingface.co/zai-org/GLM-5.3-Flash). Pagina modelului, Hugging Face.

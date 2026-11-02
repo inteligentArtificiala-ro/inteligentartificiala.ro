@@ -1,8 +1,8 @@
 ---
 title: Memoria agenților
-description: Cum ține minte un agent ce a făcut și ce a aflat, de la rezumarea și compactarea contextului până la depozite cheie-valoare, baze de date vectoriale și memorie construită în arhitectura modelului.
+description: Cum ține minte un agent ce a făcut și ce a aflat, de la fișierele Markdown, compactare și subagenți la depozite cheie-valoare, baze vectoriale, sisteme din cercetare și riscurile memoriei.
 sidebar:
-  order: 6
+  order: 9
   label: Memoria
 level: intermediar
 tags:
@@ -15,7 +15,7 @@ import DeepDive from '@components/DeepDive.astro';
 import AgentMemoryDiagram from '@components/diagrams/AgentMemoryDiagram.astro';
 import { Steps } from '@astrojs/starlight/components';
 
-Un [model de limbaj](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) nu ține minte nimic de la o cerere la alta. Ponderile modelului nu se schimbă în timpul folosirii, iar tot ce „știe” modelul despre conversația curentă vine din textul primit în [fereastra de context](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#limitări). Când un asistent pare să-și amintească numele nostru sau o decizie luată acum o oră, de fapt [harnașamentul](/comportament-agentic/harnasamentul/) a pus din nou acea informație în prompt.
+Un [model de limbaj](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) nu ține minte nimic de la o cerere la alta. Ponderile modelului nu se schimbă în timpul folosirii, iar tot ce „știe” modelul despre conversația curentă vine din textul primit în [fereastra de context](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#limitări). Când un asistent pare să-și amintească numele nostru sau o decizie luată acum o oră, de fapt [harnașamentul](/comportament-agentic/harnasamentul/) a pus din nou acea informație în prompt. Documentația Claude Code o spune direct: fiecare sesiune începe cu o fereastră de context goală.
 
 **Memoria unui agent** (_agent memory_) este deci, înainte de toate, o problemă de inginerie a harnașamentului. Trebuie să decidem ce păstrăm, unde păstrăm, cum regăsim informația și când o aducem înapoi în context. Răspunsurile depind de cât timp trebuie să trăiască informația și de cât de exactă trebuie să rămână.
 
@@ -48,11 +48,21 @@ Toate variantele din tabel există, dar cele mai multe harnașamente folosite az
 
 Cea mai simplă memorie este chiar fereastra de context. Modelul vede tot ce se află acolo, cu toate detaliile, la fiecare pas. Limitele sunt cunoscute. Fereastra are un număr maxim de tokenuri, fiecare token se plătește la fiecare apel, iar modelele folosesc mai slab informația îngropată la mijlocul unui context lung decât pe cea de la început sau de la sfârșit, efect descris de [Liu și colaboratorii](https://arxiv.org/abs/2307.03172) în lucrarea _Lost in the Middle_ (2023).
 
+Nici ferestrele de context foarte mari nu fac memoria inutilă. [Chroma](https://www.trychroma.com/research/context-rot) a testat 18 modele în iulie 2025 și a constatat că performanța scade constant pe măsură ce intrarea se lungește, iar textul care distrage atenția agravează scăderea. Pe setul LongMemEval, prompturile scurte, de aproximativ 300 de tokenuri, cu doar informația relevantă, au dat rezultate mai bune decât prompturile complete, de aproximativ 113.000 de tokenuri. Fenomenul a primit numele de _context rot_, degradarea contextului.
+
 O bună parte din gestionarea memoriei înseamnă, așadar, să alegem ce intră în context și în ce formă.
+
+### Ingineria contextului (context engineering)
+
+În iunie 2025, termenul **ingineria contextului** (_context engineering_) a început să înlocuiască _ingineria prompturilor_ în discuțiile despre agenți. Tobi Lütke, directorul Shopify, a descris-o ca arta de a oferi tot contextul de care modelul are nevoie ca sarcina să poată fi rezolvată, iar Andrej Karpathy ca „arta și știința delicată” de a umple fereastra de context cu exact informațiile potrivite pentru pasul următor. [Simon Willison](https://simonwillison.net/2025/Jun/27/context-engineering/) a strâns ambele formulări.
+
+[Anthropic](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) (septembrie 2025) tratează contextul ca pe o resursă finită, cu randament descrescător: fiecare token în plus consumă din „bugetul de atenție” al modelului. Tehnicile recomandate sunt cele de pe această pagină: compactarea, notițele structurate păstrate în afara contextului, subagenții care întorc rezumate de 1.000–2.000 de tokenuri și aducerea informației exact când este nevoie, prin căi de fișiere sau legături. [LangChain](https://www.langchain.com/blog/context-engineering-for-agents) grupează aceleași tehnici în patru verbe: a scrie în afara contextului, a selecta, a comprima și a izola.
+
+Echipa [Manus](https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus) (Yichao Ji, iulie 2025) adaugă câteva lecții practice. Rata de reutilizare a [memoriei cache pentru chei și valori](/modele-lingvistice/arhitectura-transformer/#memoria-cache-pentru-chei-și-valori-kv-cache) este, în experiența echipei, cea mai importantă metrică a unui agent în producție. Sistemul de fișiere este „contextul suprem”. Iar agentul își rescrie obiectivele într-un fișier `todo.md`, ca să le aibă mereu la sfârșitul contextului.
 
 ### Promptul ca memorie
 
-Privită așa, **ingineria prompturilor** (_prompt engineering_) este o formă de memorie scrisă de mână. Promptul de sistem reține identitatea agentului, regulile pe care trebuie să le respecte și convențiile proiectului. Multe harnașamente încarcă automat, la începutul fiecărei sesiuni, un fișier de instrucțiuni din directorul proiectului, de exemplu `AGENTS.md` sau `CLAUDE.md`. Agentul „își amintește” ce scrie acolo în fiecare sesiune, fără niciun mecanism de regăsire.
+Privită așa, **ingineria prompturilor** (_prompt engineering_) este o formă de memorie scrisă de mână. Promptul de sistem reține identitatea agentului, regulile pe care trebuie să le respecte și convențiile proiectului. Multe harnașamente încarcă automat, la începutul fiecărei sesiuni, un fișier de instrucțiuni din directorul proiectului, de exemplu `AGENTS.md` sau `CLAUDE.md` (vezi [Fișierele de instrucțiuni](#fișierele-de-instrucțiuni)). Agentul „își amintește” ce scrie acolo în fiecare sesiune, fără niciun mecanism de regăsire.
 
 Locul din prompt contează și din alt motiv. Furnizorii de modele păstrează în cache începutul promptului care se repetă de la un apel la altul (_prompt caching_). Un prompt de sistem stabil, pus la început, costă mai puțin la apelurile următoare, așa că informațiile care se schimbă des sunt puse mai spre final.
 
@@ -64,11 +74,23 @@ Când conversația se lungește, mesajele vechi pot fi înlocuite de un rezumat.
 
 [Compactarea](/comportament-agentic/orchestrare-si-sisteme-multi-agent/#compactarea-contextului-context-compaction) este rezumarea aplicată întregii sesiuni de lucru, atunci când contextul se apropie de limită. Harnașamentul îi cere modelului un rezumat structurat: obiectivul, deciziile luate, fișierele modificate, ce a eșuat și ce a rămas de făcut. Apoi pornește un context nou, care conține promptul de sistem, rezumatul și ultimele mesaje.
 
-O variantă mai ieftină este **curățarea rezultatelor de instrumente** (_tool result clearing_). Ieșirile lungi ale comenzilor deja procesate, cum ar fi jurnalele de compilare sau conținutul fișierelor citite, sunt înlocuite cu o mențiune scurtă, de exemplu _„[rezultat eliminat, 4.200 de linii]”_. Dacă agentul are din nou nevoie de acele ieșiri, rulează comanda încă o dată.
+Harnașamentele de azi fac compactarea în moduri ușor diferite.
+
+- **Claude Code** compactează automat când contextul se apropie de limită și permite compactarea la cerere, cu indicații despre ce să păstreze. După compactare, `CLAUDE.md` din rădăcina proiectului și memoria automată sunt citite din nou de pe disc, dar instrucțiunile date doar în conversație se pot pierde ([documentația](https://code.claude.com/docs/en/context-window)).
+- **OpenClaw**, înainte de compactare, face un pas pe care utilizatorul nu îl vede, în care îi cere agentului să noteze în jurnalul zilei ce este important ([documentația](https://docs.openclaw.ai/concepts/memory)).
+- **API-ul OpenAI** oferă compactare pe server, dar elementul compactat este criptat și, potrivit [documentației](https://developers.openai.com/api/docs/guides/compaction), opac și negândit pentru a fi citit de oameni. Rezumatele din Claude Code și OpenClaw sunt, în schimb, text pe care îl putem citi.
+
+O variantă mai ieftină este **curățarea rezultatelor de instrumente** (_tool result clearing_). Ieșirile lungi ale comenzilor deja procesate, cum ar fi jurnalele de compilare sau conținutul fișierelor citite, sunt înlocuite cu o mențiune scurtă, de exemplu _„[rezultat eliminat, 4.200 de linii]”_. Dacă agentul are din nou nevoie de acele ieșiri, rulează comanda încă o dată. [Anthropic](https://www.anthropic.com/news/context-management) a raportat în septembrie 2025, pe o evaluare internă de căutare făcută de agenți, o îmbunătățire de 29% numai din curățarea contextului și de 39% când curățarea a fost combinată cu un instrument de memorie bazat pe fișiere.
 
 :::caution[Compactarea pierde informație]
 Orice rezumat este o comprimare cu pierderi. Un detaliu care părea neimportant în momentul compactării, de exemplu o restricție menționată în treacăt de utilizator, poate dispărea, iar agentul nu știe că l-a pierdut. De aceea, harnașamentele bune îi cer modelului să păstreze explicit cerințele utilizatorului și deciziile, iar ce trebuie să supraviețuiască sigur este scris în afara contextului, într-un fișier sau într-o bază de date.
 :::
+
+### Subagenții, ca izolare a contextului
+
+O altă cale de a păstra contextul curat este să nu lăsăm munca de detaliu să intre deloc în contextul principal. Un **subagent** primește propria fereastră de context, cu prompt de sistem, instrumente și permisiuni proprii, și îi întoarce agentului principal doar un rezumat ([documentația Claude Code](https://code.claude.com/docs/en/sub-agents)). Fișierele citite, căutările eșuate și jurnalele lungi rămân în contextul subagentului.
+
+[Anthropic](https://www.anthropic.com/engineering/multi-agent-research-system) a descris în iunie 2025 un sistem de cercetare în care un agent principal (Claude Opus 4) coordona subagenți (Claude Sonnet 4) care lucrau în paralel, fiecare în propriul context. Pe o evaluare internă, sistemul a fost cu 90,2% mai bun decât un singur agent Opus 4. Prețul se plătește în tokenuri: potrivit aceleiași analize, un agent folosește de aproximativ 4 ori mai multe tokenuri decât o conversație obișnuită, iar un sistem cu mai mulți agenți de aproximativ 15 ori mai multe. Pagina [Orchestrare și sisteme multi-agent](/comportament-agentic/orchestrare-si-sisteme-multi-agent/) descrie împărțirea sarcinilor între agenți.
 
 ## Depozitul cheie-valoare (key-value store)
 
@@ -91,7 +113,7 @@ Cheile sunt organizate de obicei pe **spații de nume** (_namespaces_): pe utili
 Avantajele vin tocmai din faptul că este o bază de date obișnuită.
 
 - **Exactitate**: valoarea citită este exact cea scrisă, fără aproximări.
-- **Control**: o informație greșită sau învechită se modifică ori se șterge printr-o singură operație. Contează și pentru confidențialitate, de exemplu când un utilizator cere ștergerea datelor lui.
+- **Control**: o informație greșită sau învechită se modifică ori se șterge printr-o singură operație. Contează și pentru confidențialitate, de exemplu când un utilizator cere ștergerea datelor sale.
 - **Stare structurată**: se potrivește pentru starea unei sarcini lungi, cu pașii terminați, identificatorii resurselor create și contoare.
 
 Limita este că agentul trebuie să știe ce cheie caută. Întrebarea _„ce a spus utilizatorul luna trecută despre buget?”_ nu are o cheie evidentă. Pentru astfel de întrebări este nevoie de căutare după sens.
@@ -118,6 +140,18 @@ De aici apar câteva probleme pe care RAG-ul clasic le are mai rar.
 - **Contradicțiile.** Dacă utilizatorul s-a mutat din Cluj în București, ambele fapte pot ajunge în baza de date, iar căutarea după asemănare le găsește pe amândouă. Sistemul trebuie să știe care este valabil acum.
 - **Duplicatele.** Același fapt, salvat de zece ori în formulări puțin diferite, ocupă primele locuri din rezultate și împinge afară informațiile utile.
 
+În practică, căutarea după sens se combină des cu căutarea după cuvinte. OpenClaw, de exemplu, folosește în motorul de memorie implicit o bază SQLite cu căutare text BM25 și cu vectori, iar rezultatele celor două căutări sunt îmbinate, cu o penalizare pentru amintirile vechi ([documentația](https://docs.openclaw.ai/concepts/memory-builtin)).
+
+## Sisteme de memorie din cercetare
+
+Mai multe sisteme de cercetare și produse open-source au propus feluri diferite de a organiza memoria externă.
+
+- **Generative Agents** (Park și colaboratorii, 2023): 25 de agenți într-un oraș simulat, fiecare cu un flux de amintiri în limbaj natural, regăsite după scorul de mai sus. Periodic, agenții scriu reflecții care rezumă amintirile recente în concluzii mai generale.
+- **MemGPT** (Packer și colaboratorii, 2023), continuat de platforma **Letta**: memoria gestionată ca de un sistem de operare. Letta păstrează în context [blocuri de memorie](https://docs.letta.com/guides/agents/memory) editabile, de exemplu despre utilizator și despre persona agentului, care pot fi împărțite între agenți. Varianta mai nouă, Letta Code, ține [memoria ca fișiere Markdown](https://docs.letta.com/letta-code/memfs) într-un repozitoriu git.
+- **A-MEM** ([Xu și colaboratorii](https://arxiv.org/abs/2502.12110), 2025): notițe în stilul Zettelkasten, cu cuvinte-cheie, etichete și context, legate automat de notițele înrudite. O amintire nouă poate actualiza amintirile vechi, proces numit de autori „evoluția memoriei”.
+- **Zep și Graphiti** ([Rasmussen și colaboratorii](https://arxiv.org/abs/2501.13956), 2025): un **graf de cunoștințe temporal** (_temporal knowledge graph_), în care fiecare fapt are o perioadă de valabilitate. Un fapt învechit, cum ar fi orașul din exemplul de mai sus, poate fi marcat ca nevalabil de la o anumită dată, fără să dispară din istoric. Pe LongMemEval, autorii raportează o acuratețe cu până la 18,5% mai mare și o latență cu până la 90% mai mică decât variantele de referință.
+- **Mem0** ([Chhikara și colaboratorii](https://arxiv.org/abs/2504.19413), 2025): extragerea faptelor-cheie, descrisă [mai jos](#extragerea-faptelor-cheie), cu o variantă opțională care păstrează și un graf. Autorii raportau, pe LoCoMo, un scor cu 26% mai mare decât memoria OpenAI, după evaluarea unui model folosit ca arbitru.
+
 ## Memoria arhitecturală
 
 Până aici, memoria a stat în afara modelului, iar harnașamentul a adus-o în context sub formă de text. O altă familie de abordări pune memoria chiar în arhitectura rețelei.
@@ -139,6 +173,35 @@ Dacă ne uităm la asistenții conversaționali și la agenții de programare fo
 - **Notițe scrise de agent**: un director cu fișiere Markdown în care agentul notează ce a aflat (comenzile de build, capcanele proiectului, preferințele utilizatorului) și pe care le citește în sesiunile următoare.
 - **Fapte-cheie despre utilizator**: asistenții conversaționali de tipul ChatGPT, Gemini sau Claude au funcții de memorie care păstrează informații între conversații, de exemplu _„lucrează ca inginer de date”_ sau _„preferă exemple în Python”_. Implementarea exactă a acestor funcții nu este publică, dar principiul general este cel descris mai jos.
 - **Planuri și jurnale de progres**: pentru sarcinile lungi, agentul ține un fișier cu planul și cu pașii terminați, ca să poată relua lucrul după o compactare sau într-o sesiune nouă.
+
+### Fișierele de instrucțiuni
+
+Aproape fiecare harnașament de programare are un fișier de instrucțiuni, iar diferențele țin mai ales de cum sunt găsite și combinate fișierele. Tabelul descrie situația din noiembrie 2026.
+
+| Harnașament | Fișiere | Cum se încarcă |
+| :--- | :--- | :--- |
+| [Claude Code](https://code.claude.com/docs/en/memory) | `CLAUDE.md` la nivel de organizație, de utilizator (`~/.claude/CLAUDE.md`) și de proiect, `CLAUDE.local.md` (personal, nepus în git), reguli în `.claude/rules/` | Toate nivelurile se adaugă unele după altele, nu se înlocuiesc. Fișierele din directorul curent și din directoarele părinte se încarcă la pornire, cele din subdirectoare când agentul lucrează acolo. Importurile cu `@cale` merg cel mult patru niveluri. |
+| [Codex](https://learn.chatgpt.com/docs/agent-configuration/agents-md) | `AGENTS.md` global (în `~/.codex/`) și `AGENTS.md` de la rădăcina repozitoriului până la directorul curent | Cel mult un fișier pe director. Fișierele mai apropiate de directorul curent au prioritate, iar totalul este limitat implicit la 32 KiB. |
+| [Gemini CLI](https://geminicli.com/docs/cli/gemini-md/) | `GEMINI.md` global, din spațiul de lucru și din directoarele părinte, plus fișierele găsite când un instrument ajunge într-un director nou | Toate se adaugă unele după altele și se trimit cu fiecare prompt. Numele fișierului se poate schimba, de exemplu în `AGENTS.md`. |
+| [Cursor](https://cursor.com/docs/context/rules) | Reguli în `.cursor/rules/` (fișiere `.mdc`), reguli ale utilizatorului și ale echipei, `AGENTS.md` | Fiecare regulă se aplică mereu, când agentul decide după descrierea regulii, doar pentru anumite fișiere sau doar la cerere. |
+| [GitHub Copilot](https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions) | `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, `AGENTS.md` | Fișierele din `instructions/` se aplică doar căilor date în câmpul `applyTo`. Dintre fișierele `AGENTS.md`, contează cel mai apropiat. |
+
+[`AGENTS.md`](https://agents.md/) a apărut în august 2025, dintr-o colaborare între OpenAI Codex, Amp, Google Jules, Cursor și Factory. Este un fișier Markdown obișnuit, fără câmpuri obligatorii, descris ca un „README pentru agenți”. Din 9 decembrie 2025, formatul este administrat de [Agentic AI Foundation](https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation), parte a Linux Foundation, alături de MCP. Site-ul formatului afirmă că peste 60.000 de proiecte open-source îl folosesc, o cifră declarată de proiect. Claude Code citește direct `AGENTS.md` din versiunea 2.1.277 (septembrie 2026), dar implicit doar dacă nu există un `CLAUDE.md` în directorul curent sau mai sus.
+
+Documentația Claude Code recomandă sub 200 de rânduri pentru fiecare `CLAUDE.md` și avertizează că, la instrucțiuni contradictorii, modelul poate alege la întâmplare una dintre instrucțiuni. Tot acolo scrie că aceste fișiere sunt tratate drept context, nu drept configurație impusă. O acțiune care trebuie blocată sigur se blochează din harnașament, nu din `CLAUDE.md`.
+
+### Memoria scrisă de agent
+
+Din 2025, tot mai multe harnașamente îl lasă pe agent să-și scrie singur notițele, tot ca fișiere Markdown.
+
+- **Claude Code** are din versiunea 2.1.59 (februarie 2026) o **memorie automată**: un director separat pentru fiecare repozitoriu, cu un fișier index `MEMORY.md` (câte un rând pentru fiecare amintire) și fișiere pe teme. La fiecare sesiune se încarcă primele 200 de rânduri sau 25 KB din `MEMORY.md`, iar fișierele pe teme sunt citite doar la nevoie. Memoria stă pe calculatorul utilizatorului și poate fi oprită. Subagenții nu primesc memoria automată a agentului principal, dar pot avea una proprie.
+- **Codex** are o [funcție de memorie](https://learn.chatgpt.com/docs/customization/memories) oprită implicit. Când este pornită, un proces în fundal transformă sesiunile mai vechi în fișiere Markdown de memorie și elimină secretele din câmpurile generate.
+- **Gemini CLI**, potrivit [documentației din mai 2026](https://geminicli.com/docs/tools/memory), păstrează faptele durabile editând direct fișiere Markdown de memorie: `GEMINI.md` al proiectului, un director privat pentru proiect sau fișierul global.
+- **OpenClaw**, un asistent personal open-source (vezi [Asistenți personali](/comportament-agentic/asistenti-personali/)), formulează principiul cel mai clar: modelul își amintește doar ce este salvat pe disc, iar starea ascunsă nu există. `MEMORY.md` păstrează fapte și decizii durabile („nu o transcriere”), `memory/AAAA-LL-ZZ.md` este jurnalul fiecărei zile, iar `USER.md` descrie utilizatorul. Instrumentele `memory_search` și `memory_get` caută și citesc în aceste fișiere. Un proces de consolidare în fundal mută în `MEMORY.md` notițele scurte folosite des.
+- **GitHub Copilot Memory** păstrează fapte despre repozitoriu, cu trimiteri la cod verificate față de ramura curentă, plus preferințele utilizatorului. Potrivit [documentației actuale](https://docs.github.com/en/copilot/concepts/agents/copilot-memory), faptele expiră implicit după 90 de zile.
+- **API-ul Claude** oferă din septembrie 2025 un [instrument de memorie](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool) care lucrează tot cu fișiere: modelul cere operații precum citirea, crearea, înlocuirea de text sau ștergerea într-un director `/memories`, iar codul dezvoltatorului le execută pe stocarea proprie.
+
+Asistenții conversaționali au adăugat memoria pe aceeași perioadă. Claude are memorie între conversații din [septembrie 2025](https://claude.com/blog/memory) pentru planurile Team și Enterprise și din octombrie 2025 pentru Pro și Max, cu o memorie separată pentru fiecare proiect și un mod incognito care nu salvează nimic. ChatGPT folosește, pe lângă memoriile salvate explicit, informații deduse din conversațiile anterioare. [Simon Willison](https://simonwillison.net/2025/May/21/chatgpt-new-memory/) a criticat această memorie implicită în mai 2025, după ce un detaliu personal fără legătură cu cererea a apărut într-o imagine generată: utilizatorul nu mai controlează exact ce context primește modelul.
 
 Un fișier de memorie al unui agent de programare poate arăta, de exemplu, așa.
 
@@ -175,22 +238,103 @@ Observăm că, și atunci când la pasul 2 se folosesc vectori, rezultatul final
 - **Oamenii o pot citi și corecta.** Un fișier Markdown poate fi deschis, editat, șters sau pus în git, alături de cod. O greșeală din memorie se repară în câteva secunde.
 - **Comportamentul este previzibil.** Ce este scris în fișier ajunge în context de fiecare dată. La căutarea vectorială, o amintire importantă poate rata primele $k$ rezultate.
 - **De obicei, este suficient.** Pentru un proiect sau un utilizator, faptele cu adevărat utile încap adesea în câteva sute sau câteva mii de tokenuri, care intră ușor într-o fereastră de context modernă.
+- **Rezultatele nu sunt mai slabe.** Pe LoCoMo, un agent care folosea doar fișiere și căutare text a obținut un scor mai mare decât cel raportat de un sistem specializat (vezi [Cum se măsoară memoria](#cum-se-măsoară-memoria)).
 
 :::caution[Limitele memoriei text]
 - **Memoria crește.** Ocupă context la fiecare apel și are nevoie de curățare periodică, la fel ca orice documentație.
 - **Faptele extrase automat pot fi greșite.** Un fapt înțeles greșit, învechit sau scos din context este tratat apoi de model ca adevărat, în toate sesiunile.
-- **Otrăvirea memoriei** (_memory poisoning_). Un text malițios citit de agent, de exemplu o pagină web sau un comentariu dintr-un fișier, îl poate convinge să salveze o „regulă” care îi influențează toate sesiunile viitoare. Memoria scrisă de agent trebuie tratată ca date, nu ca instrucțiuni de încredere, iar modificările memoriei trebuie să poată fi verificate de un om. Pagina [Provocări și bune practici](/comportament-agentic/provocari-si-bune-practici/) discută mai pe larg securitatea agenților.
+- **Otrăvirea memoriei** (_memory poisoning_). Un text malițios citit de agent, de exemplu o pagină web sau un comentariu dintr-un fișier, îl poate convinge să salveze o „regulă” care îi influențează toate sesiunile viitoare. Secțiunea [Memoria ca suprafață de atac](#memoria-ca-suprafață-de-atac) descrie cazuri reale și apărări.
 :::
+
+## Cum se măsoară memoria
+
+Câteva **seturi de evaluare** (_benchmarks_) au devenit referințe pentru memoria agenților.
+
+- **LoCoMo** ([Maharana și colaboratorii](https://arxiv.org/abs/2402.17753), 2024): conversații foarte lungi, purtate în mai multe sesiuni, cu întrebări care cer un singur fapt, mai multe fapte legate, raționament în timp, bun-simț sau refuzul unei întrebări înșelătoare. Dimensiunea diferă între versiuni. Rezumatul de pe arXiv vorbește de 300 de replici și 9.000 de tokenuri în medie, pe până la 35 de sesiuni, iar versiunea publicată la ACL de 600 de replici și 16.000 de tokenuri, pe până la 32 de sesiuni.
+- **LongMemEval** ([Wu și colaboratorii](https://arxiv.org/abs/2410.10813), 2025): 500 de întrebări despre cinci capacități: extragerea informației, raționamentul pe mai multe sesiuni, raționamentul temporal, actualizarea cunoștințelor și abținerea atunci când răspunsul nu există. Asistenții comerciali și modelele cu context lung testate de autori au avut o scădere de 30% a acurateței.
+- **MemoryAgentBench** ([Hu, Wang și McAuley](https://arxiv.org/abs/2507.05257), 2025) adaugă învățarea în timpul testului și uitarea selectivă. Concluzia autorilor: metodele actuale nu stăpânesc toate cele patru capacități testate, iar uitarea și rezolvarea conflictelor sunt cele mai slabe.
+- **BEAM** ([Tavakoli și colaboratorii](https://arxiv.org/abs/2510.27246), 2025): 100 de conversații și 2.000 de întrebări, cu conversații de la 100.000 la 10 milioane de tokenuri. Chiar și modelele cu context de un milion de tokenuri au dificultăți.
+
+### Cifrele sunt contestate
+
+Rezultatele pentru sistemele de memorie vin adesea chiar de la firmele care le vând, iar scorurile depind mult de configurare.
+
+- Lucrarea Mem0 (aprilie 2025) îi dădea lui Zep 65,99% pe LoCoMo. [Zep a răspuns](https://www.getzep.com/blog/lies-damn-lies-statistics-is-mem0-really-sota-in-agent-memory/) în mai 2025 că Mem0 configurase greșit sistemul Zep și a raportat, după corectare, 75,14%. Zep a mai argumentat că LoCoMo este prea scurt: conversațiile de 16.000–26.000 de tokenuri încap întregi în context, iar varianta care pune toată conversația în context a obținut aproximativ 73%, peste rezultatul de aproximativ 68% al Mem0.
+- [Letta](https://www.letta.com/blog/benchmarking-ai-agent-memory) (august 2025) a rulat pe LoCoMo un agent cu gpt-4o-mini care avea doar instrumente pentru fișiere: căutare cu `grep`, căutare în fișiere, deschiderea și închiderea unui fișier. Agentul a obținut 74,0%, față de 68,5% raportat de Mem0 pentru cea mai bună variantă a sa, cea cu graf. Concluzia Letta: seturile de evaluare actuale pentru memorie s-ar putea să nu fie foarte relevante, iar felul în care agentul folosește instrumentele contează mai mult decât mecanismul de regăsire.
+- [Mem0](https://mem0.ai/blog/the-token-efficient-memory-algorithm-now-has-temporal-reasoning) a publicat în 2026 un algoritm rescris, cu rezultate declarate de 92,5 pe LoCoMo și 94,4 pe LongMemEval. Cifrele sunt ale firmei și nu au fost verificate independent.
+
+Pe seturile de evaluare de azi, un sistem simplu, cu fișiere și căutare text, plus un model capabil, este deci competitiv cu depozitele de memorie specializate. Rezultatul se potrivește cu drumul ales de harnașamentele de programare, care au ajuns la fișiere Markdown.
+
+## Memoria ca suprafață de atac
+
+Tot ce face memoria utilă o face și periculoasă: un text salvat azi ajunge în context în fiecare sesiune de mâine. Lista [OWASP din 2026](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/) spune că o injecție de prompt ajunsă în memoria persistentă afectează fiecare sesiune care citește ulterior din acea memorie. Pagina [Securitatea agenților: atacuri](/comportament-agentic/securitatea-agentilor-atacuri/#otrăvirea-memoriei-memory-poisoning) descrie incidentele în detaliu. Căile documentate sunt trei.
+
+- **Fișierele de instrucțiuni vin odată cu repozitoriul.** Un `CLAUDE.md`, un `AGENTS.md` sau un fișier de reguli dintr-un repozitoriu străin este text scris de altcineva, încărcat automat în prompt. [Rules File Backdoor](https://www.pillar.security/blog/new-vulnerability-in-github-copilot-and-cursor-how-hackers-can-weaponize-code-agents) (Pillar Security, martie 2025) a ascuns instrucțiuni în astfel de fișiere, cu caractere Unicode invizibile. Claude Code cere o aprobare separată pentru importurile din afara directorului de lucru, tocmai ca protecție față de fișierele pe care le comit alții.
+- **Memoria scrisă de agent poate fi scrisă de un atacator, prin agent.** [SpAIware](https://embracethered.com/blog/posts/2024/chatgpt-macos-app-persistent-data-exfiltration/) (Johann Rehberger, 2024) a salvat în memoria ChatGPT o instrucțiune care trimitea fiecare conversație viitoare spre atacator. În [Windsurf](https://embracethered.com/blog/posts/2025/windsurf-spaiware-exploit-persistent-prompt-injection/) (2025), instrumentul de memorie rula fără aprobare, deci un comentariu din cod putea planta instrucțiuni permanente. [Microsoft](https://www.microsoft.com/en-us/security/blog/2026/02/10/ai-recommendation-poisoning/) a găsit în februarie 2026 legături „Rezumă cu AI” de la 31 de companii, care cereau asistentului să țină minte o firmă ca sursă de încredere. În cercetare, [MINJA](https://arxiv.org/abs/2503.03704) (Dong și colaboratorii, 2025) a plantat înregistrări malițioase într-o memorie comună doar prin întrebări obișnuite, cu 98,2% succes la injectare, iar [AgentPoison](https://arxiv.org/abs/2407.12784) (Chen și colaboratorii, 2024) a obținut peste 80% succes cu mai puțin de 0,1% intrări otrăvite.
+- **Memoria poate fi și furată.** În iulie 2026, [Ayush Paul](https://www.ayush.digital/blog/the-memory-heist) a arătat cum o pagină web pregătită l-a făcut pe Claude să dezvăluie, legătură cu legătură, informații din memorie. Anthropic a eliminat urmărirea legăturilor din paginile descărcate.
+
+Harnașamentele au început să adauge apărări specifice memoriei.
+
+- **Codex** poate lăsa pe dinafară, prin opțiunea `memories.disable_on_external_context`, conversațiile care au folosit MCP, căutare pe web sau căutare de instrumente, adică exact cele în care agentul a citit text nesigur.
+- **Claude Code**, din versiunea 2.1.284 (septembrie 2026), neutralizează în `MEMORY.md` și în notițele recuperate caracterele invizibile și etichetele care imită marcajele harnașamentului ([jurnalul de modificări](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md)).
+- **OpenClaw** nu încarcă `MEMORY.md` în conversațiile de grup, ci doar în sesiunea privată principală, iar notițele venite din surse nesigure nu ajung niciodată în procesul care le mută în memoria permanentă. Documentația adaugă că memoria poate păstra contextul unei aprobări, dar nu impune nicio regulă.
+- **Microsoft** recomandă utilizatorilor să verifice periodic memoriile salvate și să le șteargă pe cele pe care nu le recunosc.
+
+Regula generală este aceeași ca pentru orice text citit de agent: memoria este date, nu instrucțiuni de încredere. Modificările memoriei ar trebui să poată fi văzute și aprobate de un om, de preferat ca diferență între versiunea veche și cea nouă, iar acțiunile cu adevărat periculoase se blochează prin permisiuni și prin [medii izolate](/comportament-agentic/securitatea-agentilor-aparari/), nu prin ce scrie în memorie.
 
 ## Bibliografie
 
 - AGENTS.md (2025). [AGENTS.md: a simple, open format for guiding coding agents](https://agents.md/).
+- Anthropic (2025). [Bringing memory to teams](https://claude.com/blog/memory). Blogul Claude.
+- Anthropic (2025). [Effective context engineering for AI agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents). Blogul Anthropic.
+- Anthropic (2025). [How we built our multi-agent research system](https://www.anthropic.com/engineering/multi-agent-research-system). Blogul Anthropic.
+- Anthropic (2025). [Managing context on the Claude Developer Platform](https://www.anthropic.com/news/context-management). Blogul Anthropic.
+- Anthropic (f.a.). [Claude Code changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md). GitHub.
+- Anthropic (f.a.). [Create custom subagents](https://code.claude.com/docs/en/sub-agents). Documentația Claude Code.
+- Anthropic (f.a.). [Explore the context window](https://code.claude.com/docs/en/context-window). Documentația Claude Code.
+- Anthropic (f.a.). [How Claude remembers your project](https://code.claude.com/docs/en/memory). Documentația Claude Code.
+- Anthropic (f.a.). [Memory tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool). Documentația Claude Platform.
 - Behrouz, A., Zhong, P. și Mirrokni, V. (2024). [Titans: Learning to Memorize at Test Time](https://arxiv.org/abs/2501.00663). Preprint arXiv:2501.00663.
 - Berges, V.-P. et al. (2024). [Memory Layers at Scale](https://arxiv.org/abs/2412.09764). Preprint arXiv:2412.09764.
 - Bulatov, A., Kuratov, Y. și Burtsev, M. S. (2022). [Recurrent Memory Transformer](https://arxiv.org/abs/2207.06881). _NeurIPS 2022_.
+- Chen, Z. et al. (2024). [AgentPoison: Red-teaming LLM Agents via Poisoning Memory or Knowledge Bases](https://arxiv.org/abs/2407.12784). Preprint arXiv:2407.12784.
 - Chhikara, P. et al. (2025). [Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory](https://arxiv.org/abs/2504.19413). Preprint arXiv:2504.19413.
+- Chroma (2025). [Context Rot: How Increasing Input Tokens Impacts LLM Performance](https://www.trychroma.com/research/context-rot). Chroma Research.
+- Cursor (f.a.). [Rules](https://cursor.com/docs/context/rules). Documentația Cursor.
+- Dong, S. et al. (2025). [Memory Injection Attacks on LLM Agents via Query-Only Interaction](https://arxiv.org/abs/2503.03704). Preprint arXiv:2503.03704.
+- GitHub (f.a.). [About GitHub Copilot Memory](https://docs.github.com/en/copilot/concepts/agents/copilot-memory). GitHub Docs.
+- GitHub (f.a.). [Adding repository custom instructions for GitHub Copilot](https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions). GitHub Docs.
+- Google (f.a.). [Memory files](https://geminicli.com/docs/tools/memory). Documentația Gemini CLI.
+- Google (f.a.). [Provide context with GEMINI.md files](https://geminicli.com/docs/cli/gemini-md/). Documentația Gemini CLI.
+- Hu, Y., Wang, Y. și McAuley, J. (2025). [Evaluating Memory in LLM Agents via Incremental Multi-Turn Interactions](https://arxiv.org/abs/2507.05257). Preprint arXiv:2507.05257.
+- Ji, Y. (2025). [Context Engineering for AI Agents: Lessons from Building Manus](https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus). Blogul Manus.
+- Karliner, Z. (2025). [New Vulnerability in GitHub Copilot and Cursor: How Hackers Can Weaponize Code Agents](https://www.pillar.security/blog/new-vulnerability-in-github-copilot-and-cursor-how-hackers-can-weaponize-code-agents). Blogul Pillar Security.
+- LangChain (2025). [Context Engineering](https://www.langchain.com/blog/context-engineering-for-agents). Blogul LangChain.
+- Letta (2025). [Benchmarking AI Agent Memory: Is a Filesystem All You Need?](https://www.letta.com/blog/benchmarking-ai-agent-memory). Blogul Letta.
+- Letta (f.a.). [Introduction to Stateful Agents](https://docs.letta.com/guides/agents/memory). Documentația Letta.
+- Letta (f.a.). [MemFS](https://docs.letta.com/letta-code/memfs). Documentația Letta.
+- Linux Foundation (2025). [Linux Foundation Announces the Formation of the Agentic AI Foundation (AAIF)](https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation). Comunicat de presă.
 - Liu, N. F. et al. (2024). [Lost in the Middle: How Language Models Use Long Contexts](https://arxiv.org/abs/2307.03172). _Transactions of the Association for Computational Linguistics_, 12, 157–173.
+- Maharana, A. et al. (2024). [Evaluating Very Long-Term Conversational Memory of LLM Agents](https://arxiv.org/abs/2402.17753). _ACL 2024_.
+- Mem0 (2026). [The Token-Efficient Memory Algorithm Now Has Temporal Reasoning](https://mem0.ai/blog/the-token-efficient-memory-algorithm-now-has-temporal-reasoning). Blogul Mem0.
+- Microsoft (2026). [Manipulating AI memory for profit: The rise of AI Recommendation Poisoning](https://www.microsoft.com/en-us/security/blog/2026/02/10/ai-recommendation-poisoning/). Microsoft Security Blog.
+- OpenAI (f.a.). [Compaction](https://developers.openai.com/api/docs/guides/compaction). Documentația API-ului OpenAI.
+- OpenAI (f.a.). [Custom instructions with AGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md). Documentația Codex.
+- OpenAI (f.a.). [Memories](https://learn.chatgpt.com/docs/customization/memories). Documentația Codex.
+- OpenClaw (f.a.). [Builtin memory engine](https://docs.openclaw.ai/concepts/memory-builtin). Documentația OpenClaw.
+- OpenClaw (f.a.). [Memory overview](https://docs.openclaw.ai/concepts/memory). Documentația OpenClaw.
+- OWASP (2026). [OWASP GenAI LLM Top 10 2026](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/). OWASP GenAI Security Project.
 - Packer, C. et al. (2023). [MemGPT: Towards LLMs as Operating Systems](https://arxiv.org/abs/2310.08560). Preprint arXiv:2310.08560.
 - Park, J. S. et al. (2023). [Generative Agents: Interactive Simulacra of Human Behavior](https://arxiv.org/abs/2304.03442). _UIST 2023_.
+- Paul, A. (2026). [The Memory Heist](https://www.ayush.digital/blog/the-memory-heist). Blogul lui Ayush Paul.
+- Rasmussen, P. et al. (2025). [Zep: A Temporal Knowledge Graph Architecture for Agent Memory](https://arxiv.org/abs/2501.13956). Preprint arXiv:2501.13956.
+- Rehberger, J. (2024). [Spyware Injection Into Your ChatGPT’s Long-Term Memory (SpAIware)](https://embracethered.com/blog/posts/2024/chatgpt-macos-app-persistent-data-exfiltration/). Blogul Embrace The Red.
+- Rehberger, J. (2025). [Windsurf: Memory-Persistent Data Exfiltration (SpAIware Exploit)](https://embracethered.com/blog/posts/2025/windsurf-spaiware-exploit-persistent-prompt-injection/). Blogul Embrace The Red.
 - Sumers, T. R. et al. (2024). [Cognitive Architectures for Language Agents](https://arxiv.org/abs/2309.02427). _Transactions on Machine Learning Research_.
+- Tavakoli, M. et al. (2025). [Beyond a Million Tokens: Benchmarking and Enhancing Long-Term Memory in LLMs](https://arxiv.org/abs/2510.27246). Preprint arXiv:2510.27246.
+- Willison, S. (2025). [Context engineering](https://simonwillison.net/2025/Jun/27/context-engineering/). Blogul lui Simon Willison.
+- Willison, S. (2025). [I really don’t like ChatGPT’s new memory dossier](https://simonwillison.net/2025/May/21/chatgpt-new-memory/). Blogul lui Simon Willison.
+- Wu, D. et al. (2025). [LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory](https://arxiv.org/abs/2410.10813). _ICLR 2025_.
 - Wu, Y. et al. (2022). [Memorizing Transformers](https://arxiv.org/abs/2203.08913). _ICLR 2022_.
+- Xu, W. et al. (2025). [A-MEM: Agentic Memory for LLM Agents](https://arxiv.org/abs/2502.12110). _NeurIPS 2025_.
+- Zep (2025). [Is Mem0 Really SOTA in Agent Memory?](https://www.getzep.com/blog/lies-damn-lies-statistics-is-mem0-really-sota-in-agent-memory/). Blogul Zep.

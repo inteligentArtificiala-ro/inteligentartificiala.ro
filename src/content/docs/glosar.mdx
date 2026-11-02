@@ -13,32 +13,48 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
+| Abilitate | Skill | Director cu un fișier `SKILL.md` (nume, descriere, instrucțiuni) și, opțional, scripturi, pe care agentul îl încarcă doar când sarcina cere abilitatea respectivă. |
 | Acuratețe | Accuracy | Procentul de predicții corecte din totalul predicțiilor. |
+| Adjunctul confuz | Confused Deputy | Program cu privilegii păcălit de o parte cu mai puține drepturi să-și folosească privilegiile în folosul acesteia. |
+| Adresă de bază | Base URL | Adresa la care un program trimite cererile către API-ul unui model, de exemplu `http://localhost:11434/v1` pentru Ollama. |
 | Afișarea textului pe măsura generării | Streaming | Tehnică prin care tokenurile apar pe ecran imediat ce sunt generate, fără să se aștepte răspunsul complet. |
+| AGENTS.md | AGENTS.md | Fișier Markdown din repozitoriu cu instrucțiunile pentru agenții de programare: comenzi, teste, convenții. |
 | Ajustare fină | Fine-tuning | Antrenarea suplimentară a unui model preantrenat pe un set de date specific, pentru o sarcină anume. |
+| Amestec de experți (MoE) | Mixture of Experts | Arhitectură în care fiecare strat are mai multe rețele feed-forward (experți), iar pentru fiecare token se folosesc doar câțiva experți. |
 | Antrenare | Training | Procesul prin care un model învață din date, ajustându-și parametrii. |
 | Arhitectură | Architecture | Structura generală a unui model de învățare automată (cum sunt conectați neuronii, câte straturi are etc.). |
+| Asistent personal | Personal AI Assistant | Agent care rulează permanent pe calculatorul sau pe serverul utilizatorului, comunică prin aplicații de mesagerie și acționează în numele utilizatorului. |
+| Atac adaptiv | Adaptive Attack | Atac care se ajustează după răspunsurile apărării, prin căutare, gradienți, învățare prin consolidare sau atacatori umani. |
 | Atenție | Attention | Mecanism care permite modelului să se concentreze pe anumite părți ale intrării atunci când produce ieșirea. |
 | Atenție încrucișată | Cross-Attention | Atenție în care interogările vin dintr-o secvență, iar cheile și valorile din alta, de exemplu din tokenurile textului care ghidează generarea unei imagini. |
 | Atenție cu capete multiple (multi-head) | Multi-head Attention | Mecanism care rulează în paralel mai multe capete de atenție, fiecare cu propriile proiecții, pentru a surprinde tipuri diferite de dependențe. |
+| Automatizare | Automation | Sarcină pe care un asistent o pornește singur, după un program sau la un eveniment, fără un mesaj de la utilizator. |
 | Auto-atenție | Self-Attention | Atenție în care tokenurile unei secvențe se raportează unele la altele, folosită în Transformer pentru a surprinde dependențele dintre tokenuri. |
 | Autoencoder | Autoencoder | Rețea formată dintr-un codificator, care comprimă datele într-o reprezentare mai mică, și un decodor, care reconstruiește datele din această reprezentare. |
 | Autoencoder variațional (VAE) | Variational Autoencoder | Autoencoder care învață o reprezentare latentă continuă, folosit pentru a comprima imaginile și clipurile video înaintea difuziei latente. |
 | Autoconsecvență | Self-Consistency | Metodă care generează mai multe lanțuri de gânduri pentru aceeași întrebare și păstrează răspunsul final cel mai frecvent (vot majoritar). |
+| A2A | Agent2Agent | Protocol deschis prin care agenții se descoperă unii pe alții, își delegă sarcini și primesc rezultatele. |
 
 ## B
 
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
 | Bază de date vectorială | Vector Database | Bază de date care stochează reprezentări vectoriale și găsește rapid vectorii cei mai apropiați de un vector dat. |
+| Benchmark agentic | Agentic Benchmark | Set de sarcini complete, rezolvate de un agent într-un mediu real, cu verificarea automată a rezultatului final. |
 | _Bias_ | Bias | Parametru adăugat la suma ponderată a unui neuron, care deplasează valoarea primită de funcția de activare. |
 
 ## C
 
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
+| Canal | Channel | Legătura dintre poarta de acces a unui asistent și o aplicație de mesagerie, de exemplu WhatsApp sau Telegram. |
+| Card de agent | Agent Card | Descrierea JSON a capabilităților unui agent, folosită de protocolul A2A pentru descoperirea agenților. |
+| Căutarea instrumentelor | Tool Search | Mecanism prin care harnașamentul încarcă descrierile instrumentelor doar când modelul are nevoie de aceste descrieri, ca să economisească fereastra de context. |
 | Căutare pe fascicul | Beam Search | Strategie de decodare care păstrează la fiecare pas mai multe secvențe candidate, pentru a găsi o secvență cât mai probabilă. |
 | Câmp receptiv | Receptive Field | Partea din date de care depinde rezultatul unui neuron sau al unui nod. Într-o rețea pe grafuri cu k straturi, sunt nodurile aflate la cel mult k muchii distanță. |
+| Cerere de informații | Elicitation | Mecanismul MCP prin care un server îi cere utilizatorului o informație care lipsește. |
+| Cheie API proprie (BYOK) | Bring Your Own Key | Folosirea, într-un harnașament sau printr-un intermediar ca OpenRouter, a cheii API obținute direct de la furnizorul modelului. |
+| Clasificator de permisiuni | Permission Classifier | Model separat care citește acțiunea propusă de agent și o aprobă sau o blochează în locul utilizatorului. |
 | Clonarea vocii | Voice Cloning | Generarea vorbirii cu vocea unei persoane anume, pornind de la o înregistrare scurtă a acelei voci. |
 | Coborâre pe gradient | Gradient Descent | Metoda de optimizare care ajustează parametrii modelului în direcția opusă gradientului funcției de pierdere. |
 | Codec audio neuronal | Neural Audio Codec | Autoencoder care comprimă sunetul într-un șir de tokenuri dintr-un vocabular fix și poate reconstrui sunetul din aceste tokenuri, de exemplu EnCodec. |
@@ -46,6 +62,8 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Codificator de text | Text Encoder | Model care transformă un text într-un șir de vectori, folosit pentru a ghida generarea unei imagini, de exemplu CLIP sau T5. |
 | Comprimare excesivă | Over-squashing | Limită a rețelelor pe grafuri în care informația de la multe noduri îndepărtate trebuie să treacă prin puține muchii și să încapă într-un vector de mărime fixă. |
 | Conexiune reziduală | Residual Connection | Legătură care adună intrarea unui bloc la ieșirea blocului, astfel încât informația și gradienții să treacă direct peste straturi, ca în rețelele reziduale. |
+| Contaminare | Contamination | Situația în care problemele unui benchmark au ajuns în datele de antrenare ale modelului evaluat. |
+| Controlul fluxului de informații | Information-Flow Control | Urmărirea provenienței datelor și blocarea fluxurilor nepermise, de exemplu trimiterea datelor private către destinatari nesiguri. |
 | Convoluție | Convolution | Operație care aplică filtre pe date spațiale sau secvențiale (folosită în rețelele convoluționale, CNN). |
 | Cuantizare | Quantization | Tehnică de reducere a mărimii modelului prin stocarea ponderilor cu mai puțini biți. |
 | CUDA | CUDA | Platformă de calcul paralel dezvoltată de NVIDIA pentru plăcile sale grafice. |
@@ -54,6 +72,9 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
+| Degradarea contextului | Context Rot | Scăderea performanței unui model pe măsură ce textul primit în context se lungește. |
+| Dezvăluire progresivă | Progressive Disclosure | Încărcarea treptată a informației în context: întâi numele și descrierea unei abilități, apoi instrucțiunile complete, doar la nevoie. |
+| Dispozitiv însoțitor | Node | Telefon, ceas sau alt calculator conectat la poarta de acces a unui asistent, prin care agentul poate folosi camera, ecranul, locația sau notificările. |
 | _Deepfake_ | Deepfake | Imagine, clip video sau înregistrare audio generată ori manipulată, care pare să arate o persoană, un loc sau un eveniment real. |
 | Decodare paralelă | Parallel Decoding | Fixarea mai multor tokenuri la aceeași trecere prin rețea, ca la modelele de limbaj bazate pe difuzie. |
 | Decodare speculativă | Speculative Decoding | Tehnică de accelerare a generării în care un model mic propune câteva tokenuri, iar modelul mare le verifică pe toate într-o singură trecere. |
@@ -74,6 +95,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Eșantionare top-k | Top-k Sampling | Metodă de generare care alege următorul token doar dintre cele k tokenuri cele mai probabile. |
 | Eșantionare top-p (nucleus) | Top-p (Nucleus) Sampling | Metodă de generare care alege următorul token doar din cel mai mic set de tokenuri a căror probabilitate cumulată atinge pragul p. |
 | Evaluare | Evaluation | Testarea performanței modelului pe un set de date pe care nu l-a văzut la antrenare. |
+| Exfiltrarea datelor | Data Exfiltration | Scoaterea datelor dintr-un sistem către un atacator, prin imagini, legături, cereri DNS sau apeluri de instrumente. |
 
 ## F
 
@@ -90,6 +112,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
+| Gazdă (MCP) | Host | Aplicația AI care pornește conexiunile MCP și conține câte un client pentru fiecare server. |
 | Generare augmentată prin regăsire (RAG) | Retrieval-Augmented Generation (RAG) | Metodă prin care sistemul caută documente relevante și le pune în contextul modelului înainte ca acesta să răspundă. |
 | Ghidare fără clasificator | Classifier-Free Guidance (CFG) | Tehnică de generare care combină estimarea zgomotului făcută cu text și fără text, ca rezultatul să urmeze mai fidel descrierea. |
 | Grad (al unui nod) | Degree | Numărul de vecini ai unui nod dintr-un graf. |
@@ -98,6 +121,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Gradienți care explodează | Exploding Gradients | Problemă a rețelelor adânci sau recurente în care gradienții devin foarte mari pe măsură ce sunt propagați înapoi, iar antrenarea devine instabilă. |
 | Graf | Graph | Structură formată din noduri și muchii, adică legături între perechi de noduri, de exemplu atomii și legăturile unei molecule. |
 | Graf computațional | Computational Graph | Graf în care nodurile sunt operațiile unui calcul, iar muchiile duc valorile intermediare, folosit pentru calculul automat al gradienților. |
+| Graf de cunoștințe temporal | Temporal Knowledge Graph | Graf de fapte în care fiecare fapt are o perioadă de valabilitate. |
 | GRPO | GRPO (Group Relative Policy Optimization) | Algoritm de învățare prin consolidare care compară mai multe răspunsuri la același prompt și le face mai probabile pe cele mai bune decât media grupului. |
 
 ## H
@@ -113,16 +137,24 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
 | ID-uri de intrare | Input IDs | Numerele care identifică tokenurile după tokenizare. |
+| Ierarhia instrucțiunilor | Instruction Hierarchy | Antrenarea modelului să prefere instrucțiunile de sistem celor ale utilizatorului, iar pe acestea celor din rezultatele instrumentelor. |
 | Inferență | Inference | Folosirea unui model antrenat pentru a produce predicții sau text. |
+| Ingineria contextului | Context Engineering | Alegerea informațiilor care intră în fereastra de context la fiecare pas al unui agent. |
+| Ingineria harnașamentului | Harness Engineering | Obiceiul de a repara definitiv fiecare greșeală a agentului, prin reguli noi în fișierul de instrucțiuni sau prin scripturi de verificare. |
 | Inițializare | Initialization | Alegerea valorilor inițiale ale parametrilor modelului, înainte de antrenare. |
+| Injecție de prompt | Prompt Injection | Atac în care un text citit de model conține instrucțiuni pe care modelul le urmează în locul celor ale utilizatorului sau ale aplicației. |
+| Injecție indirectă | Indirect Prompt Injection | Injecție de prompt plantată în date citite mai târziu de sistem (pagini web, e-mailuri, documente, rezultatele instrumentelor, memorie), nu în mesajul utilizatorului. |
+| Interfața agent-calculator | Agent-Computer Interface (ACI) | Comenzile, instrumentele și formatul mesajelor prin care un agent lucrează cu un calculator, a căror formă influențează mult rezultatele. |
 | Invarianță la permutări | Permutation Invariance | Proprietatea unui model de a da același rezultat oricum ar fi numerotate elementele intrării, de exemplu nodurile unui graf. |
 
 ## L
 
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
+| Lanț de aprovizionare | Supply Chain | Pachetele, extensiile, serverele și celelalte dependențe scrise de alții pe care se sprijină un sistem. |
 | Lanț de gânduri | Chain of Thought (CoT) | Textul intermediar, scris pas cu pas, pe care modelul îl generează înainte de răspunsul final. |
 | Limitarea gradientului | Gradient Clipping | Tehnică ce limitează norma gradientului la o valoare maximă, pentru a preveni explozia gradienților. |
+| Listă de permisiuni | Allowlist | Lista comenzilor, domeniilor sau acțiunilor permise fără o aprobare suplimentară. |
 | LoRA | LoRA (Low-Rank Adaptation) | Tehnică de ajustare fină care îngheață ponderile modelului și antrenează doar perechi de matrice mici, de rang mic, adăugate peste ponderile înghețate. |
 | Lot | Batch | Subsetul de exemple folosit la un singur pas de antrenare. |
 
@@ -132,16 +164,22 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 |-------------|-------------|------------|
 | Mască | Mask | Vector sau matrice care indică ce tokenuri sunt vizibile și care trebuie ignorate. |
 | Matrice de adiacență | Adjacency Matrix | Matrice cu câte un rând și o coloană pentru fiecare nod al unui graf, în care valoarea de pe poziția (i, j) arată dacă nodurile i și j sunt legate. |
+| Mediu izolat | Sandbox | Mediu care limitează ce poate citi, scrie și contacta un proces, indiferent ce decide modelul. |
 | Memorare | Memorization | Reproducerea aproape identică, de către un model generativ, a unor exemple din datele de antrenare. |
 | Memoria agentului | Agent Memory | Mecanismele prin care un agent păstrează informații între pași sau sesiuni și le aduce înapoi în context când are nevoie de aceste informații. |
 | Memoria cache pentru chei și valori | KV Cache | Păstrarea cheilor și valorilor de atenție ale tokenurilor deja procesate, ca să nu fie recalculate la generarea fiecărui token nou. |
 | Metrici | Metrics | Măsuri pentru evaluarea performanței unui model (precizie, sensibilitate, perplexitate etc.). |
 | Model | Model | Funcția matematică, cu parametri învățați din date, care face predicții. |
+| Modele de rezervă | Fallbacks | Listă ordonată de modele la care trece o cerere când modelul ales dă o eroare. |
+| Model Context Protocol (MCP) | Model Context Protocol | Protocol deschis prin care aplicațiile AI descoperă și apelează instrumentele și datele oferite de servere separate. |
+| Model dens | Dense Model | Model care folosește toți parametrii pentru fiecare token, spre deosebire de un amestec de experți. |
+| Model de amenințare | Threat Model | Descrierea a ce poate face atacatorul: ce acces are, câte încercări are și ce știe despre sistem. |
 | Model de difuzie | Diffusion Model | Model generativ care învață să elimine treptat zgomotul din date și generează date noi pornind de la zgomot pur. |
 | Model de limbaj bazat pe difuzie | Diffusion Language Model | Model de limbaj care generează textul prin difuzie, fixând mai multe tokenuri la fiecare pas, în loc să scrie câte un token de la stânga la dreapta. |
 | Model de limbaj cauzal | Causal Language Model | Model care prezice următorul token dintr-o secvență pe baza tokenurilor anterioare, folosit la generarea de text. |
 | Model de limbaj mare (LLM) | Large Language Model (LLM) | Model de limbaj cu miliarde de parametri, antrenat pe cantități foarte mari de text. |
 | Model de raționament | Reasoning Model | Model de limbaj antrenat special să genereze un raționament lung înainte de răspunsul final. |
+| Model închis | Closed Model | Model folosit doar prin API-ul furnizorului, fără ponderi publice. |
 | Model salvat | Checkpoint | Fișier care salvează starea modelului (ponderile și starea optimizatorului) la un moment dat. |
 | _Momentum_ | Momentum | Tehnică de optimizare care accelerează convergența prin păstrarea unei „inerții” din pașii anteriori. |
 | Muchie | Edge | Legătură între două noduri ale unui graf. |
@@ -152,6 +190,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 |-------------|-------------|------------|
 | Netezire excesivă | Over-smoothing | Fenomenul prin care, după multe straturi ale unei rețele pe grafuri, vectorii tuturor nodurilor ajung să semene unii cu alții. |
 | Neuron artificial | Artificial Neuron | Unitatea de bază a unei rețele neuronale, care primește intrări și produce o ieșire. |
+| Nivel de efort | Effort | Setare a modelelor de raționament care stabilește cât de mult „gândește” modelul înainte să răspundă. |
 | Nod | Node | Element al unui graf, de exemplu un atom dintr-o moleculă sau o persoană dintr-o rețea socială. |
 | Normalizare pe lot | Batch Normalization | Tehnică de normalizare a activărilor pe fiecare lot, pentru a stabiliza și accelera antrenarea. |
 
@@ -159,15 +198,22 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
+| Oboseala aprobărilor | Approval Fatigue | Tendința utilizatorilor de a aproba aproape orice cerere de permisiune atunci când primesc multe. |
+| Ocolirea antrenării de siguranță | Jailbreaking | Cereri formulate astfel încât modelul să producă răspunsuri pe care antrenarea de siguranță ar trebui să le blocheze. |
 | Optimizator | Optimizer | Algoritmul care ajustează parametrii modelului pentru a minimiza funcția de pierdere. |
+| Otrăvirea instrumentelor | Tool Poisoning | Instrucțiuni ascunse în descrierea unui instrument, vizibile pentru model, dar nu și pentru utilizator. |
+| Otrăvirea memoriei | Memory Poisoning | Plantarea unor instrucțiuni sau informații false în memoria unui agent, care le folosește apoi în sesiunile următoare. |
 
 ## P
 
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
 | Parametru | Parameter | Valoare ajustabilă a modelului (o pondere sau un _bias_), învățată din date. |
+| pass^k | pass^k | Măsură de fiabilitate: șansa ca un agent să rezolve aceeași sarcină în toate cele k încercări. |
 | Perplexitate | Perplexity | Măsură a cât de bine prezice un model tokenurile unui text, la care valorile mai mici înseamnă predicții mai bune. |
 | Petic | Patch | Bloc mic dintr-o imagine sau dintr-un clip video, tratat ca un singur token de un Transformer. |
+| Poartă de acces | Gateway | Procesul de lungă durată al unui asistent personal, care administrează conversațiile, sesiunile, instrumentele și conexiunile cu aplicațiile de mesagerie; prin extensie, un serviciu care rutează cererile către modele. |
+| Ponderi deschise | Open Weights | Ponderi publicate, care pot fi descărcate și rulate pe hardware propriu; nu implică și publicarea codului sau a datelor de antrenare. |
 | _Pipeline_ | Pipeline | În biblioteca Transformers, interfața simplificată care face automat tokenizarea, inferența și decodarea. |
 | Placă grafică (GPU) | GPU (Graphics Processing Unit) | Hardware specializat în calcul paralel, folosit pentru a accelera antrenarea și inferența rețelelor neuronale. |
 | Ponderi | Weights | Parametrii care stabilesc cât contează fiecare intrare pentru fiecare neuron. |
@@ -184,6 +230,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
+| Rata de succes a atacurilor (ASR) | Attack Success Rate | Proporția încercărilor sau a scenariilor în care un atac reușește. |
 | Rată de eșantionare | Sample Rate | Numărul de măsurători (eșantioane) pe secundă ale unui semnal audio, de exemplu 24.000 (24 kHz). |
 | Rată de învățare | Learning Rate | Hiperparametrul care controlează mărimea actualizărilor parametrilor la fiecare pas. |
 | Regula lanțului | Chain Rule | Regula din calculul diferențial după care derivata unei funcții compuse este produsul derivatelor funcțiilor care o compun. |
@@ -197,11 +244,13 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Rețea neuronală | Neural Network | Structură de neuroni artificiali interconectați, organizați în straturi, care învață reprezentări din date. |
 | Rețea neuronală pe grafuri (GNN) | Graph Neural Network | Rețea neuronală care lucrează direct pe un graf, prin transmiterea mesajelor între noduri vecine. |
 | RLHF | RLHF (Reinforcement Learning from Human Feedback) | Învățare prin consolidare din feedback uman, o tehnică de aliniere în care modelul este optimizat după un model de recompensă antrenat pe preferințe umane. |
+| Rutare | Routing | Alegerea automată a furnizorului sau a modelului care primește o cerere, după preț, viteză sau fiabilitate. |
 
 ## S
 
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
+| Schimbarea după aprobare | Rug Pull | Modificarea descrierii sau a configurației unui instrument după ce utilizatorul l-a aprobat. |
 | Sensibilitate (recall) | Recall | Proporția cazurilor pozitive reale care au fost identificate corect. |
 | Set de date | Dataset | Colecția de exemple folosită pentru antrenare, validare și testare. |
 | Set de validare | Validation Set | Setul de date folosit pentru a urmări performanța modelului în timpul antrenării, separat de datele de antrenare. |
@@ -211,6 +260,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Spectrogramă mel | Mel Spectrogram | Reprezentarea unui sunet ca imagine timp-frecvență, cu frecvențele grupate în benzi după felul în care le percepe urechea. |
 | Stare ascunsă | Hidden State | Vectorul intern calculat de model la un anumit pas sau strat, care poartă informația despre intrările anterioare. |
 | Strat | Layer | Grup de neuroni care procesează datele la același nivel al rețelei. |
+| Subagent | Subagent | Agent pornit de agentul principal, cu propria fereastră de context, care întoarce doar un rezumat. |
 | Subînvățare | Underfitting | Situația în care modelul nu învață suficient din datele de antrenare. |
 | Supraînvățare | Overfitting | Situația în care modelul învață prea bine datele de antrenare și generalizează prost pe date noi. |
 
@@ -219,6 +269,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Termen (RO) | Termen (EN) | Explicație |
 |-------------|-------------|------------|
 | Șablon de chat | Chat Template | Formatul de text pentru conversații, în care rolurile (user, assistant) sunt marcate prin tokenuri speciale. |
+| Șablon de proiectare | Design Pattern | Soluție generală, reutilizabilă, pentru o problemă de proiectare care apare des. |
 
 ## T
 
@@ -233,6 +284,14 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Transformer | Transformer | Arhitectură de rețea neuronală bazată pe atenție, pe care se sprijină majoritatea modelelor de limbaj actuale. |
 | Transformer de difuzie (DiT) | Diffusion Transformer | Transformer folosit ca rețea de eliminare a zgomotului într-un model de difuzie, care primește imaginea sau clipul tăiat în petice. |
 | Transmiterea mesajelor | Message Passing | Mecanismul rețelelor pe grafuri în care, la fiecare strat, fiecare nod primește vectorii vecinilor, îi agregă și își actualizează propriul vector. |
+| Transport (MCP) | Transport | Felul în care circulă mesajele MCP: stdio, pentru servere locale, sau Streamable HTTP, pentru servere la distanță. |
+| Triada letală | Lethal Trifecta | Combinația dintre acces la date private, expunere la conținut nesigur și posibilitatea de a comunica în exterior, care permite furtul de date printr-o injecție de prompt. |
+
+## U
+
+| Termen (RO) | Termen (EN) | Explicație |
+|-------------|-------------|------------|
+| Umbrirea instrumentelor | Tool Shadowing | Descrierea unui server MCP care schimbă felul în care agentul folosește instrumentele altui server. |
 
 ## V
 

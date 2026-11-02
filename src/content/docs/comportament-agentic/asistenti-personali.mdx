@@ -1,0 +1,189 @@
+---
+title: Asistenții personali și OpenClaw
+description: Ce sunt asistenții AI care rulează pe calculatorul nostru și ne răspund pe WhatsApp sau Telegram, cum este construit OpenClaw (gateway, canale, abilități, memorie, automatizări) și de ce aduce riscuri proprii.
+sidebar:
+  order: 10
+  label: 'Asistenți personali: OpenClaw'
+level: intermediar
+tags:
+  - Sisteme agentice
+  - Modele de limbaj mari (LLM)
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Harnașamentele de pe [harta harnașamentelor](/comportament-agentic/harnasamente-o-harta/) lucrează mai ales cu cod: le pornim într-un proiect, le dăm o sarcină și urmărim ce fac. Un **asistent personal** (_personal AI assistant_) folosește același proces agentic, dar în alt rol. Rulează tot timpul pe calculatorul nostru sau pe un server propriu, ne răspunde în aplicațiile de mesagerie pe care le folosim deja (WhatsApp, Telegram, Slack, Discord) și acționează în numele nostru: caută pe web, folosește un browser, rulează comenzi, citește fișiere și pornește singur sarcini programate.
+
+Cel mai cunoscut proiect de acest fel este OpenClaw. README-ul prezintă proiectul ca pe un asistent AI open source care rulează pe calculatorul utilizatorului și comunică prin canalele pe care utilizatorul le folosește deja, cu starea, memoria și cheile de acces păstrate pe hardware-ul propriu. La 2 noiembrie 2026, repozitoriul OpenClaw avea 393.749 de stele pe GitHub, mai multe decât React (252.100) sau nucleul Linux (254.174) în aceeași zi.
+
+## OpenClaw, de la Clawdbot la o fundație
+
+OpenClaw a fost scris de Peter Steinberger. README-ul spune, în glumă, că proiectul a fost construit pentru Molty, „un homar spațial”, de Steinberger și de comunitate, iar homarul explică aproape toate numele prin care a trecut proiectul în primele două luni ([OpenClaw lore](https://docs.openclaw.ai/start/lore)):
+
+- **Warelay**: primul nume, potrivit pentru ce era atunci proiectul, un releu pentru WhatsApp.
+- **Clawd** (de la 25 noiembrie 2025 până la 27 ianuarie 2026), cu repozitoriul `clawdbot`: un joc de cuvinte între Claude și _claw_, cleștele homarului.
+- **Moltbot** (27 ianuarie 2026): Anthropic a cerut schimbarea numelui, din motive de marcă înregistrată, iar comunitatea a ales prin vot noul nume, după năpârlirea (_molt_) prin care crește un homar.
+- **OpenClaw** (29–30 ianuarie 2026, în funcție de fusul orar): de data aceasta, verificările de marcă au ieșit curate.
+
+Postarea care anunța numele [OpenClaw](https://openclaw.ai/blog/introducing-openclaw) spunea că proiectul, pornit ca proiect de weekend, trecuse de 100.000 de stele pe GitHub și avusese aproximativ 2 milioane de vizitatori într-o singură săptămână.
+
+Pe 15 februarie 2026, Steinberger a [anunțat](https://steipete.me/posts/2026/openclaw) că se alătură OpenAI și că lucrează la transformarea proiectului într-o fundație, pentru ca OpenClaw să rămână open source. Pe 8 iulie 2026 a fost [anunțată](https://openclaw.ai/blog/introducing-openclaw-foundation) OpenClaw Foundation, o organizație non-profit americană de tip 501(c)(3). Licența a rămas MIT. Potrivit README-ului, fundația angajează echipa de bază și semnează versiunile, iar OpenAI este un donator, nu un proprietar. Versiunile sunt numerotate după calendar: la 2 noiembrie 2026, ultima versiune stabilă era 2026.10.9, din 29 octombrie.
+
+## Arhitectura
+
+OpenClaw are trei piese principale: o poartă de acces care rulează permanent, canalele prin care vin și pleacă mesajele și mediul de rulare al agentului, care conține procesul agentic propriu-zis.
+
+### Poarta de acces (gateway)
+
+Centrul sistemului este **poarta de acces** (_gateway_), un singur proces de lungă durată care administrează toate conversațiile, sesiunile, instrumentele și conexiunile cu aplicațiile de mesagerie ([Gateway architecture](https://docs.openclaw.ai/concepts/architecture)). Gateway-ul rulează ca serviciu al sistemului de operare și ascultă implicit doar pe adresa locală `127.0.0.1`, la portul 18789. Clienții (aplicația desktop, CLI-ul, interfața web de control, interfața din terminal) se conectează printr-un API WebSocket, cu mesaje JSON validate după o schemă, iar un dispozitiv nou trebuie aprobat explicit. Pe fiecare calculator rulează un singur gateway.
+
+La gateway se pot conecta și **dispozitive însoțitoare** (_nodes_): un telefon, un ceas sau un alt calculator, prin care agentul poate folosi camera, poate înregistra ecranul, poate afla locația sau poate trimite notificări. Documentația insistă că aceste dispozitive sunt periferice, nu alte gateway-uri ([Nodes](https://docs.openclaw.ai/nodes)).
+
+### Canalele
+
+Un **canal** (_channel_) leagă gateway-ul de o aplicație de mesagerie. README-ul numește Discord, iMessage, Slack, Teams, Telegram, WhatsApp și încă peste 20 de aplicații, printre care Signal, Matrix, Google Chat și IRC. Pentru WhatsApp, OpenClaw folosește Baileys, o bibliotecă neoficială pentru WhatsApp Web. Un canal separat, bazat pe protocolul A2A, permite altor agenți să trimită mesaje asistentului (vezi [Protocoale și standarde](/comportament-agentic/protocoale-si-standarde/)).
+
+Mesajele directe de la expeditori necunoscuți nu ajung la agent până când proprietarul nu aprobă un cod de asociere, cu comanda `openclaw pairing approve <channel> <code>`.
+
+### Mediul de rulare al agentului
+
+În interior, OpenClaw separă furnizorul de modele, modelul, canalul și **mediul de rulare al agentului** (_agent runtime_). Documentația folosește chiar termenul de harnașament: un harnașament este implementarea care oferă un mediu de rulare al agentului ([Agent runtimes](https://docs.openclaw.ai/concepts/agent-runtimes)). Implicit rulează mediul propriu, `openclaw`, dar acesta poate fi înlocuit cu serverul aplicației Codex, cu Copilot sau cu Claude Code instalat pe același calculator. Prin Agent Client Protocol, OpenClaw poate porni și harnașamente externe de programare, precum Claude Code, Cursor, OpenCode sau Gemini CLI. Procesul agentic propriu a pornit de la pi, kitul lui Mario Zechner, căruia README-ul îi mulțumește explicit.
+
+Când trimitem un mesaj asistentului, pașii arată, în mare, așa.
+
+<Steps>
+1. Mesajul sosește pe un canal, de exemplu pe Telegram, iar gateway-ul verifică expeditorul și găsește sesiunea potrivită.
+2. Mediul de rulare construiește contextul: fișierele din spațiul de lucru al agentului (instrucțiunile, personalitatea, ce știe despre utilizator), numele și descrierile abilităților disponibile și istoricul conversației.
+3. Modelul răspunde direct sau cere un instrument: o comandă în terminal, o pagină în browser, o căutare în memorie.
+4. Instrumentele rulează, implicit direct pe calculatorul gazdă, iar rezultatele se întorc la model, ca la orice [harnașament](/comportament-agentic/harnasamentul/).
+5. Răspunsul final pleacă înapoi pe același canal.
+</Steps>
+
+## Memoria: fișiere Markdown
+
+Documentația o spune direct: OpenClaw ține minte lucruri scriind fișiere Markdown obișnuite în spațiul de lucru al agentului, iar modelul își amintește doar ce a fost salvat pe disc, fără nicio stare ascunsă ([Memory overview](https://docs.openclaw.ai/concepts/memory)). Spațiul de lucru este directorul `~/.openclaw/workspace`. Configurația, cheile de acces și sesiunile stau separat, în `~/.openclaw/`.
+
+| Fișier | Ce conține |
+| :--- | :--- |
+| `AGENTS.md` | Instrucțiunile de lucru, încărcate la fiecare sesiune |
+| `SOUL.md` | Personalitatea, tonul și limitele asistentului |
+| `USER.md` | Ce știe asistentul despre utilizator: profil și preferințe |
+| `IDENTITY.md` | Numele, stilul și emoji-ul asistentului |
+| `BOOT.md` | Lista de verificări de la pornire |
+| `MEMORY.md` | Memoria pe termen lung: fapte și decizii selectate, încărcate doar în sesiunea privată principală, nu și în conversațiile de grup |
+| `memory/AAAA-LL-ZZ.md` | Jurnalul fiecărei zile |
+| `skills/` | Abilitățile instalate în spațiul de lucru |
+
+Este aceeași [memorie sub formă de text](/comportament-agentic/memoria-agentilor/#memoria-ca-text-în-harnașamentele-de-azi) folosită de harnașamentele de programare, dusă mai departe: pe lângă reguli și fapte, fișierele descriu și personalitatea asistentului și ce știe asistentul despre noi ([Agent workspace](https://docs.openclaw.ai/concepts/agent-workspace)).
+
+Fișierele puse în context sunt tăiate implicit la 20.000 de caractere fiecare și la 60.000 de caractere în total. Pentru restul, agentul are două instrumente: `memory_search`, o căutare hibridă, după cuvinte-cheie și după sens, și `memory_get`, care citește un fișier întreg sau doar câteva rânduri dintr-un fișier. Înainte de compactarea contextului, un pas care nu apare în conversație îi cere agentului să noteze în jurnalul zilei ce este important. Un proces de consolidare din fundal mută apoi în `MEMORY.md` amintirile regăsite des, dar documentația precizează că elementele care provin din surse nesigure nu ajung niciodată acolo. Tot documentația recomandă copii de siguranță ale spațiului de lucru într-un repozitoriu git privat.
+
+## Abilitățile și ClawHub
+
+O **abilitate** (_skill_) este un director cu un fișier `SKILL.md`: un antet YAML cu numele și descrierea, urmat de instrucțiuni în Markdown și, opțional, de scripturi. OpenClaw urmează specificația Agent Skills, descrisă pe pagina [Protocoale și standarde](/comportament-agentic/protocoale-si-standarde/), așa că aceeași abilitate poate funcționa și în alte harnașamente. Abilitățile sunt căutate întâi în spațiul de lucru, apoi în directoarele utilizatorului, apoi printre cele administrate și, la urmă, printre cele livrate cu OpenClaw ([Skills](https://docs.openclaw.ai/tools/skills)).
+
+**ClawHub** este registrul public al abilităților și pluginurilor OpenClaw ([ClawHub](https://docs.openclaw.ai/clawhub)). Abilitățile au versiuni, încărcările sunt scanate, iar pentru a publica este nevoie de un cont GitHub suficient de vechi.
+
+Pluginurile sunt altceva: rulează în același proces cu gateway-ul și sunt tratate ca cod de încredere. Din mai 2026, canalele, furnizorii de modele și instrumentele mari sunt mutate treptat din nucleu în pluginuri. OpenClaw poate lucra cu MCP în ambele sensuri, ca client al altor servere și ca server.
+
+## Automatizările
+
+Primele versiuni aveau un „puls” (_heartbeat_) periodic, controlat de fișierul `HEARTBEAT.md`, prin care asistentul se activa singur și verifica dacă are ceva de făcut. Azi, pulsul a devenit o **automatizare** (_automation_) obișnuită ([Automations](https://docs.openclaw.ai/automation/cron-jobs)). Planificatorul (`openclaw automations`, cu aliasul `openclaw cron`) rulează sarcini o singură dată sau după un program de tip cron, reacționează la cereri web (_webhooks_) și la mesaje noi din Gmail și poate trimite rezultatul pe un canal de chat. De exemplu, un rezumat al zilei poate ajunge în fiecare dimineață pe Telegram, fără niciun mesaj de la utilizator.
+
+## Browserul
+
+Pentru web, agentul primește un profil de browser separat (Chrome, Brave, Edge sau Chromium), folosit doar de agent și controlat printr-un serviciu local din gateway ([Browser](https://docs.openclaw.ai/tools/browser)). Există și varianta opusă: profilul `user` se atașează browserului Chrome real al utilizatorului, cu toate conturile deja autentificate, prin Chrome DevTools MCP. În acest al doilea caz, agentul lucrează cu toate sesiunile deschise ale utilizatorului.
+
+## Ce modele folosește
+
+Modelele și harnașamentele sunt pluginuri care pot fi schimbate. La 2 noiembrie 2026, documentația din repozitoriu avea 80 de pagini de furnizori: Anthropic, OpenAI, Google și xAI, furnizori de modele cu ponderi deschise (DeepSeek, Moonshot, Z.ai, MiniMax, Qwen, Mistral), agregatoare precum OpenRouter și programe pentru modele locale (Ollama, LM Studio, vLLM, SGLang, llama.cpp).
+
+Echipa ține și o [listă de modele recomandate](https://docs.openclaw.ai/concepts/recommended-models), ordonată după scorul agentic din clasamentul Arena și după utilizarea observată. În varianta din 23 octombrie 2026, lista începea cu Claude Opus 5.5, GPT-6.1 Sol și Gemini 4 Argon, iar printre modelele cu ponderi deschise includea DeepSeek V4.1 Flash, GLM-5.3 și Qwen3.8-27B. Pagina [Modele pentru agenți](/comportament-agentic/modele-pentru-agenti/) compară aceste modele.
+
+Pentru modelele Claude, OpenClaw are două variante: o cheie API sau Claude Code instalat pe același calculator, care rulează cu propria autentificare. Documentația Claude Code precizează că dezvoltatorii terți nu pot trimite cereri în numele utilizatorilor prin abonamentele Free, Pro, Max sau Ultra ([Anthropic, f.a.](https://code.claude.com/docs/en/legal-and-compliance)). Pentru OpenAI, OpenClaw acceptă autentificarea cu abonamentul ChatGPT, prin mediul de rulare Codex.
+
+Cu modele locale, câteva detalii fac diferența ([Ollama](https://docs.openclaw.ai/providers/ollama)):
+
+- OpenClaw folosește API-ul nativ al Ollama (`/api/chat`), nu adresa compatibilă OpenAI (`/v1`), care, potrivit documentației, strică apelul de instrumente: modelul ajunge să scrie apelurile ca text obișnuit.
+- Pentru un model local, contextul are implicit cel mult 32.768 de tokenuri, iar descrierile instrumentelor sunt încărcate doar la nevoie.
+- Varianta de server local administrat, bazată pe llama.cpp, alege un model potrivit pentru calculator și verifică un apel de instrument real înainte să schimbe modelul implicit.
+
+Documentația avertizează și că modelele locale nu au filtrele de siguranță ale furnizorilor găzduiți ([Local models](https://docs.openclaw.ai/gateway/local-models)), iar fișierul `SECURITY.md` adaugă că modelele mai slabe sunt, în general, mai ușor de manipulat.
+
+## Moltbook, pe scurt
+
+**Moltbook** este o rețea socială pentru agenți, apărută la sfârșitul lui ianuarie 2026. Pagina principală o prezintă ca „prima pagină a internetului agenților”, unde agenții publică, discută și votează, iar oamenii sunt bineveniți doar să privească ([Moltbook](https://www.moltbook.com)). Un agent intră pe Moltbook când proprietarul îi cere să citească fișierul `skill.md` al site-ului și să urmeze instrucțiunile din fișier. Este exact mecanismul abilităților, aplicat unui site.
+
+Pe 2 februarie 2026, [Wiz](https://www.wiz.io/blog/exposed-moltbook-database-reveals-millions-of-api-keys) a arătat că baza de date a site-ului era deschisă: o cheie Supabase din codul JavaScript al paginii, fără reguli de acces la nivel de rând, permitea oricui să citească și să scrie datele. Erau expuse aproximativ 1,5 milioane de chei de autentificare ale agenților, care aparțineau doar aproximativ 17.000 de oameni, adică în medie 88 de agenți de persoană. Wiz observa că nu exista niciun mecanism care să verifice dacă un „agent” este chiar un AI sau un om cu un script. Problema a fost reparată în câteva ore.
+
+## Proiecte asemănătoare
+
+Succesul OpenClaw a fost urmat de multe proiecte asemănătoare, de obicei mai mici sau construite în jurul unei idei de securitate. Cel mai mare, Hermes Agent, avea aproape 260.000 de stele pe GitHub la 2 noiembrie 2026. Toate proiectele din tabel sunt open source.
+
+| Proiect | Autor | Licență | Particularități |
+| :--- | :--- | :--- | :--- |
+| [Hermes Agent](https://github.com/NousResearch/hermes-agent) | Nous Research | MIT | Își creează singur abilități din experiență și le îmbunătățește în timp. Memorie în `MEMORY.md` și `USER.md`, un gateway pentru Telegram, Discord, Slack, WhatsApp și Signal, sarcini programate. Are o comandă de import din OpenClaw. |
+| [nanobot](https://github.com/HKUDS/nanobot) | HKUDS (Universitatea din Hong Kong) | MIT | Foarte mic, scris în Python. Canale de chat și e-mail, MCP, sarcini programate, modele locale prin Ollama sau vLLM. |
+| [NanoClaw](https://github.com/nanocoai/nanoclaw) | NanoClaw | MIT | Fiecare agent rulează în propriul container Docker. Construit pe Agents SDK de la Anthropic. |
+| [ZeroClaw](https://github.com/zeroclaw-labs/zeroclaw) | ZeroClaw Labs | Apache-2.0 | Un singur executabil scris în Rust, peste 30 de canale. |
+| [PicoClaw](https://github.com/sipeed/picoclaw) | Sipeed | MIT | Scris în Go, gândit pentru plăci de 10 dolari, cu 10–20 MB de memorie. |
+| [IronClaw](https://github.com/nearai/ironclaw) | NEAR AI | Apache-2.0 | Instrumentele nesigure rulează izolat, în WebAssembly, cu permisiuni pe capabilități. Cheile de acces stau criptate local. |
+| [Khoj](https://github.com/khoj-ai/khoj) | Khoj | AGPL-3.0 | Un „al doilea creier” găzduit de utilizator, cu automatizări, care lucrează cu modele locale sau găzduite. |
+
+Câteva harnașamente de programare se apropie din partea cealaltă. Cline poate fi legat de Telegram, Slack sau Discord, iar Kiro, harnașamentul AWS, care nu este open source, are „Crew”, un agent personal cu sarcini programate, memorie și acces din mai multe canale.
+
+## De ce acest design aduce riscuri specifice
+
+Simon Willison numește [triada letală](https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/) (_lethal trifecta_) combinația dintre acces la date private, expunere la conținut nesigur și posibilitatea de a comunica în exterior. Un agent care are toate trei poate fi păcălit să trimită datele cuiva din afară. Un asistent personal are toate trei din start, pentru că exact pentru asta a fost construit. Riscurile vin din patru direcții.
+
+- **Acces larg**: e-mail, calendar, fișiere, conturile de mesagerie, browserul cu sesiunile deschise și terminalul. Izolarea execuției are implicit valoarea `off`, deci, dacă nu este configurată altfel, instrumentele sesiunii principale rulează direct pe calculatorul gazdă ([SECURITY.md](https://github.com/openclaw/openclaw/blob/main/SECURITY.md)).
+- **Mereu pornit și deschis spre exterior**: gateway-ul rulează permanent, automatizările pornesc fără ca proprietarul să urmărească ce fac, iar textul ajunge la agent din grupuri, din e-mailuri și de pe paginile web citite. Orice astfel de text poate conține instrucțiuni ascunse, adică o **injecție de prompt** (_prompt injection_). Fișierul `SECURITY.md` al proiectului spune direct că modelul nu este un participant de încredere și că injecția de prompt poate schimba comportamentul agentului.
+- **Abilități scrise de alții**: o abilitate este text pe care modelul îl urmează ca pe niște instrucțiuni, plus scripturi. La începutul lui februarie 2026, Koi Security a verificat cele 2.857 de abilități aflate atunci pe ClawHub și a găsit 341 de abilități malițioase. Dintre acestea, 335 veneau dintr-o singură campanie care, sub pretextul unor „dependențe” de instalat, livra Atomic Stealer, un program care fură parole, chei SSH, chei API și portofele de criptomonede ([Underhill, 2026](https://esecurityplanet.com/threats/hundreds-of-malicious-skills-found-in-openclaws-clawhub)). ClawHub a început apoi să scaneze fiecare abilitate cu [VirusTotal](https://openclaw.ai/blog/virustotal-partnership), iar proiectul a recunoscut că scanarea nu rezolvă singură problema.
+- **Gateway-uri expuse pe internet**: gateway-ul este gândit să asculte doar local, iar documentația cere să nu fie expus pe internet și recomandă, pentru accesul de la distanță, un tunel SSH sau Tailscale. Mulți utilizatori l-au expus totuși. [Censys](https://censys.com/blog/openclaw-in-the-wild-mapping-the-public-exposure-of-a-viral-ai-assistant/) a numărat 21.639 de instanțe accesibile public pe 31 ianuarie 2026 (cele mai multe cereau totuși un token de acces), iar [SecurityScorecard](https://securityscorecard.com/blog/how-exposed-openclaw-deployments-turn-agentic-ai-into-an-attack-surface/) a găsit peste 40.000 în primele 24 de ore de scanare, în februarie 2026. Numerele diferă după metodă și după dată.
+
+Nici ascultarea doar pe adresa locală nu a fost suficientă în cazul vulnerabilității [CVE-2026-25253](https://github.com/openclaw/openclaw/security/advisories/GHSA-g8p2-7wf7-98mq). Interfața de control accepta în adresa paginii un parametru `gatewayUrl` și trimitea tokenul gateway-ului către adresa primită, așa că un singur clic pe un link pregătit de atacator îi dădea acestuia controlul asistentului, inclusiv posibilitatea de a opri aprobările și de a rula comenzi. Problema a fost reparată în versiunea 2026.1.29.
+
+Volumul arată cât de nouă este această categorie de software. La 2 noiembrie 2026, repozitoriul OpenClaw avea 722 de [avize de securitate](https://github.com/openclaw/openclaw/security/advisories) publicate. Steinberger scria în aprilie 2026 că, din cele 1.309 rapoarte primite de la 10 ianuarie, 746 fuseseră închise ca nevalide ([Steinberger, 2026](https://openclaw.ai/blog/openclaw-security-in-public)). Proiectul a răspuns cu scanarea abilităților, cu comanda `openclaw security audit`, care caută abaterile de la setările sigure, și cu un [audit extern](https://openclaw.ai/blog/openclaw-trail-of-bits-engagement-recap) făcut de Trail of Bits, ale cărui 24 de constatări au fost reparate până la versiunea 2026.8.1.
+
+Fișierul `SECURITY.md` descrie și limita de principiu: OpenClaw este o infrastructură locală pentru operatori de încredere, nu o barieră între mai mulți utilizatori care nu au încredere unii în alții, iar recomandarea este un singur utilizator pe calculator. Paginile [Securitatea agenților: atacuri](/comportament-agentic/securitatea-agentilor-atacuri/) și [Securitatea agenților: apărări](/comportament-agentic/securitatea-agentilor-aparari/) explică pe larg injecția de prompt, căile prin care pot pleca datele și măsurile care limitează pagubele, de la izolarea execuției la listele de adrese permise.
+
+## Bibliografie
+
+- Anthropic (f.a.). [Legal and compliance](https://code.claude.com/docs/en/legal-and-compliance). Documentația Claude Code.
+- Cutler, S. (2026). [OpenClaw in the Wild: Mapping the Public Exposure of a Viral AI Assistant](https://censys.com/blog/openclaw-in-the-wild-mapping-the-public-exposure-of-a-viral-ai-assistant/). Blogul Censys.
+- depthfirst (2026). [1-Click RCE To Steal Your OpenClaw Data and Keys (CVE-2026-25253)](https://depthfirst.com/post/1-click-rce-to-steal-your-moltbot-data-and-keys). Blogul depthfirst.
+- HKUDS (f.a.). [nanobot](https://github.com/HKUDS/nanobot). Cod sursă, GitHub.
+- Khoj (f.a.). [Khoj](https://github.com/khoj-ai/khoj). Cod sursă, GitHub.
+- Moltbook (f.a.). [moltbook - the front page of the agent internet](https://www.moltbook.com).
+- Morin, D. și Steinberger, P. (2026). [Introducing the OpenClaw Foundation](https://openclaw.ai/blog/introducing-openclaw-foundation). Blogul OpenClaw.
+- Nagli, G. (2026). [Hacking Moltbook: The AI Social Network Any Human Can Control](https://www.wiz.io/blog/exposed-moltbook-database-reveals-millions-of-api-keys). Blogul Wiz.
+- NanoClaw (f.a.). [NanoClaw](https://github.com/nanocoai/nanoclaw). Cod sursă, GitHub.
+- NEAR AI (f.a.). [IronClaw](https://github.com/nearai/ironclaw). Cod sursă, GitHub.
+- Nous Research (f.a.). [Hermes Agent](https://github.com/NousResearch/hermes-agent). Cod sursă, GitHub.
+- OpenClaw (2026). [1-Click RCE via Authentication Token Exfiltration From gatewayUrl](https://github.com/openclaw/openclaw/security/advisories/GHSA-g8p2-7wf7-98mq). Aviz de securitate GHSA-g8p2-7wf7-98mq, GitHub.
+- OpenClaw (2026). [OpenClaw Completes Security Audit Through OpenAI's Patch the Planet Initiative](https://openclaw.ai/blog/openclaw-trail-of-bits-engagement-recap). Blogul OpenClaw.
+- OpenClaw (2026). [OpenClaw Partners with VirusTotal for Skill Security](https://openclaw.ai/blog/virustotal-partnership). Blogul OpenClaw.
+- OpenClaw (f.a.). [Agent runtimes](https://docs.openclaw.ai/concepts/agent-runtimes). Documentația OpenClaw.
+- OpenClaw (f.a.). [Agent workspace](https://docs.openclaw.ai/concepts/agent-workspace). Documentația OpenClaw.
+- OpenClaw (f.a.). [Automations](https://docs.openclaw.ai/automation/cron-jobs). Documentația OpenClaw.
+- OpenClaw (f.a.). [Browser (OpenClaw-managed)](https://docs.openclaw.ai/tools/browser). Documentația OpenClaw.
+- OpenClaw (f.a.). [ClawHub](https://docs.openclaw.ai/clawhub). Documentația OpenClaw.
+- OpenClaw (f.a.). [Gateway architecture](https://docs.openclaw.ai/concepts/architecture). Documentația OpenClaw.
+- OpenClaw (f.a.). [Local models](https://docs.openclaw.ai/gateway/local-models). Documentația OpenClaw.
+- OpenClaw (f.a.). [Memory overview](https://docs.openclaw.ai/concepts/memory). Documentația OpenClaw.
+- OpenClaw (f.a.). [Nodes](https://docs.openclaw.ai/nodes). Documentația OpenClaw.
+- OpenClaw (f.a.). [Ollama](https://docs.openclaw.ai/providers/ollama). Documentația OpenClaw.
+- OpenClaw (f.a.). [OpenClaw](https://github.com/openclaw/openclaw). Cod sursă, GitHub.
+- OpenClaw (f.a.). [OpenClaw lore](https://docs.openclaw.ai/start/lore). Documentația OpenClaw.
+- OpenClaw (f.a.). [Recommended models](https://docs.openclaw.ai/concepts/recommended-models). Documentația OpenClaw.
+- OpenClaw (f.a.). [SECURITY.md](https://github.com/openclaw/openclaw/blob/main/SECURITY.md). Cod sursă, GitHub.
+- OpenClaw (f.a.). [Security advisories](https://github.com/openclaw/openclaw/security/advisories). GitHub.
+- OpenClaw (f.a.). [Skills](https://docs.openclaw.ai/tools/skills). Documentația OpenClaw.
+- Sipeed (f.a.). [PicoClaw](https://github.com/sipeed/picoclaw). Cod sursă, GitHub.
+- Steinberger, P. (2026). [How OpenClaw Got Safer in Public](https://openclaw.ai/blog/openclaw-security-in-public). Blogul OpenClaw.
+- Steinberger, P. (2026). [Introducing OpenClaw](https://openclaw.ai/blog/introducing-openclaw). Blogul OpenClaw.
+- Steinberger, P. (2026). [OpenClaw, OpenAI and the future](https://steipete.me/posts/2026/openclaw).
+- Underhill, K. (2026). [Hundreds of Malicious Skills Found in OpenClaw's ClawHub](https://esecurityplanet.com/threats/hundreds-of-malicious-skills-found-in-openclaws-clawhub). eSecurity Planet.
+- Vavra, S. (2026). [How Exposed OpenClaw Deployments Turn Agentic AI Into an Attack Surface](https://securityscorecard.com/blog/how-exposed-openclaw-deployments-turn-agentic-ai-into-an-attack-surface/). Blogul SecurityScorecard.
+- Willison, S. (2025). [The lethal trifecta for AI agents: private data, untrusted content, and external communication](https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/).
+- ZeroClaw Labs (f.a.). [ZeroClaw](https://github.com/zeroclaw-labs/zeroclaw). Cod sursă, GitHub.

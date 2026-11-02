@@ -2,7 +2,7 @@
 title: Provocări și bune practici
 description: Ce poate merge prost într-un sistem agentic și cum ne protejăm, prin izolarea mediului de execuție, bugete de pași și de costuri și un set mic de instrumente bine alese.
 sidebar:
-  order: 8
+  order: 14
 level: incepator
 tags:
   - Sisteme agentice
@@ -14,7 +14,7 @@ import AgentSafeguardsDiagram from '@components/diagrams/AgentSafeguardsDiagram.
 Construirea unor agenți stabili și utili ridică probleme serioase de inginerie. Cele mai importante țin de securitatea mediului în care lucrează agentul și de controlul asupra pașilor pe care îi face.
 
 :::caution[Securitatea și izolarea mediului (sandboxing)]
-Un agent care are acces la o consolă sau poate rula comenzi de sistem poate șterge din greșeală fișiere importante sau poate trimite date confidențiale către servere externe. De aceea, mediul de execuție trebuie izolat întotdeauna într-un container securizat (_sandbox_), iar operațiile distructive sau ireversibile trebuie să aștepte confirmarea explicită a unui om.
+Un agent care are acces la o consolă sau poate rula comenzi de sistem poate șterge din greșeală fișiere importante. Poate fi și păcălit, printr-o injecție de prompt ascunsă într-o pagină web, într-un e-mail sau într-un repozitoriu, să trimită date confidențiale către servere externe. De aceea, comenzile agentului trebuie să ruleze într-un mediu izolat (_sandbox_), de exemplu un container sau o mașină virtuală, cu acces limitat la rețea și fără chei la îndemână, iar operațiile distructive sau ireversibile trebuie să aștepte confirmarea explicită a unui om. Nicio măsură nu garantează singură siguranța. Paginile [Securitatea agenților: atacuri](/comportament-agentic/securitatea-agentilor-atacuri/) și [Securitatea agenților: apărări](/comportament-agentic/securitatea-agentilor-aparari/) descriu atacurile documentate și ce poate și ce nu poate opri fiecare apărare.
 :::
 
 :::tip[Bugete stricte și puține instrumente]
