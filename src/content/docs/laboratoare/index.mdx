@@ -1,11 +1,11 @@
 ---
 title: Laboratoare practice
-description: Cinci laboratoare cu cod sursă deschis, în Python și PyTorch, care rulează și în Google Colab. Învățăm un robot simulat să alerge cu PPO, construim de la zero o rețea neuronală care recunoaște cifre scrise de mână, rulăm local un model de limbaj, generăm imagini și sunete prin difuzie și antrenăm de la zero un model de tip GPT.
+description: Cinci laboratoare cu cod sursă deschis, în Python și PyTorch, care rulează și în Google Colab. Construim de la zero o rețea neuronală care recunoaște cifre scrise de mână, învățăm un robot simulat să alerge cu PPO, antrenăm de la zero un model de tip GPT, rulăm local un model de limbaj și generăm imagini și sunete prin difuzie.
 sidebar:
   label: Prezentare generală
 ---
 
-Paginile teoretice explică ideile. În laboratoare, aceleași idei devin cod care rulează pe propriul calculator. Fiecare laborator explică pas cu pas codul, scris în Python și PyTorch, și se încheie cu un rezultat pe care îl putem verifica: un robot simulat care aleargă, o rețea care recunoaște cifre scrise de mână, un model care răspunde la întrebări, imagini și sunete generate din text sau un model care scrie povești.
+Paginile teoretice explică ideile. În laboratoare, aceleași idei devin cod care rulează pe propriul calculator. Fiecare laborator explică pas cu pas codul, scris în Python și PyTorch, și se încheie cu un rezultat pe care îl putem verifica: o rețea care recunoaște cifre scrise de mână, un robot simulat care aleargă, un model care scrie povești, un model care răspunde la întrebări sau imagini și sunete generate din text.
 
 Toate laboratoarele folosesc Python 3.10 sau mai nou, cu pachetele instalate într-un mediu virtual creat cu `venv`. Rulează pe o placă grafică NVIDIA (CUDA), pe un cip Apple Silicon (MPS) sau, mai lent, pe procesor (CPU). Excepție face laboratorul cu PPO, unde rețeaua este atât de mică încât procesorul este cel mai rapid. Pagina despre [utilitatea plăcilor grafice](/concepte-de-baza/utilitatea-placilor-grafice/) explică de ce diferența de viteză este atât de mare.
 
@@ -13,7 +13,18 @@ Toate laboratoarele pot rula și în [Google Colab](https://colab.research.googl
 
 În laboratoarele de antrenare, exemplele scurte rulează direct în pagină, cu Python în browser (WebAssembly), fără nicio instalare. Antrenarea propriu-zisă rulează local, iar paginile arată rezultatele de referință, ca să le putem compara cu ce obținem pe propriul calculator. Codul acestor laboratoare este public, în [organizația proiectului de pe GitHub](https://github.com/inteligentArtificiala-ro), și poate fi clonat cu Git sau descărcat fișier cu fișier.
 
-Primul laborator, cu robotul care învață să alerge, este cel mai avansat și presupune paginile despre învățarea prin consolidare. Pentru începători, punctul de pornire potrivit este al doilea, despre rețelele neuronale construite de la zero. Laboratoarele cu Transformers și cu modele de difuzie se pot parcurge fără cunoștințe despre rețele neuronale.
+Primul laborator, despre rețelele neuronale construite de la zero, este punctul de pornire potrivit pentru începători. Al doilea, cu robotul care învață să alerge, este cel mai avansat și presupune paginile despre învățarea prin consolidare. Laboratoarele cu Transformers și cu modele de difuzie se pot parcurge fără cunoștințe despre rețele neuronale.
+
+## Rețele neuronale de la zero
+
+Scriem de la zero, în Python, tot ce se află sub o rețea neuronală. Pornim de la un **motor de diferențiere automată** (_automatic differentiation_) pentru numere obișnuite, în spiritul proiectului [micrograd](https://github.com/karpathy/micrograd) al lui Andrej Karpathy, și desenăm cu Graphviz grafurile computaționale pe care le parcurge retropropagarea, înainte și după calculul gradienților. Din aceleași piese construim neuroni, straturi și o rețea cu mai multe straturi, pe care o antrenăm cu cod scris de mână. La final, trecem de la numere la matrice: cu NumPy, scriem de mână retropropagarea unei rețele care recunoaște cifrele scrise de mână din setul MNIST, apoi scriem aceeași rețea în PyTorch.
+
+- **Nivel**: începător.
+- **Cerințe**: orice procesor obișnuit, fără placă grafică, și programul `dot` din Graphviz pentru diagrame. Antrenarea pe MNIST durează câteva secunde.
+- **Înainte de laborator**: paginile despre [rețelele neuronale](/retele-neuronale/ce-sunt-retelele-neuronale/) și despre [retropropagare](/retele-neuronale/retropropagare/).
+- **Google Colab**: un notebook pentru tot laboratorul.
+
+Laboratorul începe cu [prezentarea laboratorului și pregătirea mediului de lucru](/laboratoare/retele-neuronale-de-la-zero/prezentare/).
 
 ## Control continuu cu PPO în MuJoCo
 
@@ -27,16 +38,17 @@ Robotul **HalfCheetah**, un robot bidimensional inspirat de ghepard, cu 6 articu
 
 Laboratorul începe cu [prezentarea robotului și a simulatorului](/laboratoare/control-continuu-ppo-halfcheetah/prezentare/).
 
-## Rețele neuronale de la zero
+## Un model de limbaj de la zero
 
-Scriem de la zero, în Python, tot ce se află sub o rețea neuronală. Pornim de la un **motor de diferențiere automată** (_automatic differentiation_) pentru numere obișnuite, în spiritul proiectului [micrograd](https://github.com/karpathy/micrograd) al lui Andrej Karpathy, și desenăm cu Graphviz grafurile computaționale pe care le parcurge retropropagarea, înainte și după calculul gradienților. Din aceleași piese construim neuroni, straturi și o rețea cu mai multe straturi, pe care o antrenăm cu cod scris de mână. La final, trecem de la numere la matrice: cu NumPy, scriem de mână retropropagarea unei rețele care recunoaște cifrele scrise de mână din setul MNIST, apoi scriem aceeași rețea în PyTorch.
+Construim și antrenăm de la zero **mvGPT** (_Minimum Viable GPT_), un model de tip GPT cu 14,6 milioane de parametri. Codul, scris în Python și PyTorch, trece prin pregătirea datelor din setul TinyStories, tokenizare, preantrenare, generarea textului și **ajustarea fină supervizată** (_supervised fine-tuning_, SFT). Laboratorul însoțește, cu explicații în limba română, primele trei episoade ale seriei video [Minimum Viable GPT](https://mvgpt.nenuadrian.com). Un proiect asemănător, mai amplu, este [nanochat](https://github.com/karpathy/nanochat), scris de Andrej Karpathy.
 
-- **Nivel**: începător.
-- **Cerințe**: orice procesor obișnuit, fără placă grafică, și programul `dot` din Graphviz pentru diagrame. Antrenarea pe MNIST durează câteva secunde.
-- **Înainte de laborator**: paginile despre [rețelele neuronale](/retele-neuronale/ce-sunt-retelele-neuronale/) și despre [retropropagare](/retele-neuronale/retropropagare/).
+- **Nivel**: intermediar.
+- **Cerințe**: circa 1 GB de spațiu pe disc. Preantrenarea și ajustarea fină durează câte 10 minute pe un laptop modern.
+- **Înainte de laborator**: paginile despre [rețelele neuronale](/retele-neuronale/ce-sunt-retelele-neuronale/) și despre [mecanismul de atenție](/modele-lingvistice/avem-nevoie-doar-de-atentie/).
+- **Cod sursă**: repozitoriul [inteligentArtificiala-ro/laborator-lm-de-la-zero](https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero).
 - **Google Colab**: un notebook pentru tot laboratorul.
 
-Laboratorul începe cu [prezentarea laboratorului și pregătirea mediului de lucru](/laboratoare/retele-neuronale-de-la-zero/prezentare/).
+Laboratorul începe cu [prezentarea modelului și pregătirea mediului de lucru](/laboratoare/model-lingvistic-de-la-zero/prezentare/).
 
 ## Un model de limbaj local cu Transformers
 
@@ -59,15 +71,3 @@ Generăm imagini și sunete cu modele de difuzie cu ponderi deschise, în Python
 - **Google Colab**: un notebook pentru tot laboratorul.
 
 Laboratorul începe cu [instalarea și prima imagine](/laboratoare/difuzie-imagini-si-sunete/prezentare/).
-
-## Un model de limbaj de la zero
-
-Construim și antrenăm de la zero **mvGPT** (_Minimum Viable GPT_), un model de tip GPT cu 14,6 milioane de parametri. Codul, scris în Python și PyTorch, trece prin pregătirea datelor din setul TinyStories, tokenizare, preantrenare, generarea textului și **ajustarea fină supervizată** (_supervised fine-tuning_, SFT). Laboratorul însoțește, cu explicații în limba română, primele trei episoade ale seriei video [Minimum Viable GPT](https://mvgpt.nenuadrian.com). Un proiect asemănător, mai amplu, este [nanochat](https://github.com/karpathy/nanochat), scris de Andrej Karpathy.
-
-- **Nivel**: intermediar.
-- **Cerințe**: circa 1 GB de spațiu pe disc. Preantrenarea și ajustarea fină durează câte 10 minute pe un laptop modern.
-- **Înainte de laborator**: paginile despre [rețelele neuronale](/retele-neuronale/ce-sunt-retelele-neuronale/) și despre [mecanismul de atenție](/modele-lingvistice/avem-nevoie-doar-de-atentie/).
-- **Cod sursă**: repozitoriul [inteligentArtificiala-ro/laborator-lm-de-la-zero](https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero).
-- **Google Colab**: un notebook pentru tot laboratorul.
-
-Laboratorul începe cu [prezentarea modelului și pregătirea mediului de lucru](/laboratoare/model-lingvistic-de-la-zero/prezentare/).

@@ -11,6 +11,7 @@ tags:
 ---
 
 import Colab from '@components/Colab.astro';
+import LlmChat from '@components/LlmChat.astro';
 
 <Colab notebook='laboratoare/model-lingvistic-de-la-zero/model-lingvistic-de-la-zero.ipynb' />
 
@@ -19,6 +20,20 @@ Paginile despre [modelele de limbaj mari](/modele-lingvistice/ce-sunt-modelele-l
 import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 
 Modelul se numește **mvGPT** (_Minimum Viable GPT_) și este o implementare minimală, dar complet funcțională, a unui model de tip GPT. Are 14,6 milioane de parametri (de aproximativ 12.000 de ori mai puțini decât GPT-3) și se antrenează în circa zece minute pe un laptop modern. Codul, scris în Python și PyTorch, este împărțit în șapte fișiere, pe care le explicăm integral pe parcursul laboratorului.
+
+## Un model antrenat, direct în browser
+
+Conversația de mai jos rulează SmolLM2 135M, un model de același tip, dezvoltat de Hugging Face în 2024. Are 135 de milioane de parametri, de circa nouă ori mai mulți decât mvGPT, și a fost preantrenat pe 2.000 de miliarde de tokenuri, mai ales în limba engleză. Varianta din conversație a trecut apoi printr-o ajustare fină pentru dialog. Sunt aceleași etape pe care le parcurgem în laborator, preantrenarea și ajustarea fină supervizată, la o scară mult mai mare.
+
+:::tip[Totul rulează în browser]
+Modelul rulează direct în browser, **cuantizat** (_quantized_) pe 8 biți, prin biblioteca [Transformers.js](https://huggingface.co/docs/transformers.js), cu WebGPU sau WebAssembly. Mesajele nu sunt trimise la niciun server.
+:::
+
+<LlmChat />
+
+Modelul răspunde în engleză și are limitele firești ale unui model atât de mic. Arată însă că inferența unui model de limbaj poate rula eficient, în întregime local. Modelul mvGPT, antrenat doar pe povești scurte și simple, va fi mult mai limitat, dar funcționează pe același principiu: prezice, token cu token, cum continuă textul.
+
+## Codul și seria video
 
 Laboratorul urmărește primele trei episoade ale seriei video [Minimum Viable GPT](https://mvgpt.nenuadrian.com) și le însoțește cu explicații în limba română. Codul complet, cu comentarii tot în română, se află pe GitHub, în repozitoriul [**inteligentArtificiala-ro/laborator-lm-de-la-zero**](https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero).
 
@@ -114,8 +129,10 @@ Seria continuă cu etapele de după acest laborator, de exemplu alinierea modelu
 
 ## Bibliografie
 
+- Ben Allal, L. et al. (2025). [SmolLM2: When Smol Goes Big – Data-Centric Training of a Small Language Model](https://arxiv.org/abs/2502.02737). Preprint arXiv:2502.02737.
 - Brown, T. B. et al. (2020). [Language Models are Few-Shot Learners](https://arxiv.org/abs/2005.14165). _NeurIPS 2020_.
 - Eldan, R. și Li, Y. (2023). [TinyStories: How Small Can Language Models Be and Still Speak Coherent English?](https://arxiv.org/abs/2305.07759) Preprint arXiv:2305.07759.
+- Hugging Face (f.a.). [Transformers.js](https://huggingface.co/docs/transformers.js). Documentația Hugging Face.
 - Karpathy, A. (2022). [nanoGPT](https://github.com/karpathy/nanoGPT). Cod sursă, GitHub.
 - Karpathy, A. (2025). [nanochat](https://github.com/karpathy/nanochat). Cod sursă, GitHub.
 - Nenu, A. M. (2026). [Minimum Viable GPT](https://mvgpt.nenuadrian.com). Serie video, YouTube.

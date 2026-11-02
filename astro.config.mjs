@@ -105,14 +105,19 @@ export default defineConfig({
           items: [
             { label: 'Prezentare generală', slug: 'laboratoare' },
             {
+              label: 'Rețele neuronale de la zero',
+              collapsed: true,
+              items: [{ autogenerate: { directory: 'laboratoare/retele-neuronale-de-la-zero' } }],
+            },
+            {
               label: 'Control continuu cu PPO în MuJoCo',
               collapsed: true,
               items: [{ autogenerate: { directory: 'laboratoare/control-continuu-ppo-halfcheetah' } }],
             },
             {
-              label: 'Rețele neuronale de la zero',
+              label: 'Un model de limbaj de la zero',
               collapsed: true,
-              items: [{ autogenerate: { directory: 'laboratoare/retele-neuronale-de-la-zero' } }],
+              items: [{ autogenerate: { directory: 'laboratoare/model-lingvistic-de-la-zero' } }],
             },
             {
               label: 'Un model de limbaj local cu Transformers',
@@ -123,11 +128,6 @@ export default defineConfig({
               label: 'Imagini și sunete cu modele de difuzie',
               collapsed: true,
               items: [{ autogenerate: { directory: 'laboratoare/difuzie-imagini-si-sunete' } }],
-            },
-            {
-              label: 'Un model de limbaj de la zero',
-              collapsed: true,
-              items: [{ autogenerate: { directory: 'laboratoare/model-lingvistic-de-la-zero' } }],
             },
           ],
         },

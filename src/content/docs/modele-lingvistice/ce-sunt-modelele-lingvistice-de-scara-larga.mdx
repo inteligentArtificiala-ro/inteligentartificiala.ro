@@ -1,6 +1,6 @@
 ---
 title: Modele de limbaj mari (LLM)
-description: Un model de limbaj mare (LLM) scrie text câte un token pe rând, pe baza probabilităților învățate din cantități uriașe de text. Pagina include un demo care rulează direct în browser.
+description: Un model de limbaj mare (LLM) scrie text câte un token pe rând, pe baza probabilităților învățate din cantități uriașe de text.
 sidebar:
   order: 1
 level: incepator
@@ -10,7 +10,6 @@ tags:
 
 import DeepDive from '@components/DeepDive.astro';
 import GenerationStepDiagram from '@components/diagrams/GenerationStepDiagram.astro';
-import LlmChat from '@components/LlmChat.astro';
 import { Steps } from '@astrojs/starlight/components';
 
 Când scriem un mesaj pe telefon, tastatura propune deasupra literelor cuvântul care ar putea urma. Un **model de limbaj mare** (_large language model_, LLM) face, în esență, același lucru, la o scară mult mai mare. Primește un text, estimează cum continuă cel mai probabil și adaugă o bucată. Repetând pasul acesta de sute de ori, scrie un răspuns întreg. Sisteme precum ChatGPT, Gemini, Grok sau Claude sunt construite în jurul unor astfel de modele.
@@ -39,7 +38,7 @@ Fiecare factor este probabilitatea ca tokenul $x_t$ să apară după tokenurile 
 
 Modelele nu lucrează direct cu litere sau cu cuvinte întregi, ci cu **tokenuri** (_tokens_), adică secvențe de caractere dintr-un vocabular fixat dinainte. **Tokenizarea** (_tokenization_) este pasul care împarte textul în astfel de bucăți. Cuvintele foarte frecvente devin adesea un singur token, iar cele rare sau compuse se împart în mai multe.
 
-De exemplu, tokenizatorul modelului SmolLM2 (cel din demo-ul de mai jos) are un vocabular de 49.152 de tokenuri. Propoziția „Neural networks learn from data.” este împărțită în 7 tokenuri (`␣` marchează spațiul de la începutul unui token).
+De exemplu, tokenizatorul modelului SmolLM2, un model mic dezvoltat de Hugging Face, are un vocabular de 49.152 de tokenuri. Propoziția „Neural networks learn from data.” este împărțită în 7 tokenuri (`␣` marchează spațiul de la începutul unui token).
 
 `Ne` `ural` `␣networks` `␣learn` `␣from` `␣data` `.`
 
@@ -106,25 +105,12 @@ Un asistent conversațional se construiește de obicei în trei etape. Prima pro
 - **Prejudecățile** (_bias_) din datele de pe internet ajung și în model, care poate reproduce stereotipurile și dezechilibrele din acele date.
 :::
 
-## Un model compact în browser
-
-:::tip[Totul rulează în browser]
-SmolLM2 135M, dezvoltat de Hugging Face în 2024, are 135 de milioane de parametri, de peste 1.000 de ori mai puțini decât GPT-3. A fost preantrenat pe 2.000 de miliarde de tokenuri, mai ales în limba engleză.
-
-Modelul rulează direct în browser, **cuantizat** (_quantized_) pe 8 biți, prin biblioteca [Transformers.js](https://huggingface.co/docs/transformers.js), cu WebGPU sau WebAssembly. Mesajele nu sunt trimise la niciun server.
-:::
-
-<LlmChat />
-
-Modelul răspunde în engleză și are limitele firești ale unui model atât de mic. Arată însă că inferența unui model de limbaj poate rula eficient, în întregime local.
-
 ## Bibliografie
 
 - Ben Allal, L. et al. (2025). [SmolLM2: When Smol Goes Big – Data-Centric Training of a Small Language Model](https://arxiv.org/abs/2502.02737). Preprint arXiv:2502.02737.
 - Bengio, Y. et al. (2003). [A Neural Probabilistic Language Model](https://www.jmlr.org/papers/v3/bengio03a.html). _Journal of Machine Learning Research_, 3, 1137–1155.
 - Brown, T. B. et al. (2020). [Language Models are Few-Shot Learners](https://arxiv.org/abs/2005.14165). _NeurIPS 2020_.
 - Grattafiori, A. et al. (2024). [The Llama 3 Herd of Models](https://arxiv.org/abs/2407.21783). Preprint arXiv:2407.21783.
-- Hugging Face (f.a.). [Transformers.js](https://huggingface.co/docs/transformers.js). Documentația Hugging Face.
 - Ouyang, L. et al. (2022). [Training language models to follow instructions with human feedback](https://arxiv.org/abs/2203.02155). _NeurIPS 2022_.
 - Petrov, A. et al. (2023). [Language Model Tokenizers Introduce Unfairness Between Languages](https://arxiv.org/abs/2305.15425). _NeurIPS 2023_.
 - Radford, A. et al. (2018). [Improving Language Understanding by Generative Pre-Training](https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf). Raport tehnic OpenAI.
