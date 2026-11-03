@@ -55,7 +55,7 @@ unde $q_i$ este interogarea tokenului $i$, $k_j$ și $v_j$ sunt cheia și valoar
 
 <SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/attention.py" symbols={['attention']} />
 
-Interogările, cheile și valorile unei secvențe vin ca matrice, cu câte un rând pentru fiecare token. Produsul `q @ k.T` calculează dintr-o dată toate scorurile, într-o matrice de $T \times T$, în care rândul $i$ conține scorurile tokenului $i$ față de fiecare token. Apelul `torch.triu(…, diagonal=1)` marchează cu `True` pozițiile de deasupra diagonalei, adică perechile în care tokenul $j$ vine după tokenul $i$, iar `masked_fill` pune acolo minus infinit. `F.softmax(…, dim=-1)` lucrează pe ultima dimensiune, deci pe fiecare rând, iar `weights @ v` face toate mediile ponderate. Funcția întoarce și ponderile, ca tabelul lor să poată fi afișat.
+Interogările, cheile și valorile unei secvențe vin ca matrice, cu câte un rând pentru fiecare token. Produsul `q @ k.T` calculează dintr-o dată toate scorurile, într-o matrice de $T \times T$, în care rândul $i$ conține scorurile tokenului $i$ față de fiecare token. Apelul `torch.triu(…, diagonal=1)` marchează cu `True` pozițiile de deasupra diagonalei, adică perechile în care tokenul $j$ vine după tokenul $i$, iar `masked_fill` pune acolo minus infinit. `F.softmax(…, dim=-1)` lucrează pe ultima dimensiune, deci pe fiecare rând, iar `weights @ v` face toate mediile ponderate. Funcția întoarce și ponderile, ca tabelul ponderilor să poată fi afișat.
 
 ## O propoziție de șase tokenuri
 
