@@ -1,0 +1,286 @@
+---
+title: Recompensa și DPO
+description: O recompensă scrisă în cod, perechi de povești preferate și respinse, scrise chiar de model, și optimizarea directă a preferințelor (DPO) față de o copie înghețată a modelului, cu câștigul și prețul plătit pentru câștig.
+sidebar:
+  order: 8
+level: avansat
+tags:
+  - Modele de limbaj mari (LLM)
+---
+
+import DeepDive from '@components/DeepDive.astro';
+import Python from '@components/Python.astro';
+import SourceFile from '@components/SourceFile.astro';
+
+export const wordsUsed = String.raw`
+import re
+
+def words_used(story, words):
+    return sum(bool(re.search(rf"\b{re.escape(w)}(s|es|d|ed|ing)?\b", story, re.I)) for w in words)
+`;
+
+export const instructSetup = String.raw`
+import os, re
+from js import location
+from pyodide.http import open_url
+
+# Eșantionul de instrucțiuni al laboratorului, copiat în sistemul de fișiere din browser.
+LAB = location.origin + "/laboratoare/model-lingvistic-de-la-zero/"
+if not os.path.exists("instructiuni.txt"):
+    with open("instructiuni.txt", "w", encoding="utf-8") as f:
+        f.write(open_url(LAB + "date/instructiuni.txt").read())
+
+# Aceeași funcție ca în sft.py.
+FIELD = re.compile(r"^(Features|Words|Random sentence|Summary|Story):", re.MULTILINE)
+
+def parse(doc):
+    parts = FIELD.split(doc)
+    return {name: text.strip() for name, text in zip(parts[1::2], parts[2::2])}
+${wordsUsed}`;
+
+După [ajustarea fină](/laboratoare/model-lingvistic-de-la-zero/ajustare-fina-supervizata/), modelul scrie povești de la început, dar folosește doar o parte din cuvintele cerute de instrucțiune. În această etapă transformăm problema într-un număr, o **recompensă** (_reward_) scrisă în cod. Cu ajutorul recompensei alegem, dintre poveștile scrise chiar de model, perechi formate dintr-o poveste preferată și una respinsă. Perechile devin apoi datele unei noi etape de antrenare, **optimizarea directă a preferințelor** (_direct preference optimization_, DPO).
+
+Pagina despre [învățarea prin consolidare pentru LLM-uri](/modele-lingvistice/invatare-prin-consolidare-pentru-llm/) descrie alinierea modelelor mari, de la modelul de recompensă la DPO. Codul acestei etape se află în trei fișiere noi: `reward.py`, `preferences.py` și `dpo.py`.
+
+## Recompensa
+
+La modelele mari, recompensa vine de obicei de la un [model de recompensă](/modele-lingvistice/invatare-prin-consolidare-pentru-llm/#modelul-de-recompensă-și-rlhf), antrenat pe alegerile unor evaluatori umani, sau de la un program care verifică răspunsul, de exemplu rezultatul unei probleme de matematică. Pentru poveștile noastre, o regulă simplă este suficientă: recompensa este proporția de cuvinte cerute care apar în poveste. Pentru instrucțiunea „Words: rain, cake, jump”, povestea de pe pagina anterioară, care folosește doar „cake”, primește o treime.
+
+<DeepDive title="Formula recompensei">
+
+$$
+r = \frac{\text{numărul de cuvinte cerute care apar în poveste}}{\text{numărul de cuvinte cerute}}
+$$
+
+Recompensa este între 0 și 1. Pentru „rain, cake, jump” și o poveste care folosește doar „cake”, $r = \tfrac{1}{3}$.
+
+</DeepDive>
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/reward.py" symbols={['INSTRUCTIONS', 'MAX_TOKENS', 'words_used']} />
+
+Pentru fiecare cuvânt cerut, o expresie regulată caută cuvântul întreg, fără terminație sau cu una dintre terminațiile _s_, _es_, _d_, _ed_ și _ing_, ca „jumped” să conteze pentru „jump”. Secvența `\b` marchează granița unui cuvânt, așa că „rainbow” nu contează pentru „rain”, iar `re.I` ignoră diferența dintre literele mari și mici. Exemplul de mai jos aplică funcția câtorva texte scurte.
+
+<Python
+  code={String.raw`${wordsUsed}
+words = ["rain", "cake", "jump"]
+for story in [
+    "Lily saw a big cake. She ate the cake.",
+    "It was raining. Lily jumped over a puddle and ate two cakes.",
+    "The rainbow was pretty. Lily jumps and bakes a cake.",
+    "Rain cake jump. Rain cake jump.",
+]:
+    used = words_used(story, words)
+    print(f"{used}/{len(words)} = {used / len(words):.2f}  {story}")
+`}
+/>
+
+Ultimul text primește recompensa maximă, deși nu este o poveste. O recompensă scrisă în cod măsoară doar lucrul pentru care a fost scrisă, iar un model antrenat să obțină recompense mari poate găsi astfel de scurtături. Fenomenul se numește **exploatarea recompensei** (_reward hacking_) și apare, la scară mică, în rezultatele de la finalul paginii.
+
+Regula are și limite mai mici: „hurried” nu contează pentru „hurry”, nici „valuable” pentru „value”. Exemplul următor aplică recompensa poveștilor din eșantionul de 60 de documente din TinyStories-Instruct, scrise de GPT-3.5 și GPT-4. Aceste povești folosesc aproape toate cuvintele cerute, iar cele câteva care lipsesc apar de obicei sub o formă pe care regula nu o recunoaște.
+
+<Python
+  setup={instructSetup}
+  code={String.raw`
+with open("instructiuni.txt", encoding="utf-8") as f:
+    docs = [parse(d) for d in f.read().split("<|endoftext|>") if d.strip()]
+asks = [fields for fields in docs if "Words" in fields and "Story" in fields]
+
+used = asked = 0
+for fields in asks:
+    words = fields["Words"].split(", ")
+    found = words_used(fields["Story"], words)
+    used, asked = used + found, asked + len(words)
+    if found < len(words):
+        missing = [w for w in words if not words_used(fields["Story"], [w])]
+        print("Lipsesc:", missing)
+print(f"Povești cu cuvinte cerute: {len(asks)}, cuvinte folosite: {used} din {asked} ({used / asked:.0%})")
+`}
+/>
+
+Recompensa nu știe nimic despre finalul poveștii. De aceea, măsurăm și câte povești se încheie singure, cu tokenul `<|endoftext|>`, în cel mult 200 de tokenuri. Această a doua măsură arată dacă antrenarea strică ceva ce recompensa nu vede.
+
+## Măsurarea unui model
+
+Restul fișierului `reward.py` măsoară un model salvat pe primele 50 de instrucțiuni din partea de validare a setului TinyStories-Instruct care cer cuvinte.
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/reward.py" symbols={['load_instructions', 'measure', 'main']} />
+
+Funcția `load_instructions` folosește funcțiile `parse` și `instruction` din `sft.py` și întoarce, pentru fiecare document, instrucțiunea și lista cuvintelor cerute. Funcția `measure` scrie câte o poveste pentru fiecare instrucțiune, cu temperatura 0,8 și filtrul top-k de 50, ca `sample.py`, și se oprește la tokenul de sfârșit. Apoi adună cuvintele cerute folosite și poveștile al căror ultim token este `<|endoftext|>`. Înaintea fiecărui model, `torch.manual_seed(0)` fixează generatorul de numere aleatoare, ca modelele să fie comparate în aceleași condiții.
+
+```bash
+python reward.py checkpoints/pretrain/model.pt checkpoints/sft/model.pt
+```
+
+Rezultatele de pe această pagină vin din seria video a laboratorului, cu modelele de pe paginile anterioare.
+
+```text
+50 instrucțiuni de validare, 150 de cuvinte cerute
+pretrain   cuvinte folosite   6.0% | povești terminate   80%
+sft        cuvinte folosite  36.7% | povești terminate   70%
+```
+
+Modelul preantrenat folosește cuvintele cerute doar întâmplător, în 6% din cazuri. Modelul ajustat folosește 36,7% din cuvintele cerute, de șase ori mai multe, dar încheie puțin mai rar povestea, pentru că scrie povești întregi, de la început. Măsurătoarea este aproximativă: o poveste terminată în plus schimbă a doua măsură cu 2%, iar un cuvânt cerut în plus o schimbă pe prima cu 0,7%.
+
+## Perechile de preferințe
+
+DPO învață din perechi: pentru aceeași instrucțiune, o poveste preferată (_chosen_) și una respinsă (_rejected_). La modelele mari, perechile sunt alese de evaluatori umani sau de un model de recompensă. Aici le alege recompensa. Modelul ajustat scrie patru povești pentru fiecare instrucțiune, povestea cu cele mai multe cuvinte cerute devine povestea preferată, iar cea cu cele mai puține, povestea respinsă. Când toate cele patru povești primesc aceeași recompensă, instrucțiunea este sărită, pentru că nu există o preferință.
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/preferences.py" symbols={['SAMPLES', 'GROUP', 'load_asks', 'cut', 'make_pairs']} />
+
+Modelul scrie dintr-o dată 32 de povești, câte 4 pentru 8 instrucțiuni, într-un singur lot. Metoda `generate` nu știe să completeze secvențe de lungimi diferite, așa că instrucțiunile dintr-un lot trebuie să aibă același număr de tokenuri: `load_asks` le grupează după lungime, iar `make_pairs` alege la fiecare pas o lungime și 8 instrucțiuni de acea lungime. Temperatura 1,0, mai mare decât 0,8 din `sample.py`, face poveștile aceleiași instrucțiuni mai diferite, deci mai potrivite pentru comparații.
+
+Metoda `generate` nu primește aici `eos_id`, deci scrie câte 200 de tokenuri pentru fiecare poveste. Funcția `cut` taie povestea după primul `<|endoftext|>` și păstrează tokenul, pentru ca modelul să învețe și unde se termină o poveste. Poveștile sunt apoi ordonate după recompensă, iar prima și ultima formează perechea.
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/preferences.py" symbols={['main']} />
+
+Instrucțiunile au cel mult 56 de tokenuri (`max_prompt`, adică 256 − 200), ca instrucțiunea și povestea să încapă împreună în fereastra de context. Implicit, scriptul face 500 de perechi din partea de antrenare și 50 din partea de validare. Perechile de validare vin din documentele aflate după primele 2.000 ale fișierului de validare, ca să nu se suprapună cu cele 50 de instrucțiuni folosite de `reward.py`. Toate perechile sunt salvate în `checkpoints/dpo/preferences.json`.
+
+```bash
+python preferences.py
+```
+
+```text
+train: 500 perechi, 107 egalități sărite | cuvinte folosite: 65% în cele preferate, 21% în cele respinse | 10.4 min
+valid: 50 perechi, 8 egalități sărite | cuvinte folosite: 67% în cele preferate, 23% în cele respinse | 11.5 min
+salvate în checkpoints/dpo/preferences.json
+```
+
+Scriptul nu are un buget de timp. Pentru cele 550 de perechi, modelul a scris circa 2.700 de povești, în 11,5 minute, pe un cip Apple Silicon (MPS). Pe procesorul obișnuit, aceleași povești pot cere câteva ore. Numărul de perechi este dat de cele două argumente, așa că o încercare rapidă poate folosi mai puține, de exemplu `python preferences.py 100 20`, cu prețul unor rezultate mai slabe la DPO.
+
+Pentru 107 instrucțiuni de antrenare, cele patru povești au primit aceeași recompensă. Poveștile preferate folosesc, în medie, 65% din cuvintele cerute, iar cele respinse doar 21%. Modelul ajustat poate deci folosi cuvintele cerute, dar nu o face de fiecare dată. DPO trebuie să facă mai probabile poveștile de felul celor preferate.
+
+## Pierderea DPO
+
+Metoda clasică de aliniere, **RLHF** (_reinforcement learning from human feedback_), antrenează întâi un model de recompensă pe perechi, apoi optimizează modelul de limbaj prin învățare prin consolidare, de obicei cu PPO. DPO, propus în 2023 de [Rafailov și colaboratorii](https://arxiv.org/abs/2305.18290), sare peste ambii pași: modelul învață direct din perechi, cu o funcție de pierdere obișnuită, fără model de recompensă separat și fără să scrie povești în timpul antrenării.
+
+Pentru fiecare pereche, DPO compară cât de probabile sunt cele două povești pentru modelul antrenat și pentru un **model de referință** (_reference model_), o copie înghețată a modelului ajustat, care nu se mai schimbă. Pentru fiecare poveste calculăm un câștig: cu cât a crescut, față de referință, logaritmul probabilității poveștii. **Marja** perechii este diferența dintre câștigul poveștii preferate și câștigul poveștii respinse, înmulțită cu un coeficient β = 0,1. Pierderea este mică atunci când marja este mare și pozitivă, adică atunci când modelul a făcut povestea preferată mai probabilă decât povestea respinsă, față de cât de probabile erau cele două povești la început.
+
+Referința ține modelul aproape de punctul de plecare. Contează doar cât s-a schimbat probabilitatea fiecărei povești, nu cât de probabilă este povestea în sine. Coeficientul β stabilește cât de departe are voie să ajungă modelul: cu un β mic, aceeași pierdere cere o schimbare mai mare față de referință.
+
+<DeepDive title="Pierderea DPO">
+
+Marja unei perechi este:
+
+$$
+m = \beta \left[ \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} - \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)} \right]
+$$
+
+Pierderea perechii este:
+
+$$
+\mathcal{L} = -\log \sigma(m), \qquad \sigma(m) = \frac{1}{1 + e^{-m}}
+$$
+
+unde $x$ este instrucțiunea, $y_w$ povestea preferată, $y_l$ povestea respinsă, $\pi_\theta$ modelul antrenat, $\pi_{\text{ref}}$ modelul de referință, iar $\sigma$ funcția sigmoidă. Logaritmul probabilității unei povești este suma logaritmilor probabilităților tokenurilor poveștii. La început, $\pi_\theta = \pi_{\text{ref}}$, deci $m = 0$ și $\mathcal{L} = \ln 2 \approx 0{,}693$.
+
+Pierderea are forma pierderii unui model de recompensă din RLHF, în care recompensa unei povești este înlocuită cu $\beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$. De aici vine și titlul lucrării: modelul de limbaj este, în secret, un model de recompensă.
+
+</DeepDive>
+
+Exemplul de mai jos calculează pierderea pentru câteva câștiguri ale celor două povești, în logaritmi naturali.
+
+<Python
+  code={String.raw`
+import math
+
+def dpo_loss(margin):
+    return -math.log(1 / (1 + math.exp(-margin)))  # -log σ(marja)
+
+beta = 0.1
+for gain_chosen, gain_rejected in [(0.0, 0.0), (2.0, -1.0), (5.0, -5.0), (10.0, -10.0), (-3.0, 0.0)]:
+    margin = beta * (gain_chosen - gain_rejected)
+    print(f"câștig preferată {gain_chosen:+5.1f}, respinsă {gain_rejected:+5.1f}"
+          f" -> marja {margin:+.2f}, pierderea {dpo_loss(margin):.3f}")
+`}
+/>
+
+Pierderea scade pe măsură ce marja crește, dar tot mai încet, iar o marjă negativă, cu povestea respinsă favorizată, o face mai mare decât $\ln 2$.
+
+## Antrenarea cu DPO
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/dpo.py" symbols={['BATCH_SIZE', 'LR', 'BETA', 'EVAL_EVERY', 'DEMO', 'log_probs', 'dpo_loss', 'held_out']} />
+
+Funcția `log_probs` trece un lot prin model și ia, cu `gather`, logaritmul probabilității fiecărui token țintă. Lotul este construit cu `make_batch` din `sft.py`, așa că țintele sunt -1 pe instrucțiune și pe completare, iar acele poziții sunt înmulțite cu zero. Suma pe fiecare rând dă logaritmul probabilității întregii povești. Apelul `y.clamp(min=0)` înlocuiește -1 cu 0 doar ca `gather` să primească un indice valid, iar valorile de pe acele poziții sunt oricum anulate.
+
+Funcția `dpo_loss` pune în același lot poveștile preferate, apoi pe cele respinse. Referința rulează fără gradienți, `gain` este câștigul fiecărei povești, iar `F.logsigmoid` calculează direct $\log \sigma$, mai stabil numeric decât logaritmul aplicat după sigmoidă. Funcția `held_out` măsoară, pe perechile de validare, în loturi de câte 32, ce parte dintre perechi au marja pozitivă, adică sunt ordonate corect, și marja medie.
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/dpo.py" symbols={['main']} />
+
+Modelul antrenat și referința pornesc din același model ajustat. `copy.deepcopy` face copia, iar `requires_grad_(False)` o îngheață. Ambele modele rămân în modul de evaluare, fără _dropout_, ca la pasul 0 să dea exact aceleași probabilități. Rata de învățare, $10^{-5}$, este de 20 de ori mai mică decât la ajustarea fină, pentru că pașii mari ar îndepărta repede modelul de referință. Fiecare pas folosește 16 perechi alese la întâmplare. La fiecare 100 de pași, scriptul măsoară perechile de validare și scrie o poveste pentru instrucțiunea de test, „Words: rain, cake, jump”.
+
+```bash
+python dpo.py 2
+```
+
+Am omis o parte din liniile afișate la fiecare 20 de pași și două dintre povești.
+
+```text
+500 perechi de antrenare, 50 păstrate pentru validare
+pasul     0 | validare: ordonate corect 0%, marja +0.00
+  Once upon a time, there was a little girl who loved her house. She had a very
+  important job to her house and she had a special job. She had a special job to her
+  house. Every day, she would jump in the room and jump and jump around and play with
+  her friends. One day, the sun set and the sun began to rain. The little girl was very
+  happy and began to jump to rain. She jumped in and splashed in the wet garden until it
+  was time for her work. When it was ready, the little girl was tired. She ran around
+  the room until
+pasul    20 | pierdere 0.594 | ordonate corect 56% | 0.1 min
+pasul    40 | pierdere 0.471 | ordonate corect 75% | 0.2 min
+pasul    60 | pierdere 0.239 | ordonate corect 94% | 0.4 min
+pasul   100 | pierdere 0.115 | ordonate corect 100% | 0.6 min
+pasul   100 | validare: ordonate corect 66%, marja +0.30
+pasul   200 | pierdere 0.015 | ordonate corect 100% | 1.2 min
+pasul   200 | validare: ordonate corect 72%, marja +0.57
+pasul   300 | pierdere 0.002 | ordonate corect 100% | 1.8 min
+pasul   300 | validare: ordonate corect 72%, marja +0.97
+  Once upon a time, there was a colorful cake. It was so happy and pretty. All the fish
+  in the party was very sad. Instead the cake started to rain very hard to rain very
+  hard. It was so dirty that everyone didn't want to rain to get to play. So one day it
+  started to rain very hard, especially tried to jump. The rain made the mess. Everyone
+  was sad and sad for the rain to get to rain. But then something unexpected happened.
+  The rain started to rain very hard. The cake began to rain very hard. Everyone was sad
+  because they had
+pasul   343 | validare: ordonate corect 72%, marja +1.07
+  Once upon a time, there was a little bunny named hop. Bobby lived in a small house
+  near the ground. One day, he went to play in the kitchen to rain. He was wet and he
+  slipped over the table with a big wet cake in the oven. Bobby was sad and started to
+  run to his mommy to help him climb up the eggs. Mommy came into the kitchen and
+  decided to jump in the cake. She found a pan and started to jump in it! Bobby laughed
+  and said, "Mommy, I can jump around and jump and jump and jump even higher and higher.
+  I
+gata: 343 pași, 2.0 minute
+```
+
+La pasul 0, modelul și referința sunt identice, deci toate marjele sunt zero și niciuna nu este pozitivă. În 2 minute, scriptul face 343 de pași, adică 5.488 de perechi, aproape 11 treceri prin cele 500 de perechi de antrenare. Pe loturile de antrenare, pierderea scade aproape de zero și toate perechile ajung ordonate corect, deci modelul învață perechile de antrenare aproape pe de rost. Pe perechile de validare, ordonarea corectă urcă doar la 72%, deși marja medie continuă să crească, de la +0,30 la +1,07.
+
+Poveștile pentru instrucțiunea de test folosesc tot mai des cuvintele cerute, dar tot mai mecanic: „The rain started to rain very hard. The cake began to rain very hard.”
+
+## Modelul ajustat față de DPO
+
+```bash
+python reward.py checkpoints/sft/model.pt checkpoints/dpo/model.pt
+```
+
+```text
+50 instrucțiuni de validare, 150 de cuvinte cerute
+sft        cuvinte folosite  36.7% | povești terminate   70%
+dpo        cuvinte folosite  72.7% | povești terminate   48%
+```
+
+Modelul aliniat cu DPO folosește de două ori mai multe cuvinte cerute decât modelul ajustat, 72,7% față de 36,7%.
+
+:::caution[Exploatarea recompensei]
+Câștigul are un preț pe care recompensa nu îl vede. Doar 48% dintre povești se mai încheie în 200 de tokenuri, față de 70% înainte, iar poveștile repetă cuvintele cerute, ca în exemplele de mai sus. Perechile nu favorizau poveștile neterminate: în fișierul de preferințe, poveștile preferate și cele respinse au, în medie, aceeași lungime și se încheie la fel de des, în 83% și 80% din cazuri. DPO cere însă doar ca povestea preferată să câștige mai mult decât cea respinsă, față de referință. Ce au în comun cele două povești, de exemplu finalul, nu este apărat direct, iar după 11 treceri prin aceleași perechi, modelul s-a îndepărtat de referință și în direcții pe care perechile nu le cereau.
+
+Este un exemplu mic de **exploatare a recompensei**: modelul obține o recompensă mai mare și pe căi pe care nu le doream. La modelele mari, problema apare la fel, de exemplu atunci când un model de recompensă favorizează răspunsurile lungi. Remediile obișnuite sunt o recompensă mai bună, care să ceară și ce lipsește (aici, un final), o legătură mai strânsă cu modelul de referință, printr-un β mai mare, și o antrenare mai scurtă.
+:::
+
+Pe pagina următoare, modelul nu mai învață din perechi scrise o singură dată, înainte de antrenare, ci din poveștile pe care le scrie în timpul antrenării, prin învățare prin consolidare cu GRPO.
+
+## Bibliografie
+
+- Christiano, P. et al. (2017). [Deep reinforcement learning from human preferences](https://arxiv.org/abs/1706.03741). _NeurIPS 2017_.
+- Eldan, R. și Li, Y. (2023). [TinyStories: How Small Can Language Models Be and Still Speak Coherent English?](https://arxiv.org/abs/2305.07759) Preprint arXiv:2305.07759.
+- Ouyang, L. et al. (2022). [Training language models to follow instructions with human feedback](https://arxiv.org/abs/2203.02155). _NeurIPS 2022_.
+- Rafailov, R. et al. (2023). [Direct Preference Optimization: Your Language Model is Secretly a Reward Model](https://arxiv.org/abs/2305.18290). _NeurIPS 2023_.
+- Schulman, J. et al. (2017). [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347). Preprint arXiv:1707.06347.
