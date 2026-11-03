@@ -1,0 +1,92 @@
+{
+  "id": "intro",
+  "title": "Despre proiectul inteligențArtificială.ro",
+  "youtubeTitle": "Despre proiectul inteligențArtificială.ro",
+  "headline": "Despre\nproiect",
+  "subtitle": "Ce este InteligentArtificiala.ro, cum arată documentația și laboratoarele, și despre ce sunt videourile.",
+  "description": "InteligentArtificiala.ro este o documentație în limba română despre inteligența artificială, de la noțiunile de bază până la modelele de limbaj mari (LLM). În acest video prezentăm site-ul: harta cu trasee de învățare, secțiunile documentației, cum arată o pagină și laboratoarele, cu cod în Python și PyTorch care rulează pe propriul calculator sau în Google Colab. Videourile canalului se concentrează pe laboratoare și pe subiecte specifice din documentație, legate de ce se studiază la informatică și la tehnologia informației în școlile din România: de la folosirea AI în afaceri și în proiecte personale până la antrenarea unui model de la zero, pe un laptop obișnuit.",
+  "tags": [
+    "inteligență artificială",
+    "AI",
+    "învățare automată",
+    "rețele neuronale",
+    "modele de limbaj mari",
+    "LLM",
+    "română",
+    "documentație",
+    "laboratoare"
+  ],
+  "duration": 180.8,
+  "youtube": {
+    "id": "DJT4_KxPRB8",
+    "published": "2026-11-03"
+  },
+  "chapters": [
+    {
+      "t": 0,
+      "title": "Introducere"
+    },
+    {
+      "t": 19,
+      "title": "Cine sunt"
+    },
+    {
+      "t": 48,
+      "title": "Site-ul"
+    },
+    {
+      "t": 75,
+      "title": "O pagină din documentație"
+    },
+    {
+      "t": 96,
+      "title": "Laboratoarele"
+    },
+    {
+      "t": 120,
+      "title": "Codul pe GitHub"
+    },
+    {
+      "t": 141,
+      "title": "Ce urmează"
+    },
+    {
+      "t": 169,
+      "title": "Contact"
+    }
+  ],
+  "transcript": [
+    {
+      "t": 0.5,
+      "text": "Bine ați venit pe canalul InteligentArtificiala.ro, un proiect care explică inteligența artificială în limba română, de la noțiunile de bază până la modelele de limbaj mari. Cele mai multe materiale tehnice despre aceste subiecte sunt în engleză, așa că scriem o documentație în română, cu explicații, formule și cod."
+    },
+    {
+      "t": 20.2,
+      "text": "Mă numesc Adrian și am lucrat ca lider tehnic în câteva companii nou înființate, apoi ca inginer software la Morgan Stanley și la Google. În prezent sunt doctorand în inteligență artificială la Universitatea din Manchester, cu o teză despre învățarea prin consolidare, în engleză reinforcement learning, și despre raționament. Vocea pe care o auziți în videouri este generată cu AI și este făcută să sune ca mine."
+    },
+    {
+      "t": 48.9,
+      "text": "Pe pagina principală a site-ului este o hartă cu trasee de învățare. De exemplu, traseul despre antrenarea unui model de limbaj trece prin retropropagare, mecanismul de atenție și arhitectura Transformer, până la un model de limbaj scris de la zero. Mai jos sunt secțiunile documentației, de la conceptele de bază până la modelele de limbaj mari, agenții și modelele de difuzie."
+    },
+    {
+      "t": 75.7,
+      "text": "Fiecare pagină începe cu ideea principală, explicată simplu, cu termenii în română și echivalentul lor din engleză. Formulele sunt în casete separate, pentru cei interesați de detalii. Unele pagini au și exemple interactive, cum este acest neuron, care își recalculează ieșirea când schimbăm valorile."
+    },
+    {
+      "t": 97.2,
+      "text": "Laboratoarele sunt partea practică a documentației: cod în Python și PyTorch, care rulează pe propriul calculator sau în Google Colab. Fiecare laborator începe cu o pagină de prezentare, cu cerințele și pașii de instalare, apoi explică pas cu pas codul, pe mai multe pagini. Fiecare laborator are și un notebook, care se deschide direct în Google Colab."
+    },
+    {
+      "t": 120.8,
+      "text": "Codul laboratoarelor este public, pe GitHub, câte un repozitoriu pentru fiecare laborator. Fiecare repozitoriu descrie pașii de instalare și comenzile de rulare, iar codul este publicat sub licența MIT. Fiecare pas scris în videouri are o etichetă git, așa că puteți descărca codul în starea în care apare pe ecran."
+    },
+    {
+      "t": 141.7,
+      "text": "Videourile de pe acest canal se concentrează pe laboratoare și pe subiecte specifice din documentație. Le corelăm cu ce se studiază la informatică și la tehnologia informației în școlile din România, de la programare și algoritmi de bază până la noțiuni avansate. Abordăm subiectele atât la nivel aplicativ, cât și la nivel fundamental: de la folosirea AI în afaceri și în proiecte personale, până la antrenarea unui model de la zero, pe un laptop obișnuit."
+    },
+    {
+      "t": 169.6,
+      "text": "Pentru corecturi, sugestii sau întrebări, ne puteți scrie la adresa de contact a proiectului sau în comentarii. Dacă vreți să urmăriți laboratoarele pas cu pas, abonați-vă la canal."
+    }
+  ]
+}
