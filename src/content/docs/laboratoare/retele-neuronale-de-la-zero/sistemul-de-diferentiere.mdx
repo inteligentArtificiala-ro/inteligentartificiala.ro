@@ -11,6 +11,7 @@ tags:
 import DeepDive from '@components/DeepDive.astro';
 import Python from '@components/Python.astro';
 import SourceFile from '@components/SourceFile.astro';
+import Video from '@components/Video.astro';
 
 export const labSetup = String.raw`
 import os, sys
@@ -29,6 +30,8 @@ sys.path.insert(0, ".")
 Pe pagina despre [retropropagare](/retele-neuronale/retropropagare/), gradienții unei rețele cu un singur neuron ascuns sunt calculați de mână, verigă cu verigă. Pentru o rețea cu mii de ponderi, calculul de mână nu mai este o opțiune. Librăriile precum PyTorch fac acest lucru automat: în timpul calculului, construiesc un **graf computațional** (_computational graph_), apoi îl parcurg invers și aplică regula lanțului la fiecare nod.
 
 Pe această pagină construim un astfel de mecanism, la scară mică. Lucrăm cu numere obișnuite (scalari), nu cu matrice, ca fiecare pas să poată fi urmărit. Tot codul se află în fișierul `engine.py`.
+
+<Video id="ep001-retropropagare" capitol="Clasa Value" />
 
 ## Clasa Value
 

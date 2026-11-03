@@ -11,6 +11,7 @@ tags:
 import DeepDive from '@components/DeepDive.astro';
 import Python from '@components/Python.astro';
 import SourceFile from '@components/SourceFile.astro';
+import Video from '@components/Video.astro';
 
 export const labSetup = String.raw`
 import os, sys
@@ -27,6 +28,8 @@ sys.path.insert(0, ".")
 `;
 
 Pe [pagina anterioară](/laboratoare/retele-neuronale-de-la-zero/o-retea-neuronala-mica/), sistemul pentru scalari a avut nevoie de circa o secundă pentru o singură imagine. Rețeaua rămâne aceeași, dar calculul se poate organiza altfel: toate sumele ponderate ale unui strat, pentru un lot întreg de imagini, sunt un singur produs de matrice. Pe această pagină scriem rețeaua cu NumPy, o librărie Python pentru calcul cu matrice, și scriem de mână, pentru matrice, aceleași derivate pe care sistemul le aplica număr cu număr.
+
+<Video id="ep002-retea-neuronala" capitol="Setul de date MNIST" />
 
 ## Setul de date MNIST
 

@@ -12,6 +12,7 @@ import DeepDive from '@components/DeepDive.astro';
 import Python from '@components/Python.astro';
 import SourceFile from '@components/SourceFile.astro';
 import { Steps } from '@astrojs/starlight/components';
+import Video from '@components/Video.astro';
 
 export const labSetup = String.raw`
 import os, sys
@@ -28,6 +29,8 @@ sys.path.insert(0, ".")
 `;
 
 Sistemul de diferențiere automată știe să calculeze gradienții oricărei expresii. O rețea neuronală este doar o expresie mai mare: sume ponderate, funcții de activare și, la final, o pierdere. Pe această pagină o construim din obiecte `Value`, în fișierul `nn.py`, și o antrenăm pe o problemă mică, în fișierul `moons.py`.
+
+<Video id="ep002-retea-neuronala" capitol="Neuronul" />
 
 ## Neuronul
 

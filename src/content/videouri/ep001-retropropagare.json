@@ -1,0 +1,250 @@
+{
+  "id": "ep001-retropropagare",
+  "number": 1,
+  "title": "Retropropagarea (backpropagation) de la zero, în Python",
+  "youtubeTitle": "Retropropagarea (backpropagation) de la zero, în Python | Inteligență Artificială #1",
+  "headline": "Retropropagare\nde la zero\n(backpropagation)",
+  "subtitle": "Un sistem de diferențiere automată scris de la zero în Python, cu regula lanțului, grafuri computaționale desenate cu Graphviz și aceleași calcule în PyTorch.",
+  "description": "Scriem de la zero, în Python, un sistem de diferențiere automată: clasa Value, care ține un număr, gradientul lui și operația din care a rezultat. Pornim de la derivată, regula lanțului și gradient, calculăm de mână gradienții unei expresii, scriem derivatele locale ale adunării, înmulțirii, puterii, exponențialei, tanh și ReLU și metoda backward(), care aplică regula lanțului în ordine topologică inversă. Verificăm gradienții cu diferențe finite, desenăm graful computațional cu Graphviz, înainte și după retropropagare, și facem același calcul în PyTorch, cu autograd și torch.autograd.gradcheck. Episodul urmează laboratorul „Rețele neuronale de la zero” de pe InteligentArtificiala.ro, inspirat de micrograd, scris de Andrej Karpathy.",
+  "tags": [
+    "retropropagare",
+    "backpropagation",
+    "diferențiere automată",
+    "automatic differentiation",
+    "autograd",
+    "regula lanțului",
+    "graf computațional",
+    "gradient",
+    "Python",
+    "PyTorch",
+    "Graphviz",
+    "micrograd",
+    "rețele neuronale",
+    "inteligență artificială",
+    "învățare automată",
+    "de la zero"
+  ],
+  "duration": 1641.1,
+  "youtube": {
+    "id": "JX5FEhbjoQw",
+    "published": "2026-11-03"
+  },
+  "chapters": [
+    {
+      "t": 0,
+      "title": "Introducere"
+    },
+    {
+      "t": 63,
+      "title": "Laboratorul"
+    },
+    {
+      "t": 112,
+      "title": "Derivata și regula lanțului"
+    },
+    {
+      "t": 188,
+      "title": "Graful computațional"
+    },
+    {
+      "t": 243,
+      "title": "Clasa Value"
+    },
+    {
+      "t": 441,
+      "title": "Derivatele locale"
+    },
+    {
+      "t": 480,
+      "title": "Ordinea topologică"
+    },
+    {
+      "t": 519,
+      "title": "Metoda backward"
+    },
+    {
+      "t": 642,
+      "title": "Retropropagarea, pas cu pas"
+    },
+    {
+      "t": 691,
+      "title": "De ce gradienții se adună"
+    },
+    {
+      "t": 782,
+      "title": "Funcțiile de activare"
+    },
+    {
+      "t": 958,
+      "title": "Verificarea cu diferențe finite"
+    },
+    {
+      "t": 1111,
+      "title": "Grafuri computaționale cu Graphviz"
+    },
+    {
+      "t": 1383,
+      "title": "Înainte și după backward"
+    },
+    {
+      "t": 1452,
+      "title": "Același calcul în PyTorch"
+    },
+    {
+      "t": 1605,
+      "title": "Glosarul"
+    },
+    {
+      "t": 1616,
+      "title": "Final"
+    }
+  ],
+  "transcript": [
+    {
+      "t": 0.5,
+      "text": "Bine ați venit la primul episod despre laboratoarele de pe InteligentArtificiala.ro, în care scriem de la zero, în Python, mecanismul prin care învață rețelele neuronale. Mai întâi, să vedem unde ajungem până la finalul episodului."
+    },
+    {
+      "t": 15.8,
+      "text": "Codul nostru va calcula o expresie, va ține minte graful operațiilor din expresie și va trimite gradientul înapoi, de la rezultat spre fiecare intrare. Fiecare nod are o valoare și un gradient, iar PyTorch ne va da apoi aceleași numere."
+    },
+    {
+      "t": 31.9,
+      "text": "Rețelele neuronale învață ajustându-și ponderile, în engleză weights, iar pentru asta au nevoie de gradienți, adică de derivatele erorii în raport cu fiecare pondere. Librăriile precum PyTorch calculează acești gradienți automat, la fiecare pas de antrenare. Astăzi construim noi acest mecanism, la scară mică, ca să vedem ce fac aceste librării în interior. Fiecare formulă o scriem și în cod, iar fiecare gradient îl verificăm. Vocea pe care o auziți este generată cu AI, pornind de la vocea mea."
+    },
+    {
+      "t": 64.3,
+      "text": "Episodul urmează laboratorul Rețele neuronale de la zero, de pe site. În laborator, scriem întâi un sistem de diferențiere automată, în engleză automatic differentiation, pentru numere obișnuite, apoi, din aceleași piese, o rețea neuronală mică. La final, trecem la matrice și antrenăm o rețea care recunoaște cifrele scrise de mână. Sistemul urmează ideea din micrograd, un proiect scris de Andrej Karpathy, și îi păstrează structura, ca cele două să poată fi comparate ușor. Astăzi parcurgem primele două etape: sistemul de diferențiere automată și grafurile computaționale, desenate cu Graphviz. Codul rulează pe orice calculator, fără placă grafică, și poate rula și în Google Colab, din notebookul laboratorului."
+    },
+    {
+      "t": 113.3,
+      "text": "Pornim de la matematică: derivata unei funcții, în engleză derivative, spune cât de repede se schimbă rezultatul când intrarea se schimbă foarte puțin. Este limita diferenței dintre f de x plus h și f de x, împărțită la h, când h tinde la zero. Când L depinde de x printr-o mărime intermediară, u, folosim regula lanțului, în engleză chain rule. Derivata lui L în raport cu x este derivata lui L în raport cu u, înmulțită cu derivata lui u în raport cu x. O rețea neuronală are mulți parametri, pe care îi notăm cu theta, iar pierderea L, în engleză loss, măsoară cât de mult greșește rețeaua. Derivatele parțiale ale pierderii în raport cu fiecare parametru, puse împreună, formează gradientul. La antrenare, fiecare parametru face un pas mic în sens opus gradientului, ca pierderea să scadă. Mărimea pasului este dată de rata de învățare, în engleză learning rate, notată cu eta, iar metoda se numește coborâre pe gradient, în engleză gradient descent. Retropropagarea, în engleză backpropagation, este algoritmul care calculează toate aceste derivate parțiale, aplicând regula lanțului de la rezultat spre intrări."
+    },
+    {
+      "t": 189.4,
+      "text": "Orice calcul poate fi scris ca un graf computațional, în engleză computational graph. Exemplul nostru, din laborator, este expresia L egal a ori b plus c, totul înmulțit cu f. Intrările sunt a egal doi, b egal minus trei, c egal șapte și f egal minus doi. Înmulțirea lui a cu b dă valoarea intermediară e, egală cu minus șase. Adunarea cu c dă d, egal cu unu, iar înmulțirea cu f dă rezultatul, L, egal cu minus doi. Acest calcul, de la intrări spre rezultat, se numește propagare directă, în engleză forward pass. Ne interesează cum se schimbă L când se schimbă fiecare intrare, adică derivatele lui L în raport cu a, b, c și f. Fiecare nod rotund este o operație mică, a cărei derivată o cunoaștem, iar regula lanțului leagă aceste derivate."
+    },
+    {
+      "t": 243.7,
+      "text": "Începem cu un repozitoriu git nou, cu un fișier README, care spune ce conține laboratorul, cum se instalează pachetele și de unde vine ideea sistemului. Fișierul gitignore ține în afara repozitoriului cache-ul Python, setul de date și imaginile desenate de scripturi. Licența MIT permite oricui să folosească, să modifice și să distribuie codul, inclusiv în proiecte proprii. Sistemul de diferențiere automată este în fișierul engine. Construim un sistem minimal, pentru numere obișnuite, adică pentru scalari. Fiecare obiect Value va ține un număr, gradientul pierderii în raport cu acel număr și legăturile spre valorile din care a fost calculat. Metoda backward va parcurge aceste legături invers și va aplica regula lanțului. Ideea și structura urmează micrograd, scris de Andrej Karpathy și publicat cu licență MIT. Clasa Value păstrează un număr, iar constructorul clasei primește valoarea, data, pe care o transformăm în număr în virgulă mobilă, cu float, ca doi și doi virgulă zero să se comporte la fel. Gradientul, grad, pornește de la zero și va fi derivata pierderii în raport cu această valoare, calculată de backward. Eticheta, label, este un nume opțional, afișat în diagrame. Apoi ținem minte valorile din care a fost calculată aceasta, în tuplul prev, și operația care le-a combinat, în op, ca text. Numele care încep cu o liniuță de subliniere sunt, prin convenție în Python, de uz intern. Ultimul atribut este o funcție, backward, care trimite gradientul acestei valori spre valorile din care a fost calculată. Fiecare operație își va scrie propria funcție, iar o valoare introdusă direct, o intrare sau o pondere, nu are ce trimite mai departe, așa că pornim cu o funcție lambda care nu face nimic. Metoda repr dă textul afișat de print: valoarea și gradientul, cu patru zecimale. Urmează operațiile de bază, iar fiecare calculează rezultatul și își scrie derivata locală. Python apelează metoda add când scriem a plus b. Dacă al doilea termen este un număr obișnuit, transformăm și numărul într-un obiect Value, ca să putem scrie și a plus unu. Rezultatul, out, ține suma, cei doi termeni din care a fost calculat și semnul plus, ca operație. Apoi scriem, în interiorul metodei, funcția backward a rezultatului. Funcția folosește variabilele self, other și out ale metodei, pe care Python le păstrează într-o închidere, în engleză closure. La adunare, gradientul trece neschimbat spre ambii termeni, așa că fiecare primește gradientul lui out. Scriem plus egal, nu egal, iar motivul îl vedem puțin mai târziu. La final, atașăm funcția rezultatului și îl întoarcem. Înmulțirea se scrie la fel, cu produsul în loc de sumă și cu steluța ca operație. Derivata locală a înmulțirii este însă alta, iar aici se vede cel mai bine regula lanțului. Fiecare factor primește gradientul lui out, înmulțit cu valoarea celuilalt factor. Pentru produsul a ori b, a primește b ori gradientul rezultatului, iar b primește a ori gradientul rezultatului."
+    },
+    {
+      "t": 442.3,
+      "text": "Matematic, derivata locală a adunării este unu pentru ambii termeni: dacă x crește cu puțin, suma crește cu tot atât. La înmulțire, derivata în raport cu x este y, iar derivata în raport cu y este x. Regula lanțului leagă derivata locală de restul calculului. Gradientul pierderii în raport cu x este gradientul pierderii în raport cu rezultatul, adică out punct grad din cod, înmulțit cu derivata locală a operației. Fiecare operație are nevoie doar de valorile operanzilor și de gradientul rezultatului, fără să știe ce urmează în graf."
+    },
+    {
+      "t": 481.4,
+      "text": "Pentru a trimite gradientul mai departe, o operație are nevoie de gradientul complet al rezultatului, cu toate contribuțiile adunate. De aceea, așezăm nodurile într-o ordine topologică, în engleză topological order, în care fiecare valoare apare după toate valorile din care a fost calculată. Pentru expresia noastră, a și b vin înaintea lui e, iar e și c înaintea lui d. Retropropagarea parcurge această listă invers, de la L spre intrări. Gradientul lui L în raport cu L este unu, iar de acolo, fiecare nod își trimite gradientul spre nodurile din care a fost calculat."
+    },
+    {
+      "t": 519.6,
+      "text": "În engine, la sfârșitul clasei, scriem metoda backward. Lista topo va ține ordinea topologică, iar mulțimea visited, valorile deja vizitate, ca un nod folosit de mai multe ori să apară o singură dată. Ordinea topologică înseamnă că fiecare valoare apare după toate valorile din care a fost calculată. Funcția build face o parcurgere în adâncime a grafului, în engleză depth-first search. Pentru o valoare nevizitată, o marchează, se apelează întâi pentru fiecare valoare din care a fost calculată și abia apoi o adaugă în listă. Pornim parcurgerea de la valoarea pentru care am apelat backward, de obicei pierderea. Gradientul acestei valori primește valoarea unu, pentru că derivata unei mărimi în raport cu aceeași mărime este unu. Iar de aici, gradientul merge înapoi spre intrări, nod cu nod. Parcurgem lista de la coadă la cap și apelăm, pentru fiecare valoare, funcția backward scrisă de operația care a produs-o. Ca să încercăm sistemul, scriem un script mic, expression, care calculează expresia din laborator. Primul lui rând spune ce calculează, iar apoi importăm clasa Value din engine. Creăm cele patru intrări, fiecare cu o etichetă, apoi valorile intermediare e și d și rezultatul L, cărora le dăm și lor câte un nume. Afișăm rezultatul, apoi apelăm metoda backward a lui L și afișăm gradienții în ordinea în care îi completează retropropagarea, de la L spre intrări."
+    },
+    {
+      "t": 612.9,
+      "text": "Rulăm scriptul în terminal, cu Python, iar rezultatul este minus doi, cu gradientul zero, pentru că l-am afișat înainte de backward. După retropropagare, L are gradientul unu, iar f are gradientul unu, adică valoarea lui d. D, c și e au gradientul minus doi. A are gradientul șase, iar b are minus patru. Să verificăm aceste numere de mână, pe graf."
+    },
+    {
+      "t": 643.3,
+      "text": "Pornim de la L, cu gradientul unu, iar ultima operație este înmulțirea dintre d și f, așa că fiecare factor primește gradientul lui L înmulțit cu celălalt factor. D primește valoarea lui f, adică minus doi, iar f primește valoarea lui d, adică unu. Adunarea trimite gradientul lui d neschimbat ambilor termeni, așa că e primește minus doi și c primește tot minus doi. În sfârșit, înmulțirea dintre a și b: a primește minus doi ori b, adică minus doi ori minus trei, egal cu șase, iar b primește minus doi ori a, adică minus patru. Sunt aceleași numere pe care le-a afișat scriptul. Gradientul șase al lui a spune că, dacă a crește cu o cantitate mică, L crește de aproximativ șase ori mai mult."
+    },
+    {
+      "t": 692.4,
+      "text": "Rămâne întrebarea de ce gradienții se adună cu plus egal. Să considerăm expresia y egal x ori x plus x. Aici, valoarea x este folosită de trei ori, iar fiecare folosire contribuie la gradient. Derivata corectă este doi x plus unu, adică șapte pentru x egal cu trei. În general, când o valoare x ajunge la pierdere pe mai multe drumuri, prin valorile u k, gradientul lui x este suma contribuțiilor de pe toate drumurile. Cu egal în loc de plus egal, fiecare contribuție ar suprascrie-o pe cea de dinainte."
+    },
+    {
+      "t": 730.6,
+      "text": "Scriptul accumulate verifică acest caz: în y egal x ori x plus x, valoarea x este folosită de trei ori. Creăm x cu valoarea trei, iar y se construiește din două operații, o înmulțire și o adunare. Apelăm metoda backward a lui y și afișăm gradientul lui x, care ar trebui să fie șapte. Apoi apelăm backward a doua oară, fără să readucem gradienții la zero, și afișăm din nou gradientul lui x."
+    },
+    {
+      "t": 757.8,
+      "text": "La rulare, primul backward dă gradientul șapte, cel corect. Al doilea pornește de la gradienții rămași după primul, inclusiv pe valorile intermediare, iar rezultatul, douăzeci, nu mai este derivata lui y. De aceea, la antrenare, gradienții sunt readuși la zero înaintea fiecărui pas. În PyTorch, același rol îl are metoda zero grad a optimizatorului."
+    },
+    {
+      "t": 783.4,
+      "text": "Pentru o rețea neuronală ne mai trebuie câteva operații, printre care funcțiile de activare, în engleză activation functions. Un neuron calculează o sumă ponderată a intrărilor și îi aplică o funcție de activare. Derivata lui x la puterea n este n ori x la puterea n minus unu, iar exponențiala are ca derivată tot exponențiala. Tangenta hiperbolică, tanh, are derivata unu minus tanh la pătrat, deci se calculează din chiar rezultatul funcției. ReLU, funcția liniară rectificată, lasă să treacă valorile pozitive și transformă restul în zero. Derivata lui ReLU este unu pentru valori pozitive și zero în rest."
+    },
+    {
+      "t": 826.1,
+      "text": "Pe grafic, tanh merge de la minus unu la unu, iar derivata lui tanh este unu în zero. Departe de zero, tanh se saturează, iar derivata scade spre zero, așa că un neuron cu o sumă ponderată mare, pozitivă sau negativă, trimite înapoi un gradient foarte mic. Derivata lui ReLU este zero pentru toate valorile negative. Un neuron cu suma ponderată negativă nu trimite niciun gradient înapoi la acel pas."
+    },
+    {
+      "t": 852.1,
+      "text": "În engine, importăm modulul math al librăriei standard, pentru exponențială și tanh. Ridicarea la putere acceptă ca exponent doar un număr obișnuit, iar assert oprește programul cu un mesaj dacă primește altceva. Operația are un singur operand, iar numele operației conține exponentul. Derivata locală este exponentul ori valoarea la puterea exponent minus unu, înmulțită cu gradientul rezultatului. Exponențiala folosește math punct exp, iar derivata exponențialei este simplă: derivata lui e la x este tot e la x, adică chiar rezultatul, deci înmulțim out punct data cu gradientul. Pentru tanh, păstrăm rezultatul în t, ca să-l folosim și în derivată, unu minus t la pătrat. ReLU ia maximul dintre zero și valoare, iar gradientul trece doar dacă neuronul a fost activ, adică dacă rezultatul a fost pozitiv. Comparația dă True sau False, pe care Python le înmulțește ca unu și zero. Celelalte operații se scriu cu cele de mai sus, deci nu au nevoie de derivate proprii. Minus x este x înmulțit cu minus unu, scăderea este adunarea cu opusul, iar împărțirea este înmulțirea cu puterea minus unu. Graful lor are mai multe noduri, dar gradienții sunt corecți fără niciun rând de cod în plus. Ultimele metode tratează cazul în care numărul obișnuit este primul termen, de exemplu doi ori x sau unu minus x. Pentru doi ori x, Python încearcă întâi înmulțirea definită de numărul obișnuit, care nu știe ce este un Value, apoi metoda cu r a obiectului nostru. Adunarea și înmulțirea sunt comutative, iar scăderea și împărțirea se scriu cu operanzii inversați."
+    },
+    {
+      "t": 958.6,
+      "text": "O greșeală într-o derivată locală nu produce nicio eroare la rulare, doar gradienți greșiți. Îi putem verifica cu diferențe finite, în engleză finite differences. Modificăm puțin o intrare în sus și în jos, cu epsilon, și împărțim diferența rezultatelor la doi epsilon. Diferența centrală are o eroare proporțională cu epsilon la pătrat, mult mai mică decât diferența într-o singură direcție. Verificăm un neuron cu două intrări, două ponderi, un bias și activare tanh. Ca să încercăm și operațiile noi, a doua variantă a neuronului calculează tanh din formula cu exponențiale, cu scădere și împărțire. Această verificare a gradienților, în engleză gradient checking, se folosește și la testarea librăriilor precum PyTorch, nu doar în exemple mici."
+    },
+    {
+      "t": 1010.6,
+      "text": "Scriptul finite differences verifică gradienții unui neuron cu diferențe finite, iar pentru asta importăm clasa Value, apoi definim neuronul ca o funcție de cinci valori: două intrări, două ponderi și un bias. Suma ponderată, n, este x unu ori w unu plus x doi ori w doi plus bias. Cu tanh from exp, calculăm tanh din exponențiale, iar altfel apelăm metoda tanh. Intrările au valorile din laborator, iar epsilon este o milionime. Pentru fiecare variantă, transformăm cele cinci valori în obiecte Value, calculăm neuronul și apelăm backward. Afișăm numele variantei și ieșirea neuronului, cu șase zecimale. Apoi trecem, pe rând, prin cele cinci valori și pentru fiecare construim două dicționare noi: în primul, valoarea curentă este puțin mai mare, iar în al doilea, puțin mai mică. Celelalte valori rămân neschimbate, pentru că termenul cu epsilon se înmulțește cu zero pentru aceste valori. Diferența rezultatelor, împărțită la doi epsilon, este estimarea numerică, pe care o afișăm lângă gradientul calculat de backward."
+    },
+    {
+      "t": 1079,
+      "text": "La rulare, pentru fiecare dintre cele cinci valori, gradientul calculat de backward și estimarea prin diferențe finite coincid până la a șasea zecimală. Ponderea w doi are gradientul negativ, aproximativ minus unu virgulă doisprezece. Dacă ar crește puțin, ieșirea neuronului ar scădea. A doua variantă dă aceiași gradienți, deși graful celei de-a doua variante are mai multe noduri. Sistemul nu are nevoie să știe că expresia este tanh, pentru că îi este suficient să cunoască derivata fiecărei operații mici."
+    },
+    {
+      "t": 1111.9,
+      "text": "Ca să vedem graful pe care îl parcurge retropropagarea, îl desenăm cu Graphviz, un set de programe pentru desenarea grafurilor. Graful se descrie ca text, în limbajul DOT: o listă de noduri, fiecare cu atributele nodului, și o listă de muchii, scrise cu săgeți. Digraph înseamnă graf orientat, cu săgeți, iar rankdir egal LR îl așază de la stânga la dreapta. Forma record împarte un dreptunghi în câmpuri, despărțite de bara verticală, iar acoladele schimbă direcția în care sunt așezate câmpurile. Programul dot așază singur nodurile pe niveluri și desenează muchiile."
+    },
+    {
+      "t": 1148.9,
+      "text": "Fișierul requirements cere pachetul Python graphviz, care apelează programul dot. Fișierul graph are două părți, una care nu folosește Graphviz și una care îl folosește. Funcția to dot scrie graful ca text, în limbajul DOT, deci funcționează și fără Graphviz instalat. Funcția draw graph transformă textul într-o imagine, cu pachetul Python și programul dot, iar în Jupyter și în Google Colab imaginea apare direct sub celulă. Funcția trace adună toate valorile și legăturile dintre valori, pornind de la rădăcină, la fel ca funcția build din backward. Pentru fiecare valoare nouă, o păstrează în lista de noduri, adaugă câte o muchie de la fiecare valoare din care a fost calculată și continuă cu acea valoare. To dot dă fiecărui nod un nume scurt, v zero, v unu și așa mai departe, în ordinea în care l-a găsit trace. Primele rânduri ale textului deschid graful orientat, cu direcția de la stânga la dreapta, în ordinea calculului, și aleg fontul nodurilor. O valoare devine un dreptunghi cu numele valorii, dacă are unul, și, unul sub altul, valoarea și gradientul, cu patru zecimale. Câmpurile sunt despărțite de bara verticală, iar acoladele le așază unul sub altul, ca pe pagina laboratorului. Operația care a produs valoarea devine un nod separat, de formă ovală, cu semnul operației, și o muchie spre rezultat. Numele nodului de operație este numele scurt al valorii, urmat de op, ca să nu se confunde cu nodul valorii. Muchiile grafului merg de la operanzi spre nodul operației, iar la final închidem acolada și unim rândurile într-un singur text. Funcția draw graph importă pachetul graphviz abia când este apelată, așa că restul fișierului, cu trace și to dot, rulează și fără pachet. Source primește textul DOT și știe să-l transforme în imagine. Cu un nume de fișier, imaginea este și salvată, iar formatul vine din extensie: svg, png sau pdf. Fișierul diagrams desenează diagramele din laborator și le salvează ca imagini SVG în directorul imagini, al cărui nume îl ținem în constanta OUT. Importăm modulul os, pentru crearea directorului, clasa Value și funcția draw graph. Funcția expression construiește expresia noastră, cu fiecare valoare intermediară numită, ca să se vadă în diagramă. Valorile sunt cele de mai devreme: a egal doi, b minus trei, c șapte și f minus doi. Pentru valorile intermediare, eticheta o dăm după calcul, pentru că operațiile creează obiecte noi, fără nume. Funcția neuron construiește neuronul din verificarea cu diferențe finite. Intrările sunt x unu egal unu și x doi egal minus doi, ponderile sunt zero virgulă cinci și zero virgulă douăzeci și cinci, iar bias-ul este zero virgulă opt. Fiecare produs dintre o intrare și ponderea corespunzătoare primește un nume, la fel suma lor, s, suma cu bias-ul, n, și ieșirea, o, egală cu tanh de n. Graful expresiei îl desenăm de două ori, imediat după calcul și după retropropagare, ca să vedem ce schimbă backward. Funcția întoarce rezultatul, ca programul principal să-i poată afișa valoarea. La rulare, scriptul creează directorul imagini, dacă nu există, și desenează expresia înainte și după backward. Apoi construiește neuronul, apelează metoda backward a neuronului și desenează graful. La fiecare pas, afișează câte o valoare, ca să știm că a ajuns până acolo."
+    },
+    {
+      "t": 1366.6,
+      "text": "Rulăm scriptul diagrams: expresia dă tot minus doi, iar ieșirea neuronului este aproximativ zero virgulă șaizeci și șase. În directorul imagini sunt acum trei fișiere SVG: expresia înainte și după retropropagare și neuronul."
+    },
+    {
+      "t": 1383.8,
+      "text": "Aceleași imagini sunt și pe pagina laboratorului, desenate de același cod. Imediat după calculul expresiei, fiecare nod are o valoare, dar toți gradienții sunt zero, pentru că propagarea directă a calculat doar valorile. După backward, gradienții au fost completați de la dreapta la stânga, iar diagrama se citește în același sens. L are gradientul unu, d și f primesc fiecare valoarea celuilalt, adunarea trimite minus doi ambilor termeni, iar a și b primesc șase și minus patru. La neuron, suma ponderată este zero virgulă opt, iar ieșirea este tanh de zero virgulă opt. Prin tanh, gradientul se înmulțește cu derivata lui tanh, unu minus o la pătrat, aproximativ zero virgulă cincizeci și șase. De aici, adunările îl trimit neschimbat spre bias și spre cele două produse, iar înmulțirile îl înmulțesc cu celălalt factor. Pentru antrenare contează doar gradienții ponderilor și ai bias-ului, pentru că doar acești parametri îi modificăm."
+    },
+    {
+      "t": 1452.7,
+      "text": "În PyTorch, același calcul se scrie aproape la fel, în scriptul expression torch. Scriptul calculează expresia noastră, afișează graful construit de autograd, sistemul de diferențiere automată al lui PyTorch, și verifică gradienții unui neuron. PyTorch se instalează separat, cu pip install torch, pentru că este un pachet mare, folosit doar de ultimele scripturi. Un tensor este un tablou de numere cu oricâte dimensiuni, aici cu un singur număr. Cu requires grad egal True, PyTorch construiește graful calculelor cu acest tensor și îi va calcula gradientul. Tensorii joacă aici rolul obiectelor Value din sistemul nostru. Expresia se scrie direct, iar item dă valoarea ca număr Python. Atributul grad fn este nodul grafului care a produs L, iar next functions sunt nodurile din care a fost calculat, ca prev din sistemul nostru. Backward face aceeași parcurgere a grafului, iar gradienții ajung în atributul grad al fiecărui tensor. Pentru verificarea gradienților, PyTorch are o funcție gata făcută, torch punct autograd punct gradcheck. Neuronul primește aici vectorul intrărilor și vectorul ponderilor, iar operatorul de înmulțire matricială calculează produsul lor scalar. Funcția tanh a lui PyTorch lucrează direct pe tensori. Vom folosi aceleași valori ca în finite differences, cu tensori de numere în precizie dublă, de șaizeci și patru de biți. Gradcheck cere această precizie, iar în precizie simplă ar raporta diferențe care nu sunt greșeli. Diferențele finite scad două numere foarte apropiate, iar în precizie simplă rezultatul ar avea prea puține zecimale corecte. Gradcheck compară gradienții lui autograd cu diferențe finite și întoarce True dacă se potrivesc."
+    },
+    {
+      "t": 1563.9,
+      "text": "La rulare, L este tot minus doi, iar ultima operație este o înmulțire, MulBackward zero, calculată dintr-o adunare și din nodul AccumulateGrad al lui f. Acesta este nodul care adună gradientul în atributul grad al tensorului, cu plus egal, ca în sistemul nostru. Gradienții sunt șase, minus patru, minus doi și unu, aceiași ca la noi. Iar gradcheck întoarce True, deci gradienții lui autograd se potrivesc cu diferențele finite. Diferența dintre PyTorch și sistemul nostru este de scară, nu de principiu: un tensor ține mii sau milioane de numere, iar fiecare operație are derivata scrisă pentru matrice întregi, cu cod optimizat pentru procesor și placa grafică."
+    },
+    {
+      "t": 1606,
+      "text": "Termenii din acest episod, cu echivalentul lor din engleză și o definiție scurtă, sunt în glosarul de pe site, de la diferențierea automată și graful computațional până la retropropagare."
+    },
+    {
+      "t": 1617.4,
+      "text": "Codul episodului, capitolele și transcrierea sunt pe pagina episodului de pe InteligentArtificiala.ro. Laboratorul are aceleași exemple, iar cele scrise doar cu sistemul nostru rulează direct în browser. Pentru întrebări sau pentru a semnala greșeli, ne puteți scrie în comentarii. Dacă vreți să urmăriți și restul laboratorului, abonați-vă la canal."
+    }
+  ],
+  "code": {
+    "repo": "https://github.com/inteligentArtificiala-ro/laborator-retele-neuronale",
+    "end": "ep001/end",
+    "steps": [
+      {
+        "t": 243.2,
+        "to": "ep001/step-1"
+      },
+      {
+        "t": 519.1,
+        "from": "ep001/step-1",
+        "to": "ep001/step-2"
+      },
+      {
+        "t": 851.6,
+        "from": "ep001/step-2",
+        "to": "ep001/step-3"
+      },
+      {
+        "t": 1148.4,
+        "from": "ep001/step-3",
+        "to": "ep001/step-4"
+      },
+      {
+        "t": 1452.2,
+        "from": "ep001/step-4",
+        "to": "ep001/step-5"
+      }
+    ]
+  }
+}

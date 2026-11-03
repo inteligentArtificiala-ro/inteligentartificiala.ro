@@ -1,0 +1,308 @@
+{
+  "id": "ep002-retea-neuronala",
+  "number": 2,
+  "title": "Rețea neuronală (neural network) de la zero, până la MNIST",
+  "youtubeTitle": "Rețea neuronală (neural network) de la zero, până la MNIST | Inteligență Artificială #2",
+  "headline": "Rețea neuronală\nde la zero\n(neural network)",
+  "subtitle": "Din sistemul de diferențiere automată construim o rețea neuronală, o antrenăm pe două semilune, apoi scriem cu NumPy și cu PyTorch o rețea care recunoaște cifrele MNIST.",
+  "description": "Din clasa Value din episodul 1 construim neuroni, straturi și o rețea cu mai multe straturi (MLP), desenăm graful unei rețele mici cu ReLU și antrenăm o rețea pe două semilune de puncte, cu eroarea pătratică medie și coborârea pe gradient scrise de mână. Apoi trecem de la numere la matrice: scriem cu NumPy o rețea 784 → 128 → 10 pentru cifrele MNIST, cu inițializarea He, softmax, entropia încrucișată și retropropagarea pentru matrice, dedusă pas cu pas, și o antrenăm cu coborârea pe gradient stocastică, pe loturi de câte 64 de imagini. În final, scriem aceeași rețea în PyTorch, cu nn.Sequential, nn.Linear, cross_entropy și torch.optim.SGD, și comparăm gradienții noștri cu cei calculați de autograd. Episodul urmează laboratorul „Rețele neuronale de la zero” de pe InteligentArtificiala.ro.",
+  "tags": [
+    "rețea neuronală",
+    "neural network",
+    "MLP",
+    "multilayer perceptron",
+    "MNIST",
+    "NumPy",
+    "PyTorch",
+    "retropropagare",
+    "backpropagation",
+    "softmax",
+    "entropie încrucișată",
+    "cross-entropy",
+    "coborâre pe gradient",
+    "SGD",
+    "Python",
+    "de la zero",
+    "învățare automată",
+    "inteligență artificială"
+  ],
+  "duration": 2052.1,
+  "youtube": {
+    "id": "y8NMyu0JFds",
+    "published": "2026-11-03"
+  },
+  "chapters": [
+    {
+      "t": 0,
+      "title": "Introducere"
+    },
+    {
+      "t": 61,
+      "title": "Laboratorul"
+    },
+    {
+      "t": 85,
+      "title": "Neuronul"
+    },
+    {
+      "t": 124,
+      "title": "Neuroni, straturi și rețea"
+    },
+    {
+      "t": 331,
+      "title": "O rețea mică, în graf"
+    },
+    {
+      "t": 458,
+      "title": "Două semilune"
+    },
+    {
+      "t": 500,
+      "title": "Pașii antrenării"
+    },
+    {
+      "t": 748,
+      "title": "Antrenarea pe două semilune"
+    },
+    {
+      "t": 817,
+      "title": "Frontiera de decizie"
+    },
+    {
+      "t": 844,
+      "title": "Limita unui sistem pentru scalari"
+    },
+    {
+      "t": 879,
+      "title": "Setul de date MNIST"
+    },
+    {
+      "t": 1006,
+      "title": "De la numere la matrice"
+    },
+    {
+      "t": 1091,
+      "title": "Softmax și entropia încrucișată"
+    },
+    {
+      "t": 1160,
+      "title": "Propagarea directă cu NumPy"
+    },
+    {
+      "t": 1314,
+      "title": "Retropropagarea pentru matrice"
+    },
+    {
+      "t": 1669,
+      "title": "Antrenarea pe MNIST"
+    },
+    {
+      "t": 1728,
+      "title": "Greșelile rețelei"
+    },
+    {
+      "t": 1767,
+      "title": "Aceeași rețea în PyTorch"
+    },
+    {
+      "t": 2020,
+      "title": "Glosarul"
+    }
+  ],
+  "transcript": [
+    {
+      "t": 0.5,
+      "text": "Bine ați revenit la episodul doi, în care construim din sistemul nostru o rețea neuronală și o antrenăm pe două semilune de puncte. Apoi trecem la matrice și antrenăm o rețea pentru cifrele scrise de mână din setul MNIST. Să vedem mai întâi unde ajungem până la final."
+    },
+    {
+      "t": 17.9,
+      "text": "Rețeaua de la finalul episodului primește imaginea unei cifre scrise de mână și spune ce cifră este. După câteva secunde de antrenare, pe un procesor obișnuit, recunoaște corect nouăzeci și șapte virgulă șaizeci și doi la sută dintre cifrele pe care nu le-a văzut niciodată."
+    },
+    {
+      "t": 36.4,
+      "text": "În episodul trecut am scris clasa Value, care ține un număr, gradientul lui și operația din care a rezultat, și metoda backward, care aplică regula lanțului de la rezultat spre intrări. Am verificat gradienții cu diferențe finite, am desenat graful cu Graphviz și am obținut aceleași numere cu PyTorch. Astăzi îl folosim în scopul pentru care l-am scris: antrenarea unei rețele neuronale."
+    },
+    {
+      "t": 62.2,
+      "text": "Astăzi parcurgem ultimele două etape ale laboratorului: întâi construim neuroni, straturi și o rețea cu mai multe straturi din obiecte Value și o antrenăm să separe două semilune de puncte. Apoi trecem de la numere la matrice, cu NumPy, scriem de mână retropropagarea unei rețele pentru cifrele MNIST și, la final, scriem aceeași rețea în PyTorch."
+    },
+    {
+      "t": 85.8,
+      "text": "Un neuron artificial, în engleză artificial neuron, are câte o pondere pentru fiecare intrare. Neuronul înmulțește fiecare intrare x i cu ponderea corespunzătoare, w i, și adună produsele într-o sumă ponderată, în engleză weighted sum. La sumă se adaugă bias-ul, b, un număr care mută pragul de la care neuronul se activează. Rezultatul trece apoi prin funcția de activare, phi, la noi tanh sau ReLU, din episodul trecut. Pentru sistemul nostru, un neuron este doar o expresie mai mare, din înmulțiri, adunări și o activare, deci știm deja să-i calculăm gradienții."
+    },
+    {
+      "t": 125.5,
+      "text": "Rețeaua o scriem în fișierul nou nn, care importă modulul random, pentru ponderile inițiale, și clasa Value. Fișierul conține neuroni, straturi și o rețea cu mai multe straturi, construite din obiecte Value. Clasa de bază, Module, are două metode, folosite de toate piesele rețelei. Prima, parameters, întoarce lista parametrilor, goală aici, pe care fiecare clasă derivată o redefinește. Metoda zero grad readuce la zero gradientul fiecărui parametru, iar metoda este necesară pentru că gradienții se adună la fiecare backward, așa că îi ștergem înaintea fiecărui pas, cum am văzut în episodul trecut. Un neuron primește numărul de intrări, nin, și funcția de activare, implicit tanh, pe care o păstrăm pentru propagarea directă. Lista ponderilor o construim într-un singur rând, cu o construcție list comprehension a lui Python, câte un obiect Value pentru fiecare intrare, cu o valoare aleatoare uniformă între minus unu și unu. Bias-ul este un singur obiect Value, care pornește de la zero. Dacă toate ponderile ar porni de la aceeași valoare, neuronii unui strat ar calcula același lucru, ar primi aceiași gradienți și ar rămâne identici. Metoda call face ca un neuron să poată fi apelat ca o funcție, cu lista intrărilor. Suma ponderată plus bias o calculăm cu funcția sum, care primește bias-ul ca valoare de pornire. Așa, rezultatul este un singur obiect Value, cu tot calculul în graful rezultatului. Apoi aplicăm activarea aleasă, tanh sau ReLU, iar fără activare neuronul întoarce suma așa cum este, pentru stratul de ieșire. Parametrii unui neuron sunt ponderile lui și bias-ul. Un strat este o listă de neuroni, toți cu același număr de intrări și aceeași activare. Toți neuronii stratului primesc aceleași intrări, iar stratul întoarce lista ieșirilor. Când stratul are un singur neuron, întoarce direct valoarea acelui neuron, ca ieșirea rețelei să fie un număr, nu o listă cu un element. Parametrii stratului sunt, la rândul lor, parametrii tuturor neuronilor din strat. Rețeaua cu mai multe straturi, în engleză multilayer perceptron, pe scurt MLP, primește numărul de intrări și lista mărimilor straturilor. De exemplu, MLP doi, cu straturile șaisprezece, șaisprezece și unu, are două intrări, două straturi ascunse de câte șaisprezece neuroni și o ieșire. Toate straturile au activarea aleasă, cu excepția ultimului, care este liniar, ca ieșirea să poată lua orice valoare. Propagarea directă trece intrarea prin straturi, pe rând: ieșirile fiecărui strat devin intrările stratului următor. Parametrii rețelei sunt parametrii tuturor straturilor, iar pe aceștia îi va modifica antrenarea."
+    },
+    {
+      "t": 295.3,
+      "text": "Rețeaua pe care o vom antrena are două intrări, coordonatele unui punct din plan. Primul strat ascuns, în engleză hidden layer, are opt neuroni cu tanh, fiecare cu două ponderi și un bias, deci douăzeci și patru de parametri. Al doilea strat ascuns are tot opt neuroni, fiecare cu opt ponderi și un bias, adică șaptezeci și doi de parametri. Neuronul de ieșire are opt ponderi și un bias, fără activare. La propagarea directă, punctul trece prin cele trei straturi și iese ca un singur număr. În total, rețeaua are o sută cinci parametri."
+    },
+    {
+      "t": 331.6,
+      "text": "Înainte de antrenare, desenăm graful unei rețele atât de mici, încât să încapă pe ecran. În diagrams, importăm clasa MLP, pentru încă o diagramă: rețeaua mică. Funcția tiny mlp construiește o rețea cu două intrări, un strat ascuns de doi neuroni cu ReLU și o ieșire, plus pierderea pe un exemplu. Ponderile le alegem de mână și le dăm nume, ca diagrama să fie ușor de citit. Le alegem astfel încât primul neuron ascuns să fie activ, iar al doilea nu, pentru că suma lui ponderată va fi negativă. Luăm neuronii stratului ascuns și neuronul de ieșire, iar dicționarul values ține valorile alese. Ponderea w j i leagă intrarea i de neuronul ascuns j, iar bias-urile se numesc b unu și b doi. Ponderile neuronului de ieșire se numesc v unu și v doi, iar bias-ul neuronului de ieșire, c. Intrarea este punctul unu, minus unu, iar ieșirea rețelei este y. Pierderea pe acest exemplu este eroarea pătratică față de ținta unu, adică y minus unu, la pătrat. La rulare, scriptul calculează pierderea, apelează backward, desenează graful în imaginea retea mica și afișează pierderea."
+    },
+    {
+      "t": 404,
+      "text": "Rulăm diagrams din nou, iar pe lângă expresie și neuron, scriptul afișează pierderea rețelei mici, zero virgulă o mie douăzeci și patru."
+    },
+    {
+      "t": 413.1,
+      "text": "Pe pagina laboratorului, graful rețelei mici se citește tot de la dreapta la stânga. Pierderea este unu virgulă treizeci și doi minus unu, la pătrat, iar gradientul pierderii în raport cu y este de două ori diferența, zero virgulă șaizeci și patru. Primul neuron ascuns are suma ponderată zero virgulă optzeci și cinci, deci ReLU lasă suma să treacă, iar ponderile primului neuron primesc gradienți. Al doilea are suma minus zero virgulă cinci, iar ReLU transformă suma în zero. Gradientul se oprește aici, așa că ponderile celui de-al doilea neuron au gradientul zero și nu se vor schimba la acest pas. Rețeaua are doar nouă parametri, iar graful are deja câteva zeci de noduri."
+    },
+    {
+      "t": 458.9,
+      "text": "Prima problemă este una de clasificare, în engleză classification. Punctele din plan sunt așezate pe două semilune întrepătrunse, așa că nicio linie dreaptă nu le poate separa, iar rețeaua are nevoie de straturile ascunse și de neliniaritatea lor. Punctele de pe semiluna de sus au eticheta plus unu, iar cele de jos, minus unu. Ieșirea rețelei este un scor, s, iar clasa prezisă este semnul scorului. Pierderea este eroarea pătratică medie, în engleză mean squared error: diferența dintre scor și etichetă, ridicată la pătrat, apoi mediată pe toate punctele. Acuratețea, în engleză accuracy, este proporția de puncte clasificate corect."
+    },
+    {
+      "t": 501.3,
+      "text": "Antrenarea repetă același pas de mai multe ori. Întâi propagarea directă: rețeaua calculează scorurile tuturor punctelor, iar din scoruri se calculează pierderea. Apoi gradienții de la pasul anterior sunt readuși la zero. Retropropagarea calculează gradientul pierderii în raport cu fiecare parametru. În sfârșit, fiecare parametru face un pas mic în sens opus gradientului său. Mărimea pasului depinde de rata de învățare, în engleză learning rate, aici zero virgulă unu."
+    },
+    {
+      "t": 531.1,
+      "text": "Pentru imaginea de la final, requirements adaugă Matplotlib, o librărie Python pentru grafice. Antrenarea este în fișierul nou moons, care la final salvează și imaginea frontierei de decizie. Importăm modulele math, os, random și time, clasa Value și rețeaua MLP. Funcția make moons generează n puncte, cu un generator de numere aleatoare propriu, inițializat cu o sămânță fixă, în engleză seed, ca datele să fie aceleași la fiecare rulare. Punctele de sus au eticheta plus unu, cele de jos, minus unu. Punctele alternează între cele două semilune, iar pentru fiecare alegem un unghi t între zero și pi. Semiluna de sus este jumătatea de sus a cercului unitate, iar cea de jos este aceeași jumătate de cerc, întoarsă și mutată la dreapta și în jos. La fiecare coordonată adăugăm zgomot gaussian, cu abaterea standard zero virgulă unu, ca punctele să se împrăștie puțin în jurul curbelor. Funcția loss and accuracy calculează scorurile tuturor punctelor și pierderea. Ținta este ca scorul rețelei ar trebui să fie plus unu pentru o clasă și minus unu pentru cealaltă. Pierderea este un singur obiect Value, calculat din scorurile tuturor celor o sută de puncte, deci graful pierderii conține toate calculele rețelei. Clasa prezisă este semnul scorului, iar acuratețea este proporția de semne corecte. Funcția train face pașii de antrenare, în ordinea din formule. Întâi propagarea directă și pierderea, pe toate punctele odată. Apoi gradienții vechi se șterg, iar retropropagarea calculează gradienții noi. Coborârea pe gradient, în engleză gradient descent, se scrie direct, fără un optimizator. Modificăm p punct data, nu p, așa că parametrul rămâne același obiect, iar rețeaua îl va folosi, cu noua valoare, la următoarea propagare directă. Din când în când afișăm pasul, pierderea și acuratețea. Save boundary desenează frontiera de decizie, în engleză decision boundary, adică linia pe care scorul trece prin zero. Funcția primește rețeaua, punctele, etichetele, calea imaginii și rezoluția grilei, implicit optzeci de puncte pe fiecare axă. Importăm Matplotlib abia aici, ca restul fișierului să ruleze și fără Matplotlib, și alegem modul de lucru fără fereastră, Agg, care doar salvează imaginea în fișier. Grila acoperă zona punctelor, cu optzeci de valori pe fiecare axă, de la stânga la dreapta și de jos în sus. Coordonatele x merg de la minus unu virgulă cinci la doi virgulă cinci, iar coordonatele y, de la minus unu virgulă doi la unu virgulă șapte, cu pași egali. Calculăm scorul rețelei în fiecare punct al grilei și păstrăm doar valoarea, data, pentru că aici nu avem nevoie de gradienți. Contourf colorează cele două regiuni, unde scorul este negativ sau pozitiv, cu nivelurile minus o sută, zero și o sută, iar contour trasează linia de zero, cu gri. Apoi scatter desenează punctele, fiecare clasă în altă culoare: albastru pentru semiluna de sus și portocaliu pentru cea de jos. Ascundem axele și salvăm figura cu fundal transparent, ca să se vadă bine și pe pagina laboratorului. La rulare, fixăm sămânța modulului random, care decide ponderile inițiale, generăm o sută de puncte și construim rețeaua de mai devreme. Antrenăm două sute de pași, cu rata de învățare zero virgulă unu, măsurăm durata și salvăm imaginea frontierei."
+    },
+    {
+      "t": 748.7,
+      "text": "Pornim antrenarea, iar fiecare pas construiește și parcurge un graf cu zeci de mii de noduri, pentru o sută de puncte, așa că durează. Avem o sută de puncte și o sută cinci parametri, cum am numărat. La primul pas, rețeaua clasifică greșit majoritatea punctelor, iar pierderea este mare, pentru că ponderile aleatoare dau scoruri departe de plus sau minus unu. După douăzeci de pași, acuratețea trece de optzeci la sută, iar apoi crește încet. La ultimul pas, rețeaua clasifică corect nouăzeci și opt la sută dintre puncte. Pentru două sute de pași, antrenarea a durat puțin peste zece secunde, iar imaginea frontierei a fost salvată."
+    },
+    {
+      "t": 790.4,
+      "text": "Pe grafic, pierderea scade foarte repede în primii pași, de la trei virgulă cincizeci la mai puțin de zero virgulă patru, apoi continuă să scadă încet, până la zero virgulă zero opt. Acuratețea sare de la nouăsprezece la optzeci și șase la sută în doar doi pași, apoi urcă încet, până la nouăzeci și opt la sută. Câțiva pași la rând, acuratețea stă pe loc, dar pierderea scade în continuare, pentru că scorurile se apropie de țintele lor."
+    },
+    {
+      "t": 818.4,
+      "text": "Imaginea salvată de script arată frontiera de decizie a rețelei, o curbă care trece printre cele două semilune. Două puncte, chiar în zona în care semilunile se apropie, rămân de partea greșită. Cu mai mulți pași, rețeaua le-ar putea învăța și pe acestea, dar ar risca să urmeze zgomotul, nu forma semilunilor. Pentru a ști cât de bine generalizează, ne trebuie un set de testare separat, cum vom avea la MNIST."
+    },
+    {
+      "t": 845.1,
+      "text": "Sistemul nostru este ușor de urmărit, dar lent, pentru că fiecare număr este un obiect Python, iar fiecare operație creează un obiect nou și o funcție nouă. Rețeaua pentru cifrele MNIST are șapte sute optzeci și patru de intrări, un strat ascuns de o sută douăzeci și opt de neuroni și zece ieșiri, adică peste o sută de mii de parametri. Construită din obiecte Value, are nevoie de aproximativ o secundă pentru o singură imagine. Setul de antrenare are șaizeci de mii de imagini, așa că o singură trecere prin setul de antrenare ar dura peste șaisprezece ore."
+    },
+    {
+      "t": 880.1,
+      "text": "De acum lucrăm cu NumPy, librăria Python pentru calcul cu matrice, pe care o adăugăm în requirements. Fișierul mnist data descarcă și citește setul de date. MNIST are șaptezeci de mii de cifre scrise de mână, imagini de douăzeci și opt pe douăzeci și opt de pixeli, în tonuri de gri. Fișierul este copia publicată de echipa Keras, de unsprezece megaocteți, descărcat o singură dată, în directorul data. Ținem în două constante adresa fișierului și amprenta lui SHA-256. Funcția download primește calea fișierului, implicit în directorul data. Dacă fișierul nu există, creează directorul, afișează adresa de la care descarcă și descarcă fișierul cu urllib, din librăria standard. La rulările următoare, fișierul există deja și nu mai este descărcat. Pentru verificare, deschidem fișierul în mod binar și citim tot conținutul. Apoi calculăm amprenta SHA-256 a fișierului, care confirmă că fișierul este complet și neschimbat. Dacă amprenta diferă, oprim programul cu un mesaj care spune ce este de făcut. Load mnist citește cele patru matrice din fișier: imaginile și etichetele, pentru antrenare și pentru testare. Fiecare imagine devine un vector de șapte sute optzeci și patru de numere între zero și unu, iar etichetele devin numere întregi de la zero la nouă. Rețeaua nu știe că pixelii formau o imagine: pentru rețea, o cifră este doar o listă de intrări. La rulare, scriptul afișează formele matricelor și câte cifre are fiecare clasă."
+    },
+    {
+      "t": 979.3,
+      "text": "Fișierul de date este deja descărcat, așa că rularea este imediată. Setul de antrenare are șaizeci de mii de rânduri de câte șapte sute optzeci și patru de numere, iar setul de testare, zece mii. Cifrele de testare au fost scrise de alte persoane decât cele de antrenare. Fiecare cifră are între aproximativ cinci mii patru sute și șase mii șapte sute de exemple, deci clasele sunt aproximativ echilibrate."
+    },
+    {
+      "t": 1006.8,
+      "text": "Rețeaua pentru MNIST are șapte sute optzeci și patru de intrări, câte una pentru fiecare pixel. Stratul ascuns are o sută douăzeci și opt de neuroni cu ReLU, iar ponderile lor formează o matrice, W unu, cu șapte sute optzeci și patru de rânduri și o sută douăzeci și opt de coloane. Stratul de ieșire are zece neuroni, cu ponderile în matricea W doi. Fiecare neuron de ieșire dă scorul unei cifre, iar softmax transformă scorurile în probabilități. Toate imaginile unui lot, în engleză batch, adică ale unui grup mic de imagini, trec prin rețea deodată, ca rânduri ale unei matrice."
+    },
+    {
+      "t": 1043.8,
+      "text": "Dacă așezăm cele B imagini ale unui lot pe rândurile matricei X, produsul dintre X și W unu conține, pe rândul fiecărei imagini, sumele ponderate ale tuturor celor o sută douăzeci și opt de neuroni. Elementul i j este chiar suma ponderată calculată de clasa Neuron pentru imaginea i și neuronul j, iar bias-ul se adaugă fiecărui rând. Stratul ascuns aplică ReLU element cu element, iar stratul de ieșire este încă un produs de matrice. Ponderile pornesc de la valori aleatoare, cu inițializarea He, în engleză He initialization, potrivită pentru ReLU: o distribuție normală cu media zero și varianța doi împărțit la numărul de intrări al stratului. Astfel, sumele ponderate au aproximativ aceeași mărime în fiecare strat."
+    },
+    {
+      "t": 1091.8,
+      "text": "Cele zece ieșiri sunt scoruri nenormalizate, în engleză logits: numere oarecare, pozitive sau negative. Funcția softmax le transformă în probabilități: fiecare scor trece prin exponențială, care face din orice număr unul pozitiv, apoi rezultatele sunt împărțite la suma lor, ca suma lor să fie unu. Pierderea este entropia încrucișată, în engleză cross-entropy: logaritmul negativ al probabilității date cifrei corecte, mediat pe lot. În cod, scădem din fiecare scor maximul rândului. Rezultatul este același, dar exponențiala nu mai poate depăși cele mai mari valori reprezentabile."
+    },
+    {
+      "t": 1132.6,
+      "text": "Dacă rețeaua dă cifrei corecte probabilitatea unu, pierderea este zero. Dacă îi dă o probabilitate mică, pierderea crește foarte repede, așa că o rețea foarte sigură pe o cifră greșită este penalizată mult. O rețea care nu știe nimic dă fiecărei cifre probabilitatea o zecime, deci pierderea acestei rețele este logaritmul natural al lui zece, aproximativ doi virgulă treizeci. Rețeaua noastră, abia inițializată, pornește aproape de această valoare."
+    },
+    {
+      "t": 1160.6,
+      "text": "Rețeaua o scriem cu NumPy, în fișierul nou mnist numpy. Fișierul va conține propagarea directă, softmax, entropia încrucișată, retropropagarea scrisă de mână și coborârea pe gradient cu loturi mici. Importăm NumPy, cu numele scurt np, și funcția load mnist. Init params primește mărimile celor trei straturi, șapte sute optzeci și patru, o sută douăzeci și opt și zece, și sămânța generatorului de numere aleatoare. Generatorul, creat cu default rng, dă aceleași numere la fiecare rulare, deci aceleași ponderi inițiale. Parametrii sunt un dicționar cu patru matrice, cu nume scurte. W unu are șapte sute optzeci și patru de rânduri și o sută douăzeci și opt de coloane, iar b unu are o sută douăzeci și opt de elemente. W doi are o sută douăzeci și opt de rânduri și zece coloane, iar b doi are zece elemente. Toate sunt numere în virgulă mobilă pe treizeci și doi de biți, iar bias-urile pornesc de la zero. Ponderile sunt extrase din distribuția normală standard și înmulțite cu rădăcina pătrată din doi împărțit la numărul de intrări. Factorul vine din inițializarea He, cu ponderi normale de varianță doi împărțit la numărul de intrări, potrivită pentru ReLU. Forward primește un lot de imagini: un rând pentru fiecare imagine, cu șapte sute optzeci și patru de coloane. Operatorul de înmulțire matricială al lui Python calculează produsul, iar z unu conține sumele ponderate ale celor o sută douăzeci și opt de neuroni ascunși. NumPy adaugă vectorul de bias fiecărui rând, prin difuzare, în engleză broadcasting. Maximum dintre z unu și zero este ReLU, element cu element. Ieșirea dă zece scoruri nenormalizate, câte unul pentru fiecare cifră. Pe lângă scoruri, forward întoarce valorile intermediare, păstrate pentru retropropagare, la fel cum fiecare obiect Value își păstra operanzii. Softmax scade întâi maximul fiecărui rând: rezultatul este același, dar exponențiala nu mai poate depăși valorile reprezentabile. Keepdims păstrează rezultatul ca o coloană, ca scăderea și împărțirea să se facă pe fiecare rând. Cross entropy alege, pentru fiecare rând, probabilitatea cifrei corecte, cu indexarea avansată a lui NumPy: numerele rândurilor și etichetele. Pierderea este media logaritmului negativ al acestor probabilități. Adăugăm zece la minus doisprezece, ca să nu calculăm logaritmul lui zero."
+    },
+    {
+      "t": 1315,
+      "text": "Formulele retropropagării pentru matrice le deducem pornind de la pierdere, spre intrare. Pentru o singură imagine, cu eticheta y i, pierderea este minus scorul cifrei corecte, plus logaritmul sumei exponențialelor. Derivata în raport cu scorul z k are doi termeni: minus unu, doar pentru cifra corectă, și exponențiala lui z k împărțită la sumă, adică chiar probabilitatea p k. Gradientul are deci o formă foarte simplă: probabilitatea, minus unu la cifra corectă. Dacă rețeaua a dat cifrei corecte probabilitatea zero virgulă șapte, gradientul este minus zero virgulă trei, iar scorul cifrei corecte va fi împins în sus. Pentru tot lotul, scriem etichetele ca matricea Y, în codificarea one-hot, cu unu la cifra corectă și zero în rest, iar gradientul este P minus Y, împărțit la numărul de imagini."
+    },
+    {
+      "t": 1371.8,
+      "text": "Pentru stratul de ieșire, gradientul ponderilor este produsul dintre intrările stratului, transpuse, și gradientul ieșirilor stratului. Fiecare pondere primește suma, pe tot lotul, a gradienților ieșirii la care contribuie, înmulțiți cu intrarea corespunzătoare. Gradientul bias-ului este suma gradienților ieșirilor pe tot lotul, iar gradientul trimis stratului ascuns este produsul cu ponderile transpuse. ReLU lasă gradientul să treacă doar acolo unde suma ponderată a fost pozitivă. Masca Z unu mai mare decât zero are unu acolo și zero în rest, iar cercul cu punct înseamnă înmulțirea element cu element. Stratul ascuns are aceleași formule, cu X în loc de H. Fiecare formulă este regula lanțului din episodul trecut, aplicată tuturor elementelor unei matrice deodată."
+    },
+    {
+      "t": 1425.1,
+      "text": "Antrenarea folosește coborârea pe gradient stocastică, în engleză stochastic gradient descent, pe scurt SGD. Gradientul nu se calculează pe toate cele șaizeci de mii de imagini odată, ci pe loturi mici, de câte șaizeci și patru de imagini, alese în ordine aleatoare. Fiecare lot dă o estimare puțin zgomotoasă a gradientului, dar parametrii se actualizează de nouă sute treizeci și opt de ori la fiecare trecere prin setul de antrenare. O astfel de trecere se numește epocă, în engleză epoch."
+    },
+    {
+      "t": 1456.4,
+      "text": "În mnist numpy importăm și modulele os și time. Funcția backward primește parametrii, valorile intermediare păstrate de forward, probabilitățile și etichetele. Gradientul pierderii în raport cu scorurile este cel dedus mai devreme: probabilitățile, minus unu la cifra corectă, împărțite la lot. Pornim de la o copie a probabilităților, scădem unu la cifra corectă din fiecare rând, cu aceeași indexare ca în cross entropy, și împărțim la n, numărul de imagini din lot. Pentru stratul de ieșire, gradientul lui W doi este h transpus înmulțit cu gradientul scorurilor. Gradientul lui b doi este suma pe coloane, iar gradientul lui h este produsul cu W doi transpus. ReLU lasă gradientul să treacă doar unde neuronul a fost activ. Masca z unu mai mare decât zero are True sau False, pe care NumPy le înmulțește ca unu și zero. Stratul ascuns are aceleași formule, cu intrarea x. Funcția întoarce un dicționar de gradienți, cu aceleași chei ca parametrii. Predict alege, pentru fiecare imagine, cifra cu scorul cel mai mare, cu argmax. Train primește datele, numărul de epoci, mărimea lotului și rata de învățare. La fiecare epocă, imaginile sunt amestecate și împărțite în loturi de câte șaizeci și patru. Permutation dă ordinea aleatoare a imaginilor, iar loturile sunt bucăți succesive din această ordine. Pentru fiecare lot, calculăm scorurile, probabilitățile, pierderea și gradienții. Actualizarea este aceeași ca la semilune, dar pe matrice întregi. Gradienții nu trebuie readuși la zero, pentru că backward îi calculează de fiecare dată de la început. După fiecare epocă, măsurăm acuratețea pe cele zece mii de imagini de testare, pe care rețeaua nu le vede la antrenare, și afișăm pierderea medie, acuratețea și durata. Save examples desenează, cu Matplotlib, primele douăsprezece imagini de testare sau primele imagini clasificate greșit. Flatnonzero dă pozițiile la care predicția diferă de etichetă, iar arange dă primele poziții, la rând. Figura are câte un subgrafic pentru fiecare imagine, așezate pe un singur rând, cu lățimea proporțională cu numărul lor. Pentru fiecare imagine, refacem matricea de douăzeci și opt pe douăzeci și opt de pixeli și o afișăm în tonuri de gri. Deasupra scriem cifra prezisă, cu gri dacă este corectă, iar la greșeli, cu portocaliu, cifra prezisă și, între paranteze, cifra corectă. Ascundem axele și salvăm figura cu fundal transparent, la o sută douăzeci de puncte pe inch. La rulare, scriptul încarcă datele și creează parametrii. Numărul parametrilor este suma mărimilor celor patru matrice, pe care îl afișăm cu separator de mii. Apoi antrenează rețeaua, cu valorile implicite ale funcției train, și afișează durata totală a antrenării. Apoi calculează predicțiile pe setul de testare și numără imaginile clasificate greșit. Calculăm și perechile formate din cifra corectă și cifra prezisă care apar cel mai des printre greșeli. Funcția unique a lui NumPy numără fiecare pereche, iar argsort, cu semnul minus, le ordonează de la cea mai frecventă. Afișăm primele cinci, de forma trei citit ca cinci, de cincisprezece ori. La final, creăm directorul imagini și salvăm cele două imagini cu exemple."
+    },
+    {
+      "t": 1670.4,
+      "text": "Pornim antrenarea pe MNIST, iar rețeaua are o sută una mii șapte sute șaptezeci de parametri, cum am calculat. Pierderea medie din prima epocă este zero virgulă treizeci și șase, deja mult sub doi virgulă treizeci, pentru că rețeaua învață chiar din primele loturi. După zece epoci, rețeaua recunoaște corect nouăzeci și șapte virgulă șaizeci și doi la sută dintre cifrele de testare, iar fiecare epocă durează sub o secundă. Greșește două sute treizeci și opt de imagini din zece mii. Cea mai frecventă greșeală este un trei citit ca cinci, urmată de doi citit ca opt și de patru și nouă, confundați unul cu celălalt."
+    },
+    {
+      "t": 1709.5,
+      "text": "Pe grafic, eroarea pe setul de testare, adică proporția de cifre clasificate greșit, scade de la șase virgulă zero unu la sută după prima epocă la doi virgulă treizeci și opt la sută după a zecea, tot mai încet. Datorită semințelor fixe, numerele sunt aceleași la fiecare rulare, pe același calculator."
+    },
+    {
+      "t": 1728.8,
+      "text": "Primele douăsprezece cifre din setul de testare, cu cifra prezisă deasupra fiecăreia, sunt toate clasificate corect. Mai interesante sunt greșelile, cu cifra prezisă și, între paranteze, cifra corectă. Unele sunt de înțeles, pentru că cifrele sunt scrise neobișnuit, iar altele, ca șase citit ca zero, arată limitele rețelei. Rețeaua vede șapte sute optzeci și patru de numere separate, fără să știe care pixeli sunt vecini. Rețelele convoluționale, în engleză convolutional neural networks, construite pentru imagini, folosesc tocmai această vecinătate și ajung la peste nouăzeci și nouă la sută pe MNIST."
+    },
+    {
+      "t": 1768.3,
+      "text": "În PyTorch, aceeași rețea se scrie din straturi gata făcute, în fișierul mnist torch. Este același MLP, cu straturile șapte sute optzeci și patru, o sută douăzeci și opt și zece, iar librăria face singură retropropagarea, cu autograd. Importăm torch, modulul torch punct nn, cu straturile, și load mnist. Modelul este un nn punct Sequential, care aplică straturile pe rând, ca propagarea directă din clasa MLP. Nn punct Linear este stratul cu ponderi și bias, aici cu șapte sute optzeci și patru de intrări și o sută douăzeci și opt de ieșiri, iar nn punct ReLU este activarea. Funcția train primește aceleași date și aceleași valori implicite ca varianta NumPy, dar își creează singură modelul. Manual seed fixează sămânța generatorului lui PyTorch, care decide ponderile inițiale și ordinea loturilor. Optimizatorul SGD din torch punct optim primește parametrii modelului și rata de învățare. În același modul sunt și optimizatorii mai elaborați, cum este Adam. Randperm dă ordinea aleatoare a imaginilor, ca permutation din NumPy. Pentru date mai complicate, PyTorch are clasele Dataset și DataLoader, dar aici ne este suficientă o permutare a indicilor. Funcția cross entropy primește direct scorurile nenormalizate și aplică singură softmax, într-o formă stabilă numeric. Zero grad șterge gradienții pasului anterior, pentru că și în PyTorch gradienții se adună de la un backward la altul. Backward face retropropagarea, cu autograd, iar step face actualizarea, p minus egal rata de învățare ori gradientul, pentru fiecare parametru. Item scoate pierderea lotului ca număr Python, ca să o adunăm la total. La testare, no grad oprește construirea grafului, pentru că nu avem nevoie de gradienți, iar argmax pe dimensiunea unu alege cifra prezisă. Comparația cu etichetele dă valori adevărat sau fals, pe care le transformăm în numere în virgulă mobilă, ca să le putem calcula media. Afișăm, ca în varianta NumPy, epoca, pierderea medie, acuratețea și durata. La rulare, încărcăm cele patru matrice cu load mnist și pornim cronometrul. From numpy transformă matricele NumPy în tensori, fără să copieze datele."
+    },
+    {
+      "t": 1916.8,
+      "text": "Înainte de antrenare, verificăm retropropagarea noastră încă o dată, de data aceasta cu autograd. Pentru asta, importăm NumPy și funcțiile din mnist numpy. Compare gradients calculează gradienții pe același lot în ambele feluri, cu aceleași ponderi. Întâi varianta noastră: init params, forward și backward. Apoi copiem ponderile în rețeaua PyTorch, fără să înregistrăm copierea în graf. Un detaliu contează aici: nn punct Linear ține ponderile transpuse, cu forma ieșiri pe intrări, așa că transpunem W unu și W doi. Calculăm pierderea pe același lot și apelăm backward. Gradienții lui PyTorch îi transpunem înapoi, în forma noastră. Pentru fiecare parametru, afișăm cea mai mare diferență absolută dintre cele două variante. La rulare, comparăm gradienții pe primele șaizeci și patru de imagini, apoi antrenăm rețeaua."
+    },
+    {
+      "t": 1974.1,
+      "text": "La rulare, întâi vin diferențele dintre gradienții calculați în cele două feluri. Cea mai mare este de ordinul a zece la minus opt, cât permit numerele în virgulă mobilă de treizeci și doi de biți, deci gradienții scriși de mână sunt corecți. Antrenarea ajunge la nouăzeci și șapte virgulă cincizeci și șapte la sută, aproape cât varianta NumPy."
+    },
+    {
+      "t": 1994.1,
+      "text": "Pe grafic, cele două variante urmează aproape aceeași curbă. Diferențele mici au două cauze: nn punct Linear își inițializează ponderile cu altă distribuție decât inițializarea He din init params, iar loturile sunt amestecate de alt generator de numere aleatoare. Același cod rulează și pe o placă grafică, după ce rețeaua și datele sunt mutate pe placa grafică cu metoda to, dar pentru o rețea atât de mică, procesorul este suficient."
+    },
+    {
+      "t": 2021.1,
+      "text": "Termenii din acest episod sunt și în glosarul de pe site, în română și în engleză, de la acuratețe și epocă până la lot."
+    },
+    {
+      "t": 2029.1,
+      "text": "Cu aceasta am terminat laboratorul Rețele neuronale de la zero. Codul ambelor episoade, cu câte o etichetă git pentru fiecare pas, capitolele și transcrierea sunt pe pagina episodului de pe InteligentArtificiala.ro. Pentru întrebări sau pentru a semnala greșeli, ne puteți scrie în comentarii. Dacă vreți să urmăriți și celelalte laboratoare, abonați-vă la canal."
+    }
+  ],
+  "code": {
+    "repo": "https://github.com/inteligentArtificiala-ro/laborator-retele-neuronale",
+    "end": "ep002/end",
+    "steps": [
+      {
+        "t": 125,
+        "from": "ep001/end",
+        "to": "ep002/step-1"
+      },
+      {
+        "t": 331.1,
+        "from": "ep002/step-1",
+        "to": "ep002/step-2"
+      },
+      {
+        "t": 530.6,
+        "from": "ep002/step-2",
+        "to": "ep002/step-3"
+      },
+      {
+        "t": 879.6,
+        "from": "ep002/step-3",
+        "to": "ep002/step-4"
+      },
+      {
+        "t": 1160.1,
+        "from": "ep002/step-4",
+        "to": "ep002/step-5"
+      },
+      {
+        "t": 1455.9,
+        "from": "ep002/step-5",
+        "to": "ep002/step-6"
+      },
+      {
+        "t": 1767.8,
+        "from": "ep002/step-6",
+        "to": "ep002/step-7"
+      },
+      {
+        "t": 1916.3,
+        "from": "ep002/step-7",
+        "to": "ep002/step-8"
+      }
+    ]
+  }
+}
