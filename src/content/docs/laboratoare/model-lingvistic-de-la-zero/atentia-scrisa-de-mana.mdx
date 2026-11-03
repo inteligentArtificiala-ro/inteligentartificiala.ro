@@ -1,0 +1,168 @@
+---
+title: Atenția, scrisă de mână
+description: Atenția cauzală scrisă de mână în PyTorch, pe o propoziție de șase tokenuri, și verificată cu funcția din PyTorch, apoi stratul de atenție cu șase capete pe care îl folosește modelul GPT al laboratorului.
+sidebar:
+  order: 3
+level: intermediar
+tags:
+  - Modele de limbaj mari (LLM)
+  - Transformer
+---
+
+import DeepDive from '@components/DeepDive.astro';
+import Python from '@components/Python.astro';
+import SourceFile from '@components/SourceFile.astro';
+
+Prin **atenție** (_attention_), fiecare token al unui text poate prelua informație de la tokenurile aflate înaintea sa. Pagina [Avem nevoie doar de atenție?](/modele-lingvistice/avem-nevoie-doar-de-atentie/) explică mecanismul în teorie. În această etapă scriem calculul de mână, în fișierul `attention.py`, pe o propoziție de șase tokenuri, și comparăm rezultatul cu funcția pe care o folosește PyTorch. Apoi trecem la stratul de atenție cu șase capete din `model.py`, prima piesă a modelului GPT.
+
+## Interogări, chei și valori
+
+În model, fiecare token ajunge la atenție ca un vector de numere, care descrie tokenul și poziția din propoziție. Trei matrice de ponderi, învățate la antrenare, transformă acest vector în trei vectori noi.
+
+- **Interogarea** (_query_) descrie ce informație caută tokenul.
+- **Cheia** (_key_) este vectorul cu care se compară interogările celorlalte tokenuri.
+- **Valoarea** (_value_) este informația pe care tokenul o transmite mai departe.
+
+Cât de mult se uită tokenul $i$ la tokenul $j$ depinde de un scor: produsul scalar dintre interogarea lui $i$ și cheia lui $j$, împărțit la rădăcina pătrată a dimensiunii vectorilor. Produsul scalar este mare când cei doi vectori sunt orientați la fel, iar împărțirea păstrează scorurile la o scară potrivită pentru softmax, oricât de lungi ar fi vectorii. Pe fiecare rând de scoruri, softmax dă ponderi pozitive, cu suma 1, iar noul vector al tokenului este media valorilor, calculată cu aceste ponderi.
+
+Un model de tip GPT scrie textul de la stânga la dreapta, așa că un token nu are voie să se uite la tokenurile de după poziția sa. La generare, acele tokenuri nu există încă, iar la antrenare ar dezvălui chiar tokenul care trebuie prezis. **Masca cauzală** (_causal mask_) pune scorurile acestor perechi la minus infinit, înainte de softmax, așa că ponderile corespunzătoare devin zero.
+
+<DeepDive title="Formula atenției cauzale">
+
+Scorul dintre tokenul $i$ și tokenul $j$ este:
+
+$$
+s_{ij} = \frac{q_i \cdot k_j}{\sqrt{d}}
+$$
+
+Softmax, aplicat doar pe tokenurile de până la poziția $i$, dă ponderile:
+
+$$
+w_{ij} = \frac{e^{s_{ij}}}{\sum_{m \le i} e^{s_{im}}} \quad \text{pentru } j \le i, \qquad w_{ij} = 0 \quad \text{pentru } j > i
+$$
+
+Ieșirea pentru tokenul $i$ este media ponderată a valorilor:
+
+$$
+y_i = \sum_{j \le i} w_{ij} \, v_j
+$$
+
+unde $q_i$ este interogarea tokenului $i$, $k_j$ și $v_j$ sunt cheia și valoarea tokenului $j$, iar $d$ este dimensiunea acestor vectori. Pentru componente independente, cu media 0 și varianța 1, produsul scalar $q_i \cdot k_j$ are varianța $d$, iar împărțirea la $\sqrt{d}$ readuce varianța la 1. Fără această scalare, pentru $d$ mare, softmax ar da aproape toată ponderea unui singur token.
+
+</DeepDive>
+
+## Funcția `attention`
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/attention.py" symbols={['attention']} />
+
+Interogările, cheile și valorile unei secvențe vin ca matrice, cu câte un rând pentru fiecare token. Produsul `q @ k.T` calculează dintr-o dată toate scorurile, într-o matrice de $T \times T$, în care rândul $i$ conține scorurile tokenului $i$ față de fiecare token. Apelul `torch.triu(…, diagonal=1)` marchează cu `True` pozițiile de deasupra diagonalei, adică perechile în care tokenul $j$ vine după tokenul $i$, iar `masked_fill` pune acolo minus infinit. `F.softmax(…, dim=-1)` lucrează pe ultima dimensiune, deci pe fiecare rând, iar `weights @ v` face toate mediile ponderate. Funcția întoarce și ponderile, ca tabelul lor să poată fi afișat.
+
+## O propoziție de șase tokenuri
+
+Funcția `show` afișează ponderile ca tabel, cu un punct în locul ponderilor nule.
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/attention.py" symbols={['show']} />
+
+Prima parte a scriptului aplică funcția `attention` propoziției „Lily has a red ball.”, împărțite în șase tokenuri.
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/attention.py" lines={[26, 37]} />
+
+Ca exemplul să rămână mic, vectorii tokenurilor au doar 16 numere, iar interogările, cheile și valorile au câte 8. Vectorii și matricele de ponderi sunt aleatori, iar matricele sunt împărțite la $\sqrt{16}$, ca valorile să rămână mici. Apelul `torch.manual_seed(0)` face ca fiecare rulare să dea aceleași numere.
+
+La final, același calcul este făcut de `F.scaled_dot_product_attention`, funcția pe care o folosește modelul, cu `is_causal=True` pentru masca cauzală. Funcția din PyTorch lucrează pe loturi de secvențe, așa că `[None]` adaugă dimensiunea lotului, iar `[0]` scoate această dimensiune din rezultat.
+
+## Rularea
+
+În directorul laboratorului, după [pregătirea mediului](/laboratoare/model-lingvistic-de-la-zero/prezentare/#pregătirea-mediului-de-lucru), scriptul rulează în câteva secunde, pe orice calculator.
+
+```bash
+python attention.py
+```
+
+Rezultatul de mai jos vine din seria video a laboratorului.
+
+```text
+x (6, 16) | q, k, v (6, 8) | ieșire (6, 8)
+         Lily    has      a    red   ball      .
+  Lily   1.00      ·      ·      ·      ·      ·
+   has   0.47   0.53      ·      ·      ·      ·
+     a   0.17   0.27   0.56      ·      ·      ·
+   red   0.06   0.26   0.57   0.12      ·      ·
+  ball   0.36   0.16   0.07   0.32   0.10      ·
+     .   0.04   0.21   0.40   0.08   0.07   0.20
+diferența maximă față de PyTorch: 2.4e-07
+6 capete de câte 64: (2, 10, 384) -> (2, 10, 384), 591,360 parametri
+```
+
+Șase tokenuri cu vectori de 16 numere dau interogări, chei și valori de câte 8 numere, iar ieșirea are tot câte 8 numere pentru fiecare token. Primul token, `Lily`, se vede doar pe sine, deci primește ponderea 1. Pe fiecare rând, ponderile au suma 1, iar deasupra diagonalei, unde tabelul arată un punct, sunt zero.
+
+Ultimul rând este al punctului, care vede toată propoziția. Cea mai mare pondere merge la `a`, 0,40, urmată de `has` și de punctul însuși, cu aproximativ 0,2 fiecare. Matricele de ponderi sunt aleatoare, așa că tabelul arată mecanismul, nu un sens: nimic nu face din `a` cel mai important cuvânt pentru punct. Ponderile capătă sens abia după antrenare, cum se vede pe pagina despre [generarea textului](/laboratoare/model-lingvistic-de-la-zero/generarea-textului/#unde-privește-atenția).
+
+Calculul de mână și cel din PyTorch diferă cu cel mult $2{,}4 \cdot 10^{-7}$, adică doar prin rotunjirile calculelor cu numere reale pe 32 de biți. Ultima linie vine de la stratul cu șase capete, explicat mai jos.
+
+## Atenția cu capete multiple (multi-head)
+
+Un singur cap face, pentru fiecare token, o singură medie ponderată, deci poate urmări un singur fel de legătură între tokenuri. Modelul folosește [atenția cu capete multiple](/modele-lingvistice/avem-nevoie-doar-de-atentie/#atenția-cu-capete-multiple-multi-head): 6 capete calculează în paralel atenția, fiecare cu propriile ponderi, iar rezultatele capetelor sunt combinate la final. De exemplu, după antrenare, un cap poate urmări cuvântul de dinainte, iar altul, personajul despre care este vorba.
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/model.py" symbols={['CausalSelfAttention']} />
+
+Intrarea `x` are forma `(B, T, C)`, cu `B` secvențe dintr-un lot, câte `T` tokenuri, fiecare cu un vector de `C = 384` de valori. Stratul are patru straturi liniare: primele trei calculează interogările, cheile și valorile tuturor capetelor deodată, iar al patrulea, `o_proj`, face proiecția de ieșire. Configurația modelului, `GPTConfig`, este descrisă pe [pagina următoare](/laboratoare/model-lingvistic-de-la-zero/modelul-gpt/#configurația).
+
+După fiecare proiecție, `view` împarte vectorii de 384 de valori în 6 capete de câte 64, iar `transpose` mută capetele înaintea tokenurilor, la forma `(B, 6, T, 64)`. Funcția `F.scaled_dot_product_attention` face apoi, pentru fiecare cap, calculul din funcția `attention`, cu aceeași mască cauzală. PyTorch alege pentru această funcție cea mai rapidă implementare disponibilă pe dispozitiv. Pe plăcile grafice NVIDIA, poate folosi [FlashAttention](https://arxiv.org/abs/2205.14135), care face același calcul pe blocuri, fără să păstreze întreagă matricea ponderilor, de $T \times T$, în memoria principală a plăcii. _Dropout_-ul pe ponderi este activ doar la antrenare.
+
+Rezultatele capetelor se alătură la loc, cu `transpose` și `view`. Apelul `contiguous` copiază datele în noua ordine, pentru că `view` are nevoie de date așezate continuu în memorie. La final, `o_proj` amestecă informația venită de la cele 6 capete.
+
+Mai jos, același calcul este scris pas cu pas în NumPy, pentru 4 tokenuri, vectori de 8 valori și 2 capete.
+
+<Python
+  packages={['numpy']}
+  code={String.raw`
+import numpy as np
+
+rng = np.random.default_rng(seed=0)
+T, C, n_head = 4, 8, 2
+hs = C // n_head  # dimensiunea unui cap
+x = rng.normal(size=(T, C))
+W_q, W_k, W_v, W_o = (rng.normal(size=(C, C)) * 0.3 for _ in range(4))
+
+def split_heads(m):
+    # (T, C) -> (n_head, T, hs), ca view(...).transpose(1, 2) din model.py
+    return m.reshape(T, n_head, hs).transpose(1, 0, 2)
+
+q, k, v = split_heads(x @ W_q), split_heads(x @ W_k), split_heads(x @ W_v)
+scores = q @ k.transpose(0, 2, 1) / np.sqrt(hs)
+mask = np.tril(np.ones((T, T), dtype=bool))  # masca cauzală
+scores = np.where(mask, scores, -np.inf)
+weights = np.exp(scores - scores.max(axis=-1, keepdims=True))
+weights /= weights.sum(axis=-1, keepdims=True)
+
+y = (weights @ v).transpose(1, 0, 2).reshape(T, C)  # capetele se alătură la loc
+out = y @ W_o
+
+np.set_printoptions(precision=2, suppress=True)
+print("Ponderile de atenție ale capului 0:")
+print(weights[0])
+print("Ponderile de atenție ale capului 1:")
+print(weights[1])
+print("Forma ieșirii:", out.shape)
+`}
+/>
+
+Deasupra diagonalei, ponderile sunt zero, deci niciun token nu vede tokenurile următoare. Cele două capete împart altfel atenția, pentru că au proiecții diferite.
+
+## Stratul, verificat
+
+Ultima parte a fișierului `attention.py` construiește un strat de atenție cu configurația implicită a modelului.
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/attention.py" lines={[39, 44]} />
+
+Apelul `.eval()` oprește _dropout_-ul, iar intrarea este un lot de 2 secvențe a câte 10 tokenuri, cu vectori aleatori de 384 de valori. Ultima linie din rezultatul de mai sus arată că ieșirea are aceeași formă ca intrarea, `(2, 10, 384)`. Datorită acestui lucru, straturile de atenție se pot așeza unul după altul, în blocurile modelului.
+
+Stratul are 591.360 de parametri. Fiecare dintre cele 4 straturi liniare are o matrice de 384 × 384 de ponderi și 384 de valori de _bias_, adică $4 \cdot (384 \cdot 384 + 384) = 591.360$. Numărul nu depinde de numărul capetelor, pentru că cele 6 capete împart aceleași 384 de dimensiuni, nu adaugă altele.
+
+Pe pagina următoare, stratul de atenție devine prima parte a unui bloc Transformer, iar 6 blocuri formează modelul GPT complet.
+
+## Bibliografie
+
+- Dao, T. et al. (2022). [FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](https://arxiv.org/abs/2205.14135). _NeurIPS 2022_.
+- Vaswani, A. et al. (2017). [Attention Is All You Need](https://arxiv.org/abs/1706.03762). _NeurIPS 2017_.

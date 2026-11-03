@@ -1,8 +1,8 @@
 ---
 title: Modelul GPT
-description: Un Transformer doar cu decodor, scris clasă cu clasă în PyTorch. Configurația, atenția cauzală cu capete multiple (multi-head), rețeaua feed-forward cu GELU, blocul, ponderile legate și cele 14,6 milioane de parametri.
+description: Un Transformer doar cu decodor, scris clasă cu clasă în PyTorch. Configurația, rețeaua feed-forward cu GELU, blocul, ponderile legate și cele 14,6 milioane de parametri, numărați și verificați înainte de antrenare.
 sidebar:
-  order: 3
+  order: 4
 level: intermediar
 tags:
   - Modele de limbaj mari (LLM)
@@ -16,7 +16,7 @@ import { Steps } from '@astrojs/starlight/components';
 
 Modelul laboratorului este un **Transformer doar cu decodor** (_decoder-only Transformer_), forma folosită de modelele GPT. Componentele sunt toate cele din [GPT-2](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf), publicat de OpenAI în 2019: reprezentări învățate ale pozițiilor, normalizare pe strat, atenție cu capete multiple (multi-head) și o rețea feed-forward cu funcția GELU. Pagina [Arhitectura Transformer](/modele-lingvistice/arhitectura-transformer/) descrie variantele care le-au înlocuit în modelele actuale, de exemplu RMSNorm, RoPE și SwiGLU. Variantele clasice sunt mai ușor de urmărit, iar la această mărime diferența de calitate este mică.
 
-Tot modelul se află în fișierul `model.py`.
+Tot modelul se află în fișierul `model.py`. Stratul de atenție, `CausalSelfAttention`, a fost scris și verificat pe [pagina anterioară](/laboratoare/model-lingvistic-de-la-zero/atentia-scrisa-de-mana/). Pe această pagină construim restul modelului în jurul stratului de atenție.
 
 ## Configurația
 
@@ -34,54 +34,6 @@ Tot modelul se află în fișierul `model.py`.
 **_Dropout_**-ul pune la zero, la întâmplare, 10% din valori la fiecare pas de antrenare. Modelul nu se poate baza pe nicio valoare anume, așa că învață reprezentări care nu depind de câteva valori izolate și memorează mai greu datele de antrenare. La generare, _dropout_-ul este oprit.
 
 Funcția `pick_device` caută întâi o placă grafică NVIDIA (CUDA), apoi procesorul grafic al unui cip Apple Silicon (MPS). Dacă nu găsește niciuna, folosește procesorul obișnuit.
-
-## Atenția cauzală
-
-Fiecare bloc începe cu [atenția cu capete multiple](/modele-lingvistice/avem-nevoie-doar-de-atentie/#atenția-cu-capete-multiple-multi-head), aplicată cu [masca cauzală](/modele-lingvistice/avem-nevoie-doar-de-atentie/#masca-cauzală).
-
-<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/model.py" symbols={['CausalSelfAttention']} />
-
-Intrarea `x` are forma `(B, T, C)`, cu `B` secvențe dintr-un lot, câte `T` tokenuri, fiecare cu un vector de `C = 384` de valori. Atenția are patru straturi liniare: trei calculează interogările, cheile și valorile, iar al patrulea, `o_proj`, face proiecția de ieșire de la final. Vectorii de 384 de valori sunt împărțiți în 6 capete de câte 64, prin `view` și `transpose`, iar fiecare cap calculează atenția separat.
-
-Calculul propriu-zis este făcut de `F.scaled_dot_product_attention`, care aplică formula atenției prin produs scalar scalat. Parametrul `is_causal=True` adaugă masca cauzală, astfel încât fiecare poziție vede doar tokenurile de până la poziția respectivă. PyTorch alege pentru această funcție cea mai rapidă implementare disponibilă pe dispozitiv.
-
-Mai jos, același calcul este scris pas cu pas în NumPy, pentru 4 tokenuri, vectori de 8 valori și 2 capete.
-
-<Python
-  packages={['numpy']}
-  code={String.raw`
-import numpy as np
-
-rng = np.random.default_rng(seed=0)
-T, C, n_head = 4, 8, 2
-hs = C // n_head  # dimensiunea unui cap
-x = rng.normal(size=(T, C))
-W_q, W_k, W_v, W_o = (rng.normal(size=(C, C)) * 0.3 for _ in range(4))
-
-def split_heads(m):
-    # (T, C) -> (n_head, T, hs), ca view(...).transpose(1, 2) din model.py
-    return m.reshape(T, n_head, hs).transpose(1, 0, 2)
-
-q, k, v = split_heads(x @ W_q), split_heads(x @ W_k), split_heads(x @ W_v)
-scores = q @ k.transpose(0, 2, 1) / np.sqrt(hs)
-mask = np.tril(np.ones((T, T), dtype=bool))  # masca cauzală
-scores = np.where(mask, scores, -np.inf)
-weights = np.exp(scores - scores.max(axis=-1, keepdims=True))
-weights /= weights.sum(axis=-1, keepdims=True)
-
-y = (weights @ v).transpose(1, 0, 2).reshape(T, C)  # capetele se alătură la loc
-out = y @ W_o
-
-np.set_printoptions(precision=2, suppress=True)
-print("Ponderile de atenție ale capului 0:")
-print(weights[0])
-print("Ponderile de atenție ale capului 1:")
-print(weights[1])
-print("Forma ieșirii:", out.shape)
-`}
-/>
-
-Deasupra diagonalei, ponderile sunt zero, deci niciun token nu vede tokenurile următoare. Cele două capete împart altfel atenția, pentru că au proiecții diferite.
 
 ## Rețeaua feed-forward și GELU
 
@@ -117,7 +69,7 @@ for x in [-3, -2, -1, -0.5, 0, 0.5, 1, 2, 3]:
 
 ## Blocul
 
-Un bloc leagă cele două componente prin conexiuni reziduale, cu normalizarea pe strat înaintea fiecăreia.
+Un bloc leagă stratul de atenție și rețeaua feed-forward prin conexiuni reziduale, cu normalizarea pe strat înaintea fiecăreia.
 
 <SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/model.py" symbols={['Block']} />
 
@@ -175,33 +127,25 @@ Rezultatul, 14.585.856 de parametri, este numărul afișat și de `model.num_par
 
 ## Verificarea locală
 
-Un model abia creat poate fi verificat înainte de antrenare. Codul de mai jos trece prin model un lot de tokenuri aleatoare. Rulați-l în directorul laboratorului.
+Un model abia creat poate fi verificat înainte de antrenare. Ultima parte a fișierului `model.py` numără parametrii pe grupuri și trece prin model un lot de 4 secvențe de câte 256 de tokenuri aleatoare.
 
-```python
-import math
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/model.py" lines={[136, 147]} />
 
-import torch
-
-from model import GPT, GPTConfig
-
-torch.manual_seed(0)
-model = GPT(GPTConfig())
-print(f"{model.num_params():,} parametri")
-
-idx = torch.randint(10_000, (2, 256))  # 2 secvențe de câte 256 de tokenuri aleatoare
-targets = torch.randint(10_000, (2, 256))
-logits, loss = model(idx, targets)
-print(tuple(logits.shape))
-print(f"pierdere {loss.item():.3f}, ln(10000) = {math.log(10_000):.3f}")
+```bash
+python model.py
 ```
+
+Rezultatul de mai jos vine din seria video a laboratorului.
 
 ```text
-14,585,856 parametri
-(2, 256, 10000)
-pierdere 9.300, ln(10000) = 9.210
+reprezentări: 3,938,304 | blocuri: 10,646,784 | total: 14,585,856 parametri
+intrare (4, 256) -> scoruri (4, 256, 10000)
+pierderea la început: 9.276, iar ln(10,000) = 9.210
 ```
 
-Ieșirea are câte 10.000 de scoruri pentru fiecare dintre cele 2 × 256 de poziții. Pierderea inițială, pe ținte aleatoare, este apropiată de $\ln 10.000 \approx 9{,}21$, adică valoarea pe care o obține un model care dă aceeași probabilitate tuturor tokenurilor. Pagina despre [preantrenare](/laboratoare/model-lingvistic-de-la-zero/preantrenare/) explică de ce și cum scade această valoare.
+Reprezentările tokenurilor și ale pozițiilor au 3.938.304 parametri, iar cele 6 blocuri au 10.646.784. Restul, 768, aparțin normalizării finale. Totalul este cel calculat mai sus doar din configurație.
+
+Ieșirea are câte 10.000 de scoruri pentru fiecare dintre cele 4 × 256 de poziții. Pierderea inițială, pe ținte aleatoare, este apropiată de $\ln 10.000 \approx 9{,}21$, adică valoarea pe care o obține un model care dă aceeași probabilitate tuturor tokenurilor. Pagina despre [preantrenare](/laboratoare/model-lingvistic-de-la-zero/preantrenare/) explică de ce și cum scade această valoare.
 
 ## Bibliografie
 
