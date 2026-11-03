@@ -1,0 +1,204 @@
+---
+title: Învățare prin consolidare cu GRPO
+description: Modelul învață din propriile povești. Grupuri de povești pentru aceeași instrucțiune, avantajele calculate în interiorul grupului, penalizarea KL față de modelul de referință și o comparație între modelul ajustat, DPO și GRPO.
+sidebar:
+  order: 9
+level: avansat
+tags:
+  - Modele de limbaj mari (LLM)
+  - Învățare prin consolidare
+---
+
+import DeepDive from '@components/DeepDive.astro';
+import Python from '@components/Python.astro';
+import SourceFile from '@components/SourceFile.astro';
+import { Steps } from '@astrojs/starlight/components';
+
+Pe [pagina anterioară](/laboratoare/model-lingvistic-de-la-zero/recompensa-si-dpo/), modelul a învățat din perechi de povești scrise o singură dată, înainte de antrenare. În **învățarea prin consolidare** (_reinforcement learning_), modelul învață din încercările pe care le face chiar în timpul antrenării: scrie povești, primește recompense, este ajustat spre poveștile cu recompense mari, apoi scrie din nou, cu ponderile noi. Pagina despre [învățarea prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/) explică ideea în general, iar pagina despre [gradientul strategiei și REINFORCE](/invatare-prin-consolidare/gradientul-politicii-reinforce/) arată cum devine o recompensă un gradient.
+
+Folosim **GRPO** (_group relative policy optimization_), metoda propusă în 2024 de [Shao și colaboratorii](https://arxiv.org/abs/2402.03300), la DeepSeek, pentru modelul DeepSeekMath, și folosită apoi și pentru modelul de raționament [DeepSeek-R1](https://arxiv.org/abs/2501.12948). Pagina despre [învățarea prin consolidare pentru LLM-uri](/modele-lingvistice/invatare-prin-consolidare-pentru-llm/#grpo) descrie metoda la scara modelelor mari. Recompensa este aceeași ca la DPO, proporția de cuvinte cerute care apar în poveste, iar codul se află în fișierul `grpo.py`.
+
+## Modelul de limbaj ca strategie de decizie
+
+În termenii învățării prin consolidare, modelul de limbaj este **strategia de decizie** (_policy_). Starea este instrucțiunea, împreună cu tokenurile scrise până atunci, iar acțiunea este următorul token. Un episod este o poveste întreagă, iar recompensa vine o singură dată, la finalul poveștii, după ce `words_used` numără cuvintele cerute.
+
+## Grupuri și avantaje
+
+Recompensa singură nu spune dacă o poveste este bună pentru instrucțiunea primită. Pentru o instrucțiune ușoară, chiar și o poveste obișnuită folosește toate cuvintele cerute, iar pentru una grea, chiar și o poveste reușită poate folosi doar unul. De aceea, GRPO compară fiecare poveste cu alte povești scrise pentru aceeași instrucțiune. Modelul scrie un **grup** de 8 povești, iar **avantajul** (_advantage_) fiecărei povești este recompensa poveștii minus media grupului, împărțită la abaterea standard a grupului.
+
+Poveștile mai bune decât media grupului primesc un avantaj pozitiv și devin mai probabile. Cele mai slabe primesc un avantaj negativ și devin mai puțin probabile. Media grupului joacă rolul liniei de bază din REINFORCE, fără să fie nevoie de un **model de valoare** (_value model_) învățat, ca în PPO.
+
+<DeepDive title="Avantajul în GRPO">
+
+Pentru un grup de $G = 8$ povești, cu recompensele $r_1, \ldots, r_G$, avantajul poveștii $i$ este:
+
+$$
+\hat{A}_i = \frac{r_i - \operatorname{mean}(r_1, \ldots, r_G)}{\operatorname{std}(r_1, \ldots, r_G) + 10^{-4}}
+$$
+
+unde $\operatorname{std}$ este abaterea standard a grupului (PyTorch împarte implicit la $G - 1$), iar $10^{-4}$ evită împărțirea la zero. Același avantaj se folosește pentru toate tokenurile poveștii $i$.
+
+</DeepDive>
+
+Exemplul de mai jos calculează avantajele pentru un grup de 8 povești scrise pentru o instrucțiune cu trei cuvinte cerute, apoi pentru un grup în care toate poveștile au aceeași recompensă.
+
+<Python
+  packages={['numpy']}
+  code={String.raw`
+import numpy as np
+
+def advantages(rewards, group=8):
+    groups = rewards.reshape(-1, group)
+    std = groups.std(axis=1, ddof=1, keepdims=True)  # ca groups.std(dim=1) din PyTorch
+    return ((groups - groups.mean(axis=1, keepdims=True)) / (std + 1e-4)).reshape(-1)
+
+np.set_printoptions(precision=2, suppress=True)
+rewards = np.array([1/3, 0, 2/3, 1/3, 1/3, 0, 1/3, 1])
+print("Recompense:", rewards)
+print("Avantaje:  ", advantages(rewards))
+print()
+same = np.full(8, 2/3)
+print("Recompense egale:", same)
+print("Avantaje:        ", advantages(same))
+`}
+/>
+
+Povestea cu toate cele trei cuvinte primește cel mai mare avantaj, iar poveștile fără niciun cuvânt cerut, cel mai mic. Poveștile cu un singur cuvânt sunt puțin sub media grupului, deci devin puțin mai puțin probabile. Când toate poveștile primesc aceeași recompensă, toate avantajele sunt zero și grupul nu contribuie la învățare, la fel ca egalitățile sărite la perechile pentru DPO.
+
+## Obiectivul
+
+Pentru fiecare token al unei povești, obiectivul înmulțește logaritmul probabilității tokenului cu avantajul poveștii. Gradientul acestui produs este gradientul strategiei din REINFORCE: crește probabilitatea tokenurilor din poveștile cu avantaj pozitiv și o scade pe a tokenurilor din poveștile cu avantaj negativ.
+
+Ca la DPO, o copie înghețată a modelului ajustat este **modelul de referință**. Pentru fiecare token, o estimare a **divergenței Kullback-Leibler** (KL) măsoară cât s-a îndepărtat modelul antrenat de referință. Estimarea este zero când cele două modele dau tokenului aceeași probabilitate și pozitivă în rest. Obiectivul scade această estimare, înmulțită cu coeficientul 0,05, așa că modelul rămâne aproape de modelul ajustat, care scrie povești coerente. Penalizarea KL este principala apărare a metodei împotriva exploatării recompensei.
+
+<DeepDive title="Obiectivul GRPO din laborator">
+
+Pentru un fragment de $N = 16$ povești, obiectivul maximizat este:
+
+$$
+\mathcal{J} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{|y_i|} \sum_{t=1}^{|y_i|} \Big( \hat{A}_i \log \pi_\theta(y_{i,t} \mid x_i, y_{i,<t}) - \beta\, D_{i,t} \Big)
+$$
+
+unde $x_i$ este instrucțiunea, $y_i$ povestea, cu $|y_i|$ tokenuri, $\pi_\theta$ modelul antrenat, iar $\beta = 0{,}05$. Estimarea divergenței KL pentru un token este:
+
+$$
+D_{i,t} = \frac{\pi_{\text{ref}}(y_{i,t} \mid \cdot)}{\pi_\theta(y_{i,t} \mid \cdot)} - \log \frac{\pi_{\text{ref}}(y_{i,t} \mid \cdot)}{\pi_\theta(y_{i,t} \mid \cdot)} - 1
+$$
+
+unde $\pi_{\text{ref}}$ este modelul de referință. Funcția $z - \log z - 1$ este zero doar pentru $z = 1$ și pozitivă în rest. Este estimarea folosită și în articolul despre GRPO. Funcția de pierdere din cod este $-\mathcal{J}$.
+
+</DeepDive>
+
+## Codul
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/grpo.py" symbols={['PROMPTS', 'GROUP', 'LR', 'KL', 'CHUNK', 'EVAL_EVERY', 'rollout', 'advantages']} />
+
+Funcția `rollout` alege la întâmplare 16 instrucțiuni și scrie pentru fiecare un grup de 8 povești, într-un singur lot. Temperatura este 1,0, fără filtrul top-k, ca poveștile unui grup să fie cât mai diferite. Ca la perechile pentru DPO, `generate` scrie câte 200 de tokenuri, iar `cut` taie povestea după primul `<|endoftext|>`. Fiecare poveste primește propria recompensă, calculată cu `words_used`. Funcția `advantages` așază recompensele în grupuri de câte 8 și calculează avantajele în interiorul fiecărui grup.
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/grpo.py" symbols={['pack', 'token_log_probs']} />
+
+Funcția `pack` pune instrucțiunile și poveștile într-o matrice completată cu `[PAD]` și construiește o mască, cu valoarea 1 doar pe pozițiile care prezic tokenurile poveștii. Funcția `token_log_probs` dă logaritmul probabilității fiecărui token, calculată din tokenurile anterioare. Spre deosebire de `log_probs` din `dpo.py`, aici sumele nu se fac imediat, pentru că penalizarea KL se calculează token cu token.
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/grpo.py" symbols={['main']} />
+
+Fiecare rundă a antrenării are trei părți.
+
+<Steps>
+1. **Poveștile** sunt scrise de modelul curent: 16 instrucțiuni cu câte 8 povești, deci 128 de povești pe rundă, fiecare cu propria recompensă.
+2. **Avantajele** sunt calculate în interiorul fiecărui grup de 8 povești.
+3. **Actualizările** folosesc cele 128 de povești amestecate, în fragmente de câte 16. Pentru fiecare fragment, scriptul calculează logaritmii probabilităților sub modelul antrenat și sub referință, estimarea KL și pierderea, apoi face un pas de optimizare. O rundă are deci 8 pași.
+</Steps>
+
+Ca la DPO, modelul pornește din modelul ajustat, iar referința este o copie înghețată. Ambele modele rămân în modul de evaluare, fără _dropout_. Rata de învățare este $2 \cdot 10^{-5}$, iar instrucțiunile vin din partea de antrenare a setului TinyStories-Instruct, cu aceeași limită de 56 de tokenuri ca la DPO. După fiecare rundă, scriptul afișează recompensa medie a poveștilor din rundă și divergența KL medie pe poveste, adică suma estimărilor KL pe tokenurile unei povești, iar la fiecare 4 runde scrie o poveste pentru instrucțiunea de test, „Words: rain, cake, jump”.
+
+:::note[Ce simplifică scriptul față de GRPO și PPO]
+În [PPO](/modele-lingvistice/invatare-prin-consolidare-pentru-llm/#ppo) și în GRPO, așa cum au fost publicate, fiecare actualizare compară modelul nou cu modelul vechi, cel care a scris răspunsurile. Pentru fiecare token se calculează raportul dintre probabilitatea dată de modelul nou și cea dată de modelul vechi, iar raportul este decupat la intervalul $[1 - \varepsilon, 1 + \varepsilon]$. Așa, aceleași răspunsuri pot fi folosite pentru mai mulți pași de actualizare, fără ca modelul să se îndepărteze prea mult de cel care le-a scris.
+
+Scriptul nu păstrează probabilitățile vechi, deci nu calculează niciun raport și nu decupează nimic: obiectivul folosește direct logaritmul probabilității sub modelul curent. Când răspunsurile sunt folosite pentru un singur pas, cele două variante sunt echivalente, pentru că la acel pas raportul este 1, decuparea nu are efect, iar gradientul este același. Așa a fost antrenat DeepSeekMath, cu o singură actualizare după fiecare lot de răspunsuri generate. În schimb, `grpo.py` face câte un pas pentru fiecare fragment de 16 povești, deci 8 pași pe rundă. După primul pas, restul poveștilor au fost scrise de o versiune puțin mai veche a modelului, iar fără raport această diferență nu este corectată. Cu o rată de învățare mică și cu penalizarea KL, diferența rămâne mică, dar scriptul este o simplificare, nu GRPO-ul din articol.
+:::
+
+## Rularea
+
+Argumentul este bugetul de timp, în minute. O rundă începe doar dacă bugetul nu s-a terminat, așa că ultima rundă poate depăși puțin bugetul.
+
+```bash
+python grpo.py 10
+```
+
+Rezultatul de mai jos vine din seria video a laboratorului, cu modelul ajustat de pe pagina despre [ajustarea fină](/laboratoare/model-lingvistic-de-la-zero/ajustare-fina-supervizata/). Am omis povestea de dinaintea primei runde, aceeași ca la pasul 0 al DPO, și două dintre poveștile intermediare.
+
+```text
+35,501 instrucțiuni cu cuvinte cerute | 16 pe rundă, câte 8 povești
+runda   1 | recompensa 0.359 | KL  1.53 | 0.6 min
+runda   2 | recompensa 0.404 | KL  4.77 | 1.3 min
+runda   3 | recompensa 0.539 | KL  6.59 | 1.9 min
+runda   4 | recompensa 0.477 | KL  8.58 | 2.5 min
+runda   5 | recompensa 0.445 | KL 10.85 | 3.2 min
+runda   6 | recompensa 0.448 | KL 11.88 | 3.8 min
+runda   7 | recompensa 0.594 | KL 12.49 | 4.4 min
+runda   8 | recompensa 0.461 | KL 14.03 | 5.0 min
+  Once upon a time there was a girl who loved to have fun in the sunshine. One day, the
+  girl had a fun idea! She wanted to see what was happening and the girl began to jump.
+  She jumped and jumped until she was never too scared. Then the girl had an idea. She
+  jumped just around the kitchen to the kitchen and jumped a bite. She jumped and played
+  until she reached the kitchen to jump. The girl hopped and jumped. She jumped on
+  circles and laughed as the cake jumped off the floor. The girl jumped and jumped until
+  she jumped so high. It was going so
+runda   9 | recompensa 0.448 | KL 15.71 | 5.6 min
+runda  10 | recompensa 0.505 | KL 15.64 | 6.2 min
+runda  11 | recompensa 0.586 | KL 18.50 | 6.8 min
+runda  12 | recompensa 0.589 | KL 17.55 | 7.5 min
+runda  13 | recompensa 0.529 | KL 18.14 | 8.1 min
+runda  14 | recompensa 0.552 | KL 17.20 | 8.7 min
+runda  15 | recompensa 0.607 | KL 17.28 | 9.3 min
+runda  16 | recompensa 0.609 | KL 19.64 | 9.9 min
+  Once upon a time there was a big cake. Every day the cake would jump and jump around.
+  All the other things around the house would get a cake. One day a rain started to
+  rain. The rain was very hot and the cake started to rain. The rain was getting wet and
+  wet. The rain was wet. The rain had a big fall. The rain was very wet. The rain made
+  the cake clean by the rain. The rain was wet. The rain was wet. The rain stopped, the
+  rain was wet. The rain came down again and the rain did not move. It
+runda  17 | recompensa 0.648 | KL 18.91 | 10.5 min
+  Once upon a time there was a little girl who loved to play with her toys. One day the
+  girl started to rain very far and she wanted to rain. So, she ran around the room and
+  jumped. She was very dirty and she had to stay outside, so she jumped and jumped in
+  the wind. She threw so much cloth and the water got so tight. The rain made the water
+  wet and the air went down. It was raining very still. The girl jumped and jumped as
+  she jumped as she could. She splashed in the rain and it started to rain. She felt so
+  happy.
+gata: 17 runde, 10.5 minute
+```
+
+Dintre instrucțiunile de antrenare care cer cuvinte, 35.501 au cel mult 56 de tokenuri. O rundă durează circa 37 de secunde pe un cip Apple Silicon (MPS), iar cea mai mare parte din timp merge pe scrierea celor 128 de povești. În 10,5 minute, modelul a scris 2.176 de povești și a făcut 136 de pași de actualizare. Pe un procesor obișnuit, o singură rundă poate dura mai mult decât tot bugetul de 10 minute, iar scriptul se oprește după prima rundă.
+
+Recompensa medie a poveștilor dintr-o rundă crește de la 0,36 la 0,65, cu variații mari de la o rundă la alta, pentru că fiecare rundă are doar 16 instrucțiuni, unele mai ușoare, altele mai grele. Divergența KL crește aproape fără oprire, de la 1,5 la circa 19 pe poveste: penalizarea încetinește îndepărtarea de modelul de referință, dar nu o oprește. Poveștile pentru instrucțiunea de test folosesc tot mai des cuvintele cerute, dar le repetă la fiecare propoziție („The rain was wet. The rain was wet.”).
+
+## Modelul ajustat, DPO și GRPO
+
+```bash
+python reward.py checkpoints/sft/model.pt checkpoints/dpo/model.pt checkpoints/grpo/model.pt
+```
+
+```text
+50 instrucțiuni de validare, 150 de cuvinte cerute
+sft        cuvinte folosite  36.7% | povești terminate   70%
+dpo        cuvinte folosite  72.7% | povești terminate   48%
+grpo       cuvinte folosite  56.7% | povești terminate   46%
+```
+
+Comparația folosește, pentru toate modelele, aceleași 50 de instrucțiuni de validare și aceeași sămânță, cu temperatura 0,8 și filtrul top-k de 50. De aceea, valorile diferă de recompensa din timpul antrenării, măsurată pe instrucțiuni de antrenare, la temperatura 1,0 și fără filtru. GRPO crește proporția cuvintelor cerute folosite de la 36,7% la 56,7%, mai puțin decât DPO, iar poveștile se încheie la fel de rar ca după DPO, doar în 46% din cazuri.
+
+Cele două metode nu au fost comparate în condiții egale. DPO a învățat din 500 de perechi, alese dintre circa 2.700 de povești, în 343 de pași, iar GRPO din 2.176 de povești, în 136 de pași, într-un timp total apropiat. Cu doar 50 de instrucțiuni, diferențele de câteva procente pot veni și din întâmplare.
+
+:::caution[Exploatarea recompensei, din nou]
+Ambele metode au crescut recompensa și au stricat ce recompensa nu măsoară: finalul poveștilor și, în exemplele de mai sus, varietatea textului. În GRPO, modelul învață direct din propriile povești, așa că ajunge singur la scurtătură: o poveste în care „rain” și „jump” apar în fiecare propoziție primește recompensa maximă, oricât de slabă ar fi. Penalizarea KL, cu coeficientul 0,05, nu a ținut modelul aproape de modelul ajustat. Încercările firești sunt un coeficient KL mai mare, o recompensă care cere și un final sau care penalizează repetițiile și o antrenare mai scurtă. Toate se pot încerca schimbând constantele de la începutul fișierului `grpo.py` și funcția `words_used`.
+:::
+
+La modelele mari, aceeași metodă a dat rezultate mult mai bune cu recompense greu de păcălit, verificate de un program, de exemplu rezultatul corect al unei probleme de matematică. Pagina despre [învățarea prin consolidare pentru LLM-uri](/modele-lingvistice/invatare-prin-consolidare-pentru-llm/#recompense-verificabile-și-raționament) descrie aceste **recompense verificabile** (_verifiable rewards_) și modelele de raționament antrenate cu GRPO.
+
+## Bibliografie
+
+- DeepSeek-AI (2025). [DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning](https://arxiv.org/abs/2501.12948). Preprint arXiv:2501.12948.
+- Schulman, J. et al. (2017). [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347). Preprint arXiv:1707.06347.
+- Shao, Z. et al. (2024). [DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models](https://arxiv.org/abs/2402.03300). Preprint arXiv:2402.03300.
+- Williams, R. J. (1992). [Simple statistical gradient-following algorithms for connectionist reinforcement learning](https://doi.org/10.1007/BF00992696). _Machine Learning_, 8(3–4), 229–256.
