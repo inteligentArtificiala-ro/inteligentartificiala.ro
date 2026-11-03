@@ -1,3 +1,5 @@
+"""Tokenizatorul la nivel de cuvânt: textul devine o listă de numere, iar numerele, din nou text."""
+
 import re
 from collections import Counter
 
@@ -6,9 +8,7 @@ PAD = "[PAD]"
 UNK = "[UNK]"
 SPECIALS = [UNK, PAD, EOT]
 
-# Un cuvânt sau un șir de semne de punctuație. Spațiile nu se potrivesc cu niciuna, deci dispar.
 PRETOKENIZE = re.compile(r"\w+|[^\w\s]+")
-# Grupul face ca re.split să păstreze și tokenurile speciale după care desparte textul.
 SPECIALS_SPLIT = re.compile("(" + "|".join(re.escape(s) for s in SPECIALS) + ")")
 
 
@@ -22,7 +22,6 @@ def build_vocab(paths, size, min_count=2):
         with open(path, encoding="utf-8") as f:
             for line in f:
                 counts.update(pretokenize(line.replace(EOT, " ")))
-    # Întâi cele mai frecvente, iar la egalitate în ordine alfabetică, ca aceleași date să dea aceleași id-uri.
     ranked = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
     words = [word for word, count in ranked if count >= min_count]
     return SPECIALS + words[: size - len(SPECIALS)], counts
@@ -32,7 +31,6 @@ def detokenize(tokens):
     text = " ".join(tokens)
     text = re.sub(r" ([.,!?;:]\S*)", r"\1", text)
     text = re.sub(r"(\w) ' (\w)", r"\1'\2", text)
-    # Ghilimelele de deschidere se lipesc de cuvântul de după ele.
     text = re.sub(r'(^|\s)" ', r'\1"', text)
     return text
 

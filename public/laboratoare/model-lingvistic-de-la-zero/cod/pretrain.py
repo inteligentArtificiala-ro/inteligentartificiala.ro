@@ -1,3 +1,5 @@
+"""Preantrenarea: modelul învață să prezică următorul token din poveștile TinyStories."""
+
 import math
 import os
 import sys
@@ -23,7 +25,6 @@ EVAL_EVERY = 250
 def get_batch(data, block_size, batch_size, device):
     starts = torch.randint(len(data) - block_size - 1, (batch_size,))
     x = torch.stack([torch.from_numpy(data[i : i + block_size].astype(np.int64)) for i in starts])
-    # Țintele sunt intrările deplasate cu o poziție: poziția t învață să prezică tokenul t + 1.
     y = torch.stack([torch.from_numpy(data[i + 1 : i + 1 + block_size].astype(np.int64)) for i in starts])
     return x.to(device), y.to(device)
 
@@ -46,7 +47,6 @@ def estimate_loss(model, splits, batches=20):
 def learning_rate(step, progress):
     if step < WARMUP_STEPS:
         return LR * (step + 1) / WARMUP_STEPS
-    # Cosinus de la LR până la MIN_LR, care se termină odată cu timpul alocat.
     return MIN_LR + 0.5 * (LR - MIN_LR) * (1 + math.cos(math.pi * progress))
 
 
@@ -62,7 +62,6 @@ def main(minutes):
     }
     print(f"{model.num_params():,} parametri pe {device}, {len(splits['train']):,} tokenuri de antrenare")
 
-    # Descreșterea ponderilor (weight decay) trage matricele spre zero, dar nu și vectorii de bias sau pe cei din LayerNorm.
     params = list(model.parameters())
     optimizer = torch.optim.AdamW(
         [
@@ -73,7 +72,6 @@ def main(minutes):
         betas=(0.9, 0.95),
     )
 
-    # Valorile antrenării ajung în TensorBoard, într-un director cu numele și momentul pornirii.
     writer = SummaryWriter(os.path.join(RUNS, time.strftime("pretrain-%Y%m%d-%H%M%S")))
 
     def evaluate(step):
@@ -82,10 +80,8 @@ def main(minutes):
         writer.add_scalar("loss/train", losses["train"], step)
         writer.add_scalar("loss/valid", losses["valid"], step)
         writer.add_text("sample", story, step)
-        # Scris pe disc imediat, ca TensorBoard să arate evaluarea în timpul antrenării.
         writer.flush()
         print(f"pasul {step:>5} | antrenare {losses['train']:.3f} | validare {losses['valid']:.3f} | {story}", flush=True)
-        # Un checkpoint la fiecare evaluare, pentru a compara modelul pe măsură ce învață.
         save_checkpoint(os.path.join(RUN_DIR, f"step-{step}.pt"), model, tokenizer, step=step)
 
     budget = minutes * 60
@@ -100,7 +96,6 @@ def main(minutes):
         _, loss = model(x, y)
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
-        # Un lot neobișnuit nu poate strica ponderile: lungimea gradientului este limitată la 1.
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
         step += 1

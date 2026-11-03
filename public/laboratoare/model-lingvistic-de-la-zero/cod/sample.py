@@ -1,3 +1,5 @@
+"""Povești scrise de un model antrenat, token cu token, cu temperatură și filtrare top-k."""
+
 import argparse
 import textwrap
 
@@ -31,7 +33,7 @@ def main():
     torch.manual_seed(args.seed)
     model, tokenizer, _ = load_checkpoint(args.checkpoint, pick_device())
     for _ in range(args.stories):
-        story = write(model, tokenizer, args.prompt, args.tokens, args.temperature, args.top_k)
+        story = write(model, tokenizer, args.prompt, args.tokens, args.temperature, args.top_k or None)
         print(textwrap.fill(story, width=90), end="\n\n")
 
 

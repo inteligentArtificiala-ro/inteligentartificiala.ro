@@ -1,3 +1,5 @@
+"""Datele: poveștile TinyStories, vocabularul de 10.000 de tokenuri și fișierele cu tokenuri."""
+
 import os
 import urllib.request
 
@@ -14,14 +16,13 @@ DOWNLOADS = {
     "instruct_train.txt": f"{HF}/TinyStoriesInstruct/resolve/main/TinyStories-Instruct-train.txt",
     "instruct_valid.txt": f"{HF}/TinyStoriesInstruct/resolve/main/TinyStories-Instruct-valid.txt",
 }
-MAX_BYTES = 80 * 2**20  # primii 80 MB din fiecare fișier ajung pentru un model de această mărime
+MAX_BYTES = 80 * 2**20
 
 
 def download(url, path):
     with urllib.request.urlopen(url) as response:
         raw = response.read(MAX_BYTES)
     text = raw.decode("utf-8", errors="ignore")
-    # Fișierul se oprește la sfârșitul ultimei povești întregi.
     text = text[: text.rfind(EOT) + len(EOT)]
     with open(path, "w", encoding="utf-8") as f:
         f.write(text)
@@ -48,7 +49,6 @@ def main():
         if not os.path.exists(path):
             download(url, path)
 
-    # Instrucțiunile intră și ele în vocabular: după antrenare, vocabularul nu se mai poate schimba.
     train = [os.path.join(DATA_DIR, n) for n in ("train.txt", "instruct_train.txt")]
     vocab, counts = build_vocab(train, VOCAB_SIZE)
     with open(os.path.join(DATA_DIR, "vocab.txt"), "w", encoding="utf-8") as f:
@@ -59,7 +59,6 @@ def main():
     for split in ("train", "valid"):
         encode(tokenizer, os.path.join(DATA_DIR, f"{split}.txt"), os.path.join(DATA_DIR, f"{split}.bin"))
 
-    # O propoziție așa cum o vede modelul, și înapoi.
     text = 'Once upon a time, a cat said "Hello!"'
     ids = tokenizer.encode(text)
     print()

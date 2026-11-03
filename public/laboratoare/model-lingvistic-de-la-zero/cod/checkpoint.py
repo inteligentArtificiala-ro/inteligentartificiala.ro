@@ -1,3 +1,5 @@
+"""Salvarea și încărcarea modelului, cu configurația și vocabularul lui."""
+
 import os
 from dataclasses import asdict
 
@@ -7,7 +9,6 @@ from model import GPT, GPTConfig
 from tokenizer import WordTokenizer
 
 CHECKPOINTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "checkpoints")
-# Fiecare antrenare își scrie jurnalul într-un director propriu de aici, pentru TensorBoard.
 RUNS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "runs")
 
 

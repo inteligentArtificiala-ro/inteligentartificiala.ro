@@ -1,3 +1,5 @@
+"""Ajustarea fină supervizată (SFT): modelul preantrenat învață să scrie povestea cerută de o instrucțiune."""
+
 import os
 import re
 import sys
@@ -20,13 +22,11 @@ LR = 2e-4
 EVAL_EVERY = 250
 DEMO = "Features: Dialogue\nWords: dog, happy, park\nSummary: A dog makes a new friend at the park.\nStory:"
 
-# Câmpurile unei instrucțiuni, în ordinea în care apar în prompturi, înaintea poveștii.
 FIELDS = ["Features", "Words", "Random sentence", "Summary"]
 FIELD = re.compile(r"^(Features|Words|Random sentence|Summary|Story):", re.MULTILINE)
 
 
 def parse(doc):
-    # Împărțirea alternează numele și textele: ["", "Words", " dog, park\n", "Story", " Once ...", ...].
     parts = FIELD.split(doc)
     return {name: text.strip() for name, text in zip(parts[1::2], parts[2::2])}
 
@@ -47,7 +47,6 @@ def build_examples(path, tokenizer, block_size, limit=None):
         prompt = tokenizer.encode(instruction(fields))
         story = tokenizer.encode(fields["Story"]) + [tokenizer.eot_id]
         ids = (prompt + story)[: block_size + 1]
-        # O instrucțiune care umple toată fereastra nu lasă nimic de învățat.
         if len(ids) > len(prompt):
             examples.append((ids, len(prompt)))
     return examples
@@ -59,8 +58,6 @@ def make_batch(examples, pad_id, device):
     y = np.full((len(examples), longest - 1), -1, dtype=np.int64)
     for row, (ids, prompt_len) in enumerate(examples):
         x[row, : len(ids) - 1] = ids[:-1]
-        # Se învață doar povestea: ultima poziție a promptului prezice primul ei token, iar instrucțiunea
-        # și completarea păstrează ținta -1, pe care pierderea o ignoră.
         y[row, prompt_len - 1 : len(ids) - 1] = ids[prompt_len:]
     return torch.from_numpy(x).to(device), torch.from_numpy(y).to(device)
 
@@ -91,7 +88,6 @@ def main(minutes):
     valid = build_examples(os.path.join(DATA_DIR, "instruct_valid.txt"), tokenizer, block_size, limit=5000)
     print(f"{len(train):,} exemple de antrenare, {len(valid):,} păstrate pentru validare")
 
-    # O rată de învățare mai mică decât la preantrenare: se ajustează ce știe modelul, nu se înlocuiește.
     params = list(model.parameters())
     optimizer = torch.optim.AdamW(
         [

@@ -1,3 +1,5 @@
+"""Modelul GPT: un Transformer doar cu decodor, cu atenție cauzală, scris clasă cu clasă."""
+
 import math
 from dataclasses import dataclass
 
@@ -9,7 +11,7 @@ from torch.nn import functional as F
 def pick_device():
     if torch.cuda.is_available():
         return "cuda"
-    if torch.backends.mps.is_available():  # procesoarele Apple
+    if torch.backends.mps.is_available():
         return "mps"
     return "cpu"
 
@@ -17,10 +19,10 @@ def pick_device():
 @dataclass
 class GPTConfig:
     vocab_size: int = 10_000
-    block_size: int = 256  # fereastra de context, în tokenuri
+    block_size: int = 256
     n_layer: int = 6
     n_head: int = 6
-    n_embd: int = 384  # împărțit între capete: 6 x 64
+    n_embd: int = 384
     dropout: float = 0.1
     bias: bool = True
 
@@ -37,11 +39,10 @@ class CausalSelfAttention(nn.Module):
         self.resid_dropout = nn.Dropout(config.dropout)
 
     def forward(self, x):
-        B, T, C = x.shape  # secvențe, tokenuri, canale
+        B, T, C = x.shape
         q = self.q_proj(x).view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
         k = self.k_proj(x).view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
         v = self.v_proj(x).view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
-        # softmax(q k^T / sqrt(64)) v, unde fiecare token se vede pe sine și tokenurile dinaintea lui.
         y = F.scaled_dot_product_attention(
             q, k, v, dropout_p=self.dropout_p if self.training else 0.0, is_causal=True
         )
@@ -50,7 +51,6 @@ class CausalSelfAttention(nn.Module):
 
 
 def gelu(x):
-    # x înmulțit cu probabilitatea ca o variabilă normală standard să fie cel mult x.
     return 0.5 * x * (1.0 + torch.erf(x / math.sqrt(2.0)))
 
 
@@ -89,7 +89,6 @@ class GPT(nn.Module):
         self.blocks = nn.ModuleList([Block(config) for _ in range(config.n_layer)])
         self.norm = nn.LayerNorm(config.n_embd, bias=config.bias)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
-        # Ponderi legate: stratul de ieșire dă scorurile tokenurilor cu aceeași matrice care le reprezintă la intrare.
         self.embed_tokens.weight = self.lm_head.weight
         self._init_weights()
 
@@ -97,7 +96,6 @@ class GPT(nn.Module):
         for name, module in self.named_modules():
             if isinstance(module, (nn.Linear, nn.Embedding)):
                 std = 0.02
-                # Aceste două proiecții se adună la fluxul rezidual, de două ori pe bloc, așa că pornesc mai mici.
                 if name.endswith(("o_proj", "down_proj")):
                     std /= math.sqrt(2 * self.config.n_layer)
                 nn.init.normal_(module.weight, mean=0.0, std=std)
@@ -116,14 +114,12 @@ class GPT(nn.Module):
         logits = self.lm_head(self.norm(x))
         loss = None
         if targets is not None:
-            # Ținta -1 marchează o poziție din care nu se învață nimic, de exemplu completarea.
             loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1)
         return logits, loss
 
     @torch.no_grad()
     def generate(self, idx, max_new_tokens, temperature=1.0, top_k=None, eos_id=None):
         for _ in range(max_new_tokens):
-            # Modelul are block_size poziții, așa că vede cel mult ultimele 256 de tokenuri.
             logits, _ = self(idx[:, -self.config.block_size :])
             logits = logits[:, -1, :] / temperature
             if top_k is not None:
@@ -135,3 +131,17 @@ class GPT(nn.Module):
             if eos_id is not None and (next_id == eos_id).all():
                 break
         return idx
+
+
+if __name__ == "__main__":
+    torch.manual_seed(0)
+    config = GPTConfig()
+    model = GPT(config)
+    embeddings = model.embed_tokens.weight.numel() + model.embed_positions.weight.numel()
+    blocks = sum(p.numel() for p in model.blocks.parameters())
+    print(f"reprezentări: {embeddings:,} | blocuri: {blocks:,} | total: {model.num_params():,} parametri")
+    x = torch.randint(config.vocab_size, (4, config.block_size))
+    y = torch.randint(config.vocab_size, (4, config.block_size))
+    logits, loss = model(x, y)
+    print(f"intrare {tuple(x.shape)} -> scoruri {tuple(logits.shape)}")
+    print(f"pierderea la început: {loss.item():.3f}, iar ln({config.vocab_size:,}) = {math.log(config.vocab_size):.3f}")
