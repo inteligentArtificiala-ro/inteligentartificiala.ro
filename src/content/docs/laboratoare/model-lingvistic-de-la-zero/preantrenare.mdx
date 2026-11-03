@@ -2,7 +2,7 @@
 title: Preantrenarea
 description: Modelul învață din povești să prezică următorul token. Obiectivul, loturile de antrenare, optimizatorul AdamW, programul ratei de învățare, limitarea gradientului și o antrenare de zece minute pe un laptop.
 sidebar:
-  order: 4
+  order: 5
 level: intermediar
 tags:
   - Modele de limbaj mari (LLM)
@@ -114,7 +114,7 @@ Rata de învățare nu este constantă. În primii 100 de pași crește liniar d
 
 <SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/pretrain.py" symbols={['LR', 'MIN_LR', 'WARMUP_STEPS', 'learning_rate']} />
 
-Antrenarea are un buget de timp, nu un număr fix de pași, ca să se potrivească oricărui calculator. De aceea, curba cosinus urmează fracțiunea de timp deja consumată (`progress`) și ajunge la valoarea minimă exact când se termină timpul. Codul de mai jos afișează programul pentru o antrenare de 1.250 de pași.
+Antrenarea are un buget de timp, nu un număr fix de pași, ca să se potrivească oricărui calculator. De aceea, curba cosinus urmează fracțiunea de timp deja consumată (`progress`) și ajunge la valoarea minimă exact când se termină timpul. Codul de mai jos afișează programul pentru o antrenare de 1.284 de pași, cât a făcut rularea de mai jos.
 
 <Python
   code={String.raw`
@@ -129,8 +129,8 @@ def learning_rate(step, progress):
         return LR * (step + 1) / WARMUP_STEPS
     return MIN_LR + 0.5 * (LR - MIN_LR) * (1 + math.cos(math.pi * progress))
 
-total_steps = 1250
-for step in [0, 25, 50, 99, 100, 250, 500, 625, 750, 1000, 1249]:
+total_steps = 1284
+for step in [0, 25, 50, 99, 100, 250, 500, 642, 750, 1000, 1283]:
     lr = learning_rate(step, step / total_steps)
     print(f"pasul {step:>4}: {lr:.1e} {'#' * round(lr / LR * 40)}")
 `}
@@ -193,24 +193,25 @@ Argumentul comenzii este bugetul de timp, în minute.
 python pretrain.py 10
 ```
 
-Rezultatul de mai jos vine dintr-o antrenare de 10 minute din seria video, pe un laptop modern. Am omis o parte din liniile afișate la fiecare 50 de pași.
+Rezultatul de mai jos vine din antrenarea de 10 minute din seria video a laboratorului, pe un laptop modern, cu un cip Apple Silicon (MPS). Am omis o parte din liniile afișate la fiecare 50 de pași.
 
 ```text
 14,585,856 parametri pe mps, 19,853,261 tokenuri de antrenare
 pasul     0 | antrenare 9.324 | validare 9.325 | Once upon a time aren dismay mud Fragile sung passed disappearing Get Petal dead witch growling sunburn Patch onion sunburn Skip Barks napkins poles drip passed cautiously moms inspired asleep insisted insisted recorded feeder performers tear sliding rested bullets giving quilt hooted cuddle recommendations
-pasul    50 | pierdere 5.277 | lr 3.0e-04 | 19,994 tokenuri/s
-pasul   100 | pierdere 4.122 | lr 6.0e-04 | 27,243 tokenuri/s
-pasul   250 | antrenare 3.195 | validare 3.210 | Once upon a time, there was a tall bird. She loved to go home and make the bird. One day, a little bird named Tom was very angry anymore. The bird said, "I lost your friend!
-pasul   500 | antrenare 2.678 | validare 2.697 | Once upon a time, there was a little boy named Tim. He liked to make a big box on his room, and a bottle. Tim had an idea and said, "Let's watch the box!" In
-pasul   750 | antrenare 2.466 | validare 2.448 | Once upon a time, there was a small dog named Spot. Spot had many friends. Every day, Tom had a big job to do. One day, Spot went to the park to play. As Spot played,
-pasul  1000 | antrenare 2.307 | validare 2.311 | Once upon a time, there was a big tree. The tree had many leaves. The leaves were big and pretty. The tree liked to play with the leaves. One day, a little bird came to the tree.
-pasul  1250 | antrenare 2.252 | validare 2.252 | Once upon a time, in a big forest, there was a big hill. He lived in a big tree and all the forest. One day, a little bird came to the park. The bird asked, "What
-gata: 1,250 pași, 15,360,000 tokenuri, 10.1 minute
+pasul    50 | pierdere 5.272 | lr 3.0e-04 | 23,454 tokenuri/s
+pasul   100 | pierdere 4.124 | lr 6.0e-04 | 28,489 tokenuri/s
+pasul   250 | antrenare 3.184 | validare 3.205 | Once upon a time, there was a little girl named Lily. She loved to do was a big box. She was so happy. One day, Lily went to her ball with her friends. She wanted to go to
+pasul   500 | antrenare 2.669 | validare 2.669 | Once upon a time, there was a smart cat named Lily. She loved to play with her toys and toys. One day, Lily wanted to buy a toy gun to play with her toys. She asked her mom,
+pasul   750 | antrenare 2.453 | validare 2.430 | Once upon a time, there was a little girl named Lily. She loved to play with her friends in the park. One sunny day, Lily saw a big building in the park. She wanted to see it, but
+pasul  1000 | antrenare 2.288 | validare 2.290 | Once upon a time, there was a little girl named Lily. She loved to play with her toys and her toys. One day, she got a big red ball in her room. It was a small, friendly cat
+pasul  1250 | antrenare 2.226 | validare 2.253 | Once upon a time, there was a small dog named Max. Max loved to run and play all day. One day, Max and his ball went to the park. Max saw a big tree and decided to play with
+pasul  1284 | antrenare 2.246 | validare 2.215 | Once upon a time, there was a big red ball. The ball was a normal ball. The ball went to the kids and wanted to play with the ball. They all sat under the tree and sat on the ball
+gata: 1,284 pași, 15,777,792 tokenuri, 10.1 minute
 ```
 
-La pasul 0, modelul alege cuvinte la întâmplare din vocabular. După 250 de pași apar propozițiile și dialogul, iar după 1.000 de pași poveștile păstrează un fir pe parcursul câtorva propoziții. Pierderea pe validare scade de la 9,3 la 2,25, adică o perplexitate de aproximativ 9,5: din 10.000 de tokenuri posibile, modelul ezită, în medie, între câteva. Cele două pierderi rămân aproape egale până la final, deci modelul nu a memorat datele de antrenare. În 10 minute a văzut 15 milioane de tokenuri, mai puțin decât întregul set de antrenare.
+La pasul 0, modelul alege cuvinte la întâmplare din vocabular. După 250 de pași apar propozițiile și un personaj cu nume, deși gramatica are încă greșeli („She loved to do was a big box”). De la 750 de pași, poveștile păstrează un fir pe parcursul câtorva propoziții. Pierderea pe validare scade de la 9,325 la 2,215, adică o perplexitate de aproximativ 9,2: din 10.000 de tokenuri posibile, modelul ezită, în medie, între câteva. Cele două pierderi rămân aproape egale până la final, deci modelul nu a memorat datele de antrenare. În 10 minute, modelul a făcut 1.284 de pași și a văzut 15,8 milioane de tokenuri, mai puțin decât întregul set de antrenare, de 19,9 milioane.
 
-Viteza depinde mult de hardware. Pe o placă grafică NVIDIA, antrenarea ajunge mai departe în același timp. Pe un laptop mai lent, de exemplu la 16.000 de tokenuri pe secundă, 3 minute înseamnă doar 228 de pași și o pierdere de 3,6. Textele au atunci forma unei povești, dar personajele își schimbă numele de la o propoziție la alta. O rulare a codului din laborator pe un alt calculator de același tip a dat exact aceleași pierderi la pașii 50 și 100, pentru că generatorul de numere aleatoare pornește de la aceeași valoare.
+Viteza depinde mult de hardware. Rularea de mai sus a procesat circa 28.000 de tokenuri pe secundă. O placă grafică NVIDIA face mai mulți pași în același timp, iar un procesor obișnuit, mult mai puțini: pe un procesor cu 4 nuclee, cele 10 minute ajung doar pentru câteva zeci de pași, iar pierderea rămâne aproape de 5, ca la pasul 50 de mai sus. Pentru că generatorul de numere aleatoare pornește mereu de la aceeași valoare, pierderile din primii pași ies foarte apropiate de cele de mai sus pe orice calculator, iar numărul de pași și pierderea finală depind de viteza calculatorului.
 
 ## Urmărirea în TensorBoard
 

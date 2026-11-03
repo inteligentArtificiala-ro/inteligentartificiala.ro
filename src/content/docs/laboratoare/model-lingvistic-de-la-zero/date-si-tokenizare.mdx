@@ -124,7 +124,7 @@ Clasa `WordTokenizer` face trecerea în ambele sensuri. Metoda `encode` transfor
 
 <SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/tokenizer.py" symbols={['detokenize', 'WordTokenizer']} />
 
-Tokenurile speciale sunt separate înainte de pretokenizare, ca `<|endoftext|>` să devină un singur ID, nu cinci bucăți de punctuație și litere. La decodificare, tokenurile sunt unite cu spații, iar funcția `detokenize` scoate spațiile dinaintea punctuației.
+Tokenurile speciale sunt separate înainte de pretokenizare, ca `<|endoftext|>` să devină un singur ID. Altfel, expresia regulată ar tăia tokenul în trei bucăți: `<|`, `endoftext` și `|>`. La decodificare, tokenurile sunt unite cu spații, iar funcția `detokenize` scoate spațiile dinaintea punctuației.
 
 <Python
   setup={labSetup}
@@ -195,7 +195,7 @@ instruct_train.txt    80.0 MB    76,875 povești
 instruct_valid.txt    25.7 MB    25,027 povești
 vocabular: 10,000 din 22,245 tokenuri distincte
 train.bin             19,853,261 tokenuri    0.08% necunoscute
-valid.bin              5,324,095 tokenuri    0.10% necunoscute
+valid.bin              5,324,231 tokenuri    0.10% necunoscute
 
 Once upon a time, a cat said "Hello!"
 ['Once', 'upon', 'a', 'time', ',', 'a', 'cat', 'said', '"', 'Hello', '!"']

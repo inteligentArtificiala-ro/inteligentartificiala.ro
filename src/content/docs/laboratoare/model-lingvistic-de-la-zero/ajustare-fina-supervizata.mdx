@@ -2,7 +2,7 @@
 title: Ajustarea fină supervizată
 description: Modelul preantrenat învață să scrie povestea cerută de o instrucțiune. Datele TinyStories-Instruct, formatul instrucțiunilor, pierderea calculată doar pe răspuns, completarea loturilor și rezultatele.
 sidebar:
-  order: 6
+  order: 7
 level: intermediar
 tags:
   - Modele de limbaj mari (LLM)
@@ -44,24 +44,22 @@ with open("instructiuni.txt", encoding="utf-8") as f:
     docs = [d for d in f.read().split(EOT) if d.strip()]
 `;
 
-Modelul preantrenat știe doar să continue texte. Dacă primește o instrucțiune, o continuă cu ce i se pare probabil, iar asta rareori este ce cerea instrucțiunea. Să luăm instrucțiunea „Words: dog, ball, happy. Story:”, care cere o poveste cu aceste trei cuvinte. Modelul de pe pagina anterioară răspunde cu textele de mai jos.
+Modelul preantrenat știe doar să continue texte. Dacă primește o instrucțiune, o continuă cu ce i se pare probabil, iar asta rareori este ce cerea instrucțiunea. Să luăm instrucțiunea „Words: rain, cake, jump Story:”, care cere o poveste cu aceste trei cuvinte. Modelul de pe pagina anterioară răspunde astfel.
 
 ```bash
-python sample.py checkpoints/pretrain/model.pt "Words: dog, ball, happy. Story:" -n 2
+python sample.py checkpoints/pretrain/model.pt "Words: rain, cake, jump Story:" -n 1 --tokens 120
 ```
 
 ```text
-Words: dog, ball, happy. Story: "Wow, Max, it is too." Mia was happy and thanked her mom.
-They walked to the park and saw a big park. When it was time to go home, they found Max
-again. Max was happy and thanked his mom. They played happily ever after.
-
-Words: dog, ball, happy. Story: I am sorry for you. But we can both go to the park. We
-will get the ball back and get it back inside. But it is the same time to go home." The
-ball likes to go home and play with his ball. Lila and Ben nod. They run to the park and
-slide. They are happy.
+Words: rain, cake, jump Story: "Wow, Mia! The cake is so yummy!" Mia and Ben are
+surprised. They are curious to see the cake. They find out that the cake is gone. They see
+a big cake behind them. The cake is empty. It is not safe. It is fun to stay inside. Mia
+and Ben run to the kitchen. They find the cake inside. They look at the cake. They see a
+big cake on the ground. It is a big cake, a cookie inside. The cake is red cake. "Wow,
+look at this cake!" Mia says. "This cake is not
 ```
 
-Ambele texte încep la mijlocul unei povești, iar câinele cerut nu apare. **Ajustarea fină supervizată** (_supervised fine-tuning_, SFT) continuă antrenarea pe perechi formate dintr-o instrucțiune și răspunsul dorit, ca modelul să învețe să răspundă la instrucțiuni. Prin aceeași etapă trec și asistenții conversaționali, la care instrucțiunile sunt întrebări și cereri, iar răspunsurile sunt scrise sau verificate de oameni. Aici, instrucțiunile cer o poveste cu anumite cuvinte, trăsături sau un rezumat, iar răspunsurile sunt chiar poveștile.
+Textul începe la mijlocul unei povești, cu o replică, și folosește doar „cake”. Cuvintele „rain” și „jump” nu apar. **Ajustarea fină supervizată** (_supervised fine-tuning_, SFT) continuă antrenarea pe perechi formate dintr-o instrucțiune și răspunsul dorit, ca modelul să învețe să răspundă la instrucțiuni. Prin aceeași etapă trec și asistenții conversaționali, la care instrucțiunile sunt întrebări și cereri, iar răspunsurile sunt scrise sau verificate de oameni. Aici, instrucțiunile cer o poveste cu anumite cuvinte, trăsături sau un rezumat, iar răspunsurile sunt chiar poveștile.
 
 ## Datele
 
@@ -175,85 +173,71 @@ Diferențele sunt puține. Antrenarea pornește de la modelul preantrenat, `chec
 python sft.py 10
 ```
 
-Mai jos este rezultatul unei ajustări de 10 minute, pe același laptop ca preantrenarea. Am omis o parte din linii.
+Mai jos este rezultatul ajustării de 10 minute din seria video a laboratorului, pe același laptop ca preantrenarea. Am omis o parte din linii.
 
 ```text
 76,875 exemple de antrenare, 4,999 păstrate pentru validare
-pasul     0 | antrenare 2.491 | validare 2.466
-  Do you understand?" Amy said, "Yes, please! I think it is fun. I don't like it!" Her
-  mother smiled and said, "I'm sorry, Tom. I just wanted to play with you." Amy hugged
-  her dog and said, "No, Tom. It's okay. Let's get it together." Tom nodded. He learned
-  that even if he can help others to be happy. They played together and had a lot of
-  fun.
-pasul   500 | antrenare 2.162 | validare 2.132
-  Once upon a time, there was a dog. He liked to run and play in the park. One day, he
-  saw a big tree with a stick. He wanted to go up the tree and see what was at there.
-  The dog was so happy. He ran to the tree and took the stick. The dog was so proud of
-  himself. He wanted to show the dog. The dog looked at the dog and said "Look at this
-  stick!" The dog wanted to show the stick. The dog barked. He jumped up and down. The
-  dog was happy to be back. He took the
-pasul  1167 | antrenare 1.988 | validare 2.023
-  One day, a dog and a dog were at the park. The dog was a happy dog. They played on the
-  swings, the dog had a lot of fun. The dog wanted to have fun. The dog and dog were
-  happy. They wanted to play on the swings. The dog was a good dog. They started to play
-  on the swings. The dog was happy. They ran and kicked on the slide. The dog saw the
-  dog. The dog wanted to play too. The dog barked. The dog was not nice. The dog and the
-  dog played together. They had fun. Then
-gata: 1,167 pași, 10.1 minute
+pasul     0 | antrenare 2.468 | validare 2.443
+  "Please teach us! We are not so scary!" The dog barked and wagged its tail. The dog
+  looked at the dog and chased him. "I'm sorry, I didn't know what to do." But the dog
+  did not want to be brave. The dog did not want Tim to scare him. He knew he would be
+  brave. After a while, the dog ran off the swing. It was a happy dog with the dog. They
+  both hugged the dog and went back to play.
+pasul    50 | pierdere 2.374 | 0.4 min
+pasul   100 | pierdere 2.484 | 0.8 min
+pasul   250 | antrenare 2.269 | validare 2.223
+  Once upon a time, there was a big dog. The dog liked to play games. He would run,
+  jump, and play with a ball. One day, the dog ran to the park. He saw a big tree. He
+  wanted to drink the bird. The dog tried to drink the bird's tail. The dog looked and
+  saw a new friend. The dog wanted to play too. The dog wanted to help the cat. The dog
+  barked. The dog took a toy ball and began to climb it. The dog was very happy. The dog
+  and the dog played together. They became
+pasul   750 | antrenare 2.048 | validare 2.061
+  Once upon a time, there was a big park. In the park, there was a little dog. The dog
+  loved to play with the ball. One day, the dog saw a new friend. The new friend wanted
+  to play with the toy too. The new friend was so excited. The little dog started to
+  play with the new friend. They played together and had lots of fun. The end.
+pasul  1341 | antrenare 1.954 | validare 1.926
+  Once upon a time, there was a big dog. The dog was very happy. He loved to play and
+  run around. One day, he noticed a new friend. The dog was a happy dog. The dog was
+  very happy with the dog. The dog played with the dog and played with it. One night,
+  the dog saw a new friend. The new friend was a happy dog. The dog was nice too. The
+  new friend helped the new dog. The new friend was happy too.
+gata: 1,341 pași, 10.1 minute
 ```
 
-Instrucțiunea de test cere un dialog, cuvintele „dog”, „happy” și „park” și o poveste despre un câine care își face un prieten nou în parc. La pasul 0, modelul preantrenat continuă instrucțiunea cu mijlocul altei povești. După 500 de pași, modelul scrie povestea de la început și folosește cuvintele cerute. Pierderea pe validare scade de la 2,47 la 2,02.
+Instrucțiunea de test cere un dialog, cuvintele „dog”, „happy” și „park” și o poveste despre un câine care își face un prieten nou în parc. La pasul 0, modelul preantrenat continuă instrucțiunea cu mijlocul altei povești. După 250 de pași, modelul scrie povestea de la început, cu un câine, un parc și un prieten nou. Pierderea pe validare scade de la 2,443 la 1,926. Poveștile rămân însă simple și repetitive („The dog played with the dog”), iar dialogul cerut apare rar.
 
 ## Rezultatele
 
 Mai jos, modelul ajustat primește aceeași instrucțiune ca la începutul paginii.
 
 ```bash
-python sample.py checkpoints/sft/model.pt "Words: dog, ball, happy. Story:" -n 2
+python sample.py checkpoints/sft/model.pt "Words: rain, cake, jump Story:" -n 1 --tokens 120
 ```
 
 ```text
-Words: dog, ball, happy. Story: Once upon a time, there was a happy dog. He wanted to play
-with his ball. His friend, a dog, had a red ball. He wanted to play with it too. So, he
-put the ball in his pocket and went to play with it. The ball went down and down to play
-with his ball. They played with the ball all day long. They took turns to pretend they
-were at a dog. The dog was having a lot of fun. Everyone was happy. After the ball go
-home, the dog and the dog played with the ball all the time. They played with the ball and
-had a fun day.
-
-Words: dog, ball, happy. Story: Once upon a time, there was a happy dog. The dog liked to
-play in the big, tall tree. One day, the tree was very happy. The dog saw a ball. The ball
-wanted to play with the ball. So, the dog went to the ball. He was happy and wanted to
-play with the ball. The ball went to the ball. He played with the ball. They had fun. The
-ball was very happy. Then, something unexpected happened. The ball went into the tree. The
-ball became friends. They played with the ball. They played and played all day in the big
-tree.
+Words: rain, cake, jump Story: One day, a little girl named Lily went outside to play. She
+saw a big cake with lots of colors and leaves. Lily wanted to eat the cake, so she took a
+walk and went outside. She saw a big cake cake and a tray on it. She put the cake inside
+and went to sleep. When the cake was there, Lily saw lots of colors and colorful colors.
+She liked the cake and the pictures. She thought it was a cake cake, so she decided to
+take a flower home with her mom. When they got home, Lily had a great day with her mom.
 ```
 
-Ambele povești pornesc de la început, cu „Once upon a time”, și folosesc toate cele trei cuvinte, chiar prea des. Spațiile și trecerile la rând nou dispar la tokenizare, așa că promptul poate fi scris pe un singur rând.
+Povestea pornește de la început, cu un personaj și o întâmplare, ca poveștile din setul cu instrucțiuni. Folosește însă tot doar „cake”, chiar prea des, iar „rain” și „jump” lipsesc. Promptul are forma instrucțiunilor de la antrenare: „Words: rain, cake, jump”, apoi „Story:” pe rândul următor. Spațiile și trecerile la rând nou dispar la tokenizare, așa că promptul poate fi scris pe un singur rând.
 
-În seria video, cele două modele au fost comparate pe instrucțiuni și povești păstrate pentru validare, cu un script de evaluare care nu face parte din laborator.
-
-| Măsură | Preantrenat | Ajustat |
-| --- | --- | --- |
-| Cuvinte cerute folosite în poveste | aproximativ 3% | aproximativ 27% |
-| Pierderea pe poveștile instrucțiunilor | 2,60 | 2,13 |
-| Pierderea pe povești simple | 2,25 | 2,38 |
-| Lungimea medie a unei povești, în tokenuri | 85 | 178 |
-| Povești încheiate în cel mult 200 de tokenuri | 92% | 48% |
-
-Modelul ajustat folosește de aproape zece ori mai multe dintre cuvintele cerute. Poveștile modelului ajustat sunt de două ori mai lungi, apropiate ca lungime de cele din setul cu instrucțiuni, așa că mai puține se termină în limita de 200 de tokenuri. Modelul preantrenat continuă de la mijlocul unei povești și o încheie repede, iar cel ajustat scrie o poveste întreagă. Pierderea pe poveștile simple crește puțin, pentru că modelul preia stilul poveștilor din setul cu instrucțiuni, care provin din prima versiune a TinyStories, generată parțial de GPT-3.5.
+O singură poveste nu ajunge pentru o comparație. Pe pagina următoare scriem o măsură calculată pe multe instrucțiuni: proporția de cuvinte cerute care apar în poveste. Pe 50 de instrucțiuni de validare, modelul preantrenat folosește 6,0% din cuvintele cerute, iar cel ajustat, 36,7%, de șase ori mai multe. Majoritatea cuvintelor cerute tot lipsesc, iar acesta este punctul de plecare al etapelor următoare.
 
 ## Mai departe
 
-:::note[Următorul pas: alinierea cu preferințele umane]
-Modelul urmează acum instrucțiuni, dar nu știe care dintre două povești este mai bună. La modelele mari, etapa următoare este **alinierea cu preferințele umane** (_alignment_), cu metode ca DPO, PPO sau GRPO, descrise pe pagina despre [învățarea prin consolidare pentru LLM-uri](/modele-lingvistice/invatare-prin-consolidare-pentru-llm/). Seria video [Minimum Viable GPT](https://mvgpt.nenuadrian.com) continuă cu DPO și PPO, aplicate aceluiași model, în episoadele de după cele trei urmărite de laborator. Pentru tot drumul, de la tokenizare până la învățarea prin consolidare, pe un model mai mare, merită studiat și [nanochat](https://github.com/karpathy/nanochat), proiectul lui Andrej Karpathy.
+:::note[Următorul pas: alinierea]
+Modelul urmează acum instrucțiunile, dar nu știe care dintre două povești este mai bună. La modelele mari, etapa următoare este **alinierea** (_alignment_), cu metode ca DPO, PPO sau GRPO, descrise pe pagina despre [învățarea prin consolidare pentru LLM-uri](/modele-lingvistice/invatare-prin-consolidare-pentru-llm/). Laboratorul continuă cu două dintre aceste metode, aplicate aceluiași model: [DPO](/laboratoare/model-lingvistic-de-la-zero/recompensa-si-dpo/), care învață din perechi de povești, și [GRPO](/laboratoare/model-lingvistic-de-la-zero/invatare-prin-consolidare-cu-grpo/), o metodă de învățare prin consolidare. Pentru tot drumul, de la tokenizare până la învățarea prin consolidare, pe un model mai mare, merită studiat și [nanochat](https://github.com/karpathy/nanochat), proiectul lui Andrej Karpathy.
 :::
 
 ## Bibliografie
 
 - Eldan, R. și Li, Y. (2023). [TinyStories: How Small Can Language Models Be and Still Speak Coherent English?](https://arxiv.org/abs/2305.07759) Preprint arXiv:2305.07759.
 - Karpathy, A. (2025). [nanochat](https://github.com/karpathy/nanochat). Cod sursă, GitHub.
-- Nenu, A. M. (2026). [Minimum Viable GPT](https://mvgpt.nenuadrian.com). Serie video, YouTube.
 - Ouyang, L. et al. (2022). [Training language models to follow instructions with human feedback](https://arxiv.org/abs/2203.02155). _NeurIPS 2022_.
 - Wei, J. et al. (2022). [Finetuned Language Models Are Zero-Shot Learners](https://arxiv.org/abs/2109.01652). _ICLR 2022_.

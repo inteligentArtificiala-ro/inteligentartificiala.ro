@@ -1,8 +1,8 @@
 ---
 title: Generarea textului
-description: Cum scrie modelul antrenat o poveste, token cu token. Procesul de generare, temperatura, eșantionarea top-k, tokenul de sfârșit și câteva povești scrise de modelul din laborator.
+description: Cum scrie modelul antrenat o poveste, token cu token. Procesul de generare, temperatura, eșantionarea top-k, tokenul de sfârșit, câteva povești scrise de modelul din laborator și locul în care privește atenția modelului antrenat.
 sidebar:
-  order: 5
+  order: 6
 level: intermediar
 tags:
   - Modele de limbaj mari (LLM)
@@ -120,60 +120,113 @@ Fișierul `sample.py` încarcă un model salvat și scrie povești pornind de la
 
 Funcția `write` este folosită și în timpul antrenării, pentru poveștile afișate la fiecare evaluare. Funcția trece modelul în modul de evaluare, ca _dropout_-ul să fie oprit, apoi îl readuce în modul în care l-a găsit.
 
+Implicit, poveștile au cel mult 200 de tokenuri noi, temperatura 0,8 și filtrul top-k de 50. Opțiunea `--top-k 0` oprește filtrarea: expresia `args.top_k or None` transformă valoarea 0 în `None`, iar `generate` păstrează atunci toate tokenurile. Opțiunea `--seed` alege valoarea de pornire a generatorului de numere aleatoare, deci aceeași comandă scrie de fiecare dată aceleași povești, pe același dispozitiv.
+
 ## Povești generate local
 
-Mai jos sunt două povești scrise, cu setările implicite, de modelul preantrenat timp de 10 minute în rularea de pe pagina despre [preantrenare](/laboratoare/model-lingvistic-de-la-zero/preantrenare/#rularea).
+Modelul salvat la pasul 0, înainte de orice antrenare, dă probabilități aproape egale tuturor celor 10.000 de tokenuri, așa că alege cuvintele aproape la întâmplare.
+
+```bash
+python sample.py checkpoints/pretrain/step-0.pt -n 1 --tokens 40
+```
+
+```text
+Once upon a time doing recommended reassure recommended cap honeycomb displayed taking
+Carly flight Captain stash slippers Leopard recommended ant proves wax plop Ivy burgers
+wonderland Hops everyone France deck forwards padlock peeking courageous want crooked
+rescues peck janitor Roses Softy Watching Watching forming
+```
+
+Mai jos sunt două povești scrise, cu setările implicite, de modelul preantrenat timp de 10 minute în rularea de pe pagina despre [preantrenare](/laboratoare/model-lingvistic-de-la-zero/preantrenare/#rularea). Ca și celelalte rezultate de pe această pagină, poveștile vin din seria video a laboratorului.
 
 ```bash
 python sample.py checkpoints/pretrain/model.pt
 ```
 
 ```text
-Once upon a time, there was a little girl named Sue. She had a toy with her toy. Sue loved
-to play with her toy train. One day, Sue's toy car went to play with her. She wanted to be
-friends with her toy car. Sue was sad. She had an idea. Sue asked her mom, "What is that
-toy car?" Her mom said, "I can help you find my toy car." Sue thought for a moment and
-then came over. She used her toy car to make it go fast again. Sue was so happy and
-thanked her mom. The toy car played with the car all day long. And they lived happily ever
-after.
+Once upon a time, there was a little girl named Sue. She had a toy cat named Lucy. Sue
+loved to play with her toy train. One day, she decided to play with her toy train with
+her. She would throw the train with her toy train as she was as fast as she could. At
+night, Sue heard a voice voice. "What is this?" she said. "I am playing with toys," Tim
+thought it was the same toy. He started to play with the jeep. He thought the other train
+would be fun to be the best car. But then, the Buddy turned around the town. He did not
+want to play with it again. He was sad. Sue had an idea. She made a big, scary, big,
+yellow train. She kept playing with the train with her long, but she was not looking for
+it. She could not catch it, and she was very sad. She had an idea. She had an idea. Tim
+and Sue played with the train
 
-Once upon a time there was a young boy named Tim. Tim loved to explore the big road with
-his mom. One day, he decided to go on a walk in the park. As Tim set his mom walked, Tim
-saw a big hill. He was very curious about what was inside. Tim asked his mom, "Mom, can
-you help me open the hill?" His mom said, "Yes, but be careful. Don't worry, it will come
-back." But Tim's mom knew they would be careful. They went to the hill. Tim looked and saw
-his mom in the hill. He knew it would be fun to go back home soon. Tim looked at his mom
-and knew his mom was safe. Later, Tim's mom went home, but they were tired. Tim was happy.
-He put his toys on his mom's bed and went back to bed.
+Once upon a time, there was a big dog named Spot. Spot loved to play with his best friend,
+a small cat named Kitty. They liked to play together in the sun. One day, while they were
+playing, Spot saw a big, shiny stone. He wanted to play with it, but he knew it was safe.
+Spot ran to the stone and found a big leaf. He picked it up and took it to Kitty. Kitty
+did not like the stone, but he was not happy. The stone made Tim sad. It knew it was a
+good place to play with. Spot and Kitty played with the stone all day long. They had a lot
+of fun. And from that day on, Spot never forgot to be more careful with his new friend,
+always with their new friend.
 ```
 
-Gramatica este aproape corectă, iar poveștile au început, conflict și final. Logica slăbește însă pe parcurs: o mașinuță „se joacă” cu Sue, iar un deal are ceva „înăuntru”. Ambele povești se opresc singure, cu tokenul `<|endoftext|>`, înainte de limita de 200 de tokenuri.
+Gramatica este aproape corectă, iar poveștile au personaje, o întâmplare și o încercare de final. Logica slăbește însă pe parcurs: în prima poveste apare dintr-odată un Tim, iar în a doua, piatra îl întristează pe Tim, care nu face parte din poveste. Prima poveste ajunge la limita de 200 de tokenuri și se oprește la mijlocul unei propoziții. A doua se încheie singură, cu tokenul `<|endoftext|>`.
 
-Modelul salvat după doar 250 de pași, cu pierderea 3,2, scrie astfel.
+La o temperatură mică, modelul alege aproape mereu continuările cele mai probabile.
 
 ```bash
-python sample.py checkpoints/pretrain/step-250.pt -n 1
+python sample.py checkpoints/pretrain/model.pt -n 1 --temperature 0.3
 ```
 
 ```text
-Once upon a time there was a little girl named Amy. Jane was a big, and her mom. He loved
-to play with her mom. One day, Kitty, she saw a big garden, "I don't want to be careful!"
-said Sue. Sam said, "Let's find it." Spot was very happy to help her for a bird. They all
-played with the bird. They worked together every day.
+Once upon a time, there was a little girl named Lily. She had a big, soft bed. Lily loved
+to play with her toys. One day, Lily saw a big box in the box. She wanted to open it, but
+she was too small. Lily's mom saw her and said, "Lily, you can open the box!" Lily was
+very happy and said, "Thank you, Lily!" They played with the box all day. They had a lot
+of fun. And from that day on, Lily and her mom always played together.
 ```
 
-Forma unei povești există deja, dar numele se schimbă de la o propoziție la alta. La o temperatură mare, chiar și modelul final pierde firul.
+Povestea este scurtă și se încheie singură, dar este previzibilă: o fetiță numită Lily, o cutie, mama și formula „And from that day on”, care apare în foarte multe povești din setul de date. Nici aici logica nu este perfectă, pentru că Lily îi mulțumește lui Lily.
+
+La o temperatură mare și fără filtrul top-k, distribuția devine aproape plată, iar modelul alege des tokenuri rare. Mai jos este doar începutul textului.
 
 ```bash
-python sample.py checkpoints/pretrain/model.pt "Tom and his dog" -n 1 --temperature 1.6
+python sample.py checkpoints/pretrain/model.pt -n 1 --temperature 1.5 --top-k 0
 ```
 
 ```text
-Tom and his dog played with his blocks when it turned too short and strong for their moms
-all day. He felt jealous when he played, every day, they got more careful and proud of the
-blocks too. Tom learned that sometimes more hard even more hard than trying to get new
-toys that is small than making him happy to be happy.
+Once upon a time shook learning new disturbed triangles down than did feeding a while
+crayon '! ready her crayons up off out eager to continue flying onto her person sprayed
+crafts. Silver held flew dark legs around, he kicked her again cleaning the unpacking
+carefully fireman greater around eraser together as she was touching an bald Leah memory
+…
 ```
+
+Fiecare cuvânt vine din vocabularul poveștilor, dar textul nu mai are nici gramatică, nici fir, și nu se oprește până la limita de 200 de tokenuri.
+
+## Unde privește atenția
+
+Pe pagina despre [atenția scrisă de mână](/laboratoare/model-lingvistic-de-la-zero/atentia-scrisa-de-mana/), ponderile de atenție veneau din matrice aleatoare și nu aveau un sens. Fișierul `attention_map.py` arată unde se uită fiecare cap al modelului antrenat, pornind de la ultimul token al unei propoziții.
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/attention_map.py" symbols={['attention_maps']} />
+
+Funcția `F.scaled_dot_product_attention`, folosită de model, nu întoarce ponderile de atenție, așa că `attention_maps` le recalculează. Pe stratul de atenție al fiecărui bloc, `register_forward_hook` pune un _forward hook_, o funcție pe care PyTorch o apelează la fiecare trecere prin strat și care păstrează aici intrarea stratului. După o trecere prin model, funcțiile sunt scoase, iar pentru fiecare bloc se refac interogările și cheile, cu proiecțiile stratului. Scorurile, masca cauzală și softmax urmează apoi exact funcția `attention` din `attention.py`. Rezultatul are forma `(6, 6, T, T)`: straturi, capete și câte o matrice de ponderi pentru fiecare cap. Funcția întoarce și scorurile modelului pentru tokenul care ar urma după propoziție.
+
+<SourceFile path="laboratoare/model-lingvistic-de-la-zero/cod/attention_map.py" symbols={['main']} />
+
+Propoziția implicită este „Tom and Lily went to the park. Tom gave the ball to”. Scriptul afișează cele mai probabile trei continuări, apoi, pentru fiecare strat și fiecare cap, tokenul la care ultimul token, `to`, se uită cel mai mult, cu ponderea respectivă.
+
+```bash
+python attention_map.py checkpoints/pretrain/model.pt
+```
+
+```text
+Tom and Lily went to the park . Tom gave the ball to
+următorul token: Lily 52%, the 20%, Tom 8%
+stratul 1 |  gave 0.52 |  gave 0.33 |  ball 0.18 |  ball 0.26 |   the 0.13 |  gave 0.50
+stratul 2 |  gave 0.36 |  ball 0.33 |  gave 0.38 |    to 0.21 |  gave 0.24 |     . 0.46
+stratul 3 |     . 0.39 |   Tom 0.24 |    to 0.21 |  gave 0.38 |  ball 0.31 |    to 0.56
+stratul 4 |  ball 0.30 |    to 0.28 |  ball 0.64 |   Tom 0.83 |  Lily 0.61 |  Lily 0.52
+stratul 5 |  Lily 0.56 |    to 0.49 |     . 0.25 |   Tom 0.49 |   Tom 0.24 |   Tom 0.54
+stratul 6 |   the 0.32 |  park 0.44 |  Lily 0.55 |   Tom 0.53 |   Tom 0.11 |  ball 0.47
+```
+
+Modelul prezice că urmează „Lily”, cu probabilitatea de 52%, deși propoziția nu spune cui i-a dat Tom mingea. „Tom” primește doar 8%: din povești, modelul a învățat că, după „Tom gave the ball to”, urmează de obicei celălalt personaj. În primele trei straturi, capetele se uită mai ales la cuvintele din apropiere (`gave`, `ball`, `to`) și la punct. În straturile 4–6, 10 dintre cele 18 capete se uită cel mai mult la unul dintre nume: la `Tom`, cu ponderi de până la 0,83, sau la `Lily`, cu ponderi între 0,52 și 0,61. Tabelul arată doar tokenul preferat al fiecărui cap, așa că nu explică singur cum ajunge modelul la răspuns. Arată însă că, după antrenare, capetele nu mai împart atenția la întâmplare, ci caută informația de care este nevoie pentru următorul cuvânt.
 
 Modelul preantrenat continuă orice text ca pe începutul unei povești. Nu știe să urmeze o cerere, de exemplu să folosească anumite cuvinte. Va învăța acest lucru în etapa următoare, prin [ajustarea fină supervizată](/laboratoare/model-lingvistic-de-la-zero/ajustare-fina-supervizata/).
 
