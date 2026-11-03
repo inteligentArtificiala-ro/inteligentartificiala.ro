@@ -1,6 +1,6 @@
 ---
 title: Imagini și sunete cu modele de difuzie
-description: Laborator practic în care generăm imagini și sunete cu modele de difuzie cu ponderi deschise, în Python, cu bibliotecile Diffusers și Transformers, pe propriul calculator sau în Google Colab.
+description: Laborator practic în care generăm imagini și sunete cu modele de difuzie cu ponderi deschise, în Python, cu librăriile Diffusers și Transformers, pe propriul calculator sau în Google Colab.
 sidebar:
   order: 1
   label: Introducere
@@ -16,7 +16,7 @@ import { Steps } from '@astrojs/starlight/components';
 
 Paginile despre [modelele de difuzie](/modele-de-difuzie/ce-sunt-modelele-de-difuzie/) explică ideea: o rețea neuronală învață să estimeze zgomotul dintr-o imagine, iar generarea pornește de la zgomot pur, pe care îl curăță pas cu pas. În acest laborator rulăm modele reale, cu [ponderi deschise](/concepte-de-baza/chatgpt-gemini-claude-grok-deepseek/#ponderi-deschise-și-modele-închise), publicate pe [Hugging Face Hub](https://huggingface.co/models). Generăm pisici pornind de la zgomot, imagini pornind de la o descriere și sunete pornind de la un text.
 
-Instrumentul principal este **Diffusers**, biblioteca open-source a companiei Hugging Face pentru modele de difuzie. Este biblioteca soră a bibliotecii Transformers, folosită în laboratorul despre [un model de limbaj local](/laboratoare/model-local-transformers/prezentare/). Diffusers încarcă ponderile în PyTorch și oferă două niveluri de lucru: **pipeline-uri** gata făcute, care generează o imagine în câteva linii de cod, și componentele din care sunt construite, adică rețelele neuronale și **metodele de eșantionare** (_schedulers_), care pot fi folosite separat. Codificatoarele de text și vocoderul vin din Transformers. Biblioteca are o [documentație oficială](https://huggingface.co/docs/diffusers/index) foarte bună, pe care nu o traducem aici. Laboratorul arată codul minim, explică ce se întâmplă în fiecare pas și trimite la documentație pentru detalii.
+Instrumentul principal este **Diffusers**, librăria open-source a companiei Hugging Face pentru modele de difuzie. Este librăria soră a librăriei Transformers, folosită în laboratorul despre [un model de limbaj local](/laboratoare/model-local-transformers/prezentare/). Diffusers încarcă ponderile în PyTorch și oferă două niveluri de lucru: **pipeline-uri** gata făcute, care generează o imagine în câteva linii de cod, și componentele din care sunt construite, adică rețelele neuronale și **metodele de eșantionare** (_schedulers_), care pot fi folosite separat. Codificatoarele de text și vocoderul vin din Transformers. Librăria are o [documentație oficială](https://huggingface.co/docs/diffusers/index) foarte bună, pe care nu o traducem aici. Laboratorul arată codul minim, explică ce se întâmplă în fiecare pas și trimite la documentație pentru detalii.
 
 Codul este scris pentru Diffusers 0.41, Transformers 5.20 și PyTorch 2.14.
 
@@ -47,7 +47,7 @@ source .venv/bin/activate
 pip install torch diffusers transformers accelerate scipy matplotlib
 ```
 
-Pe Linux și Windows, varianta de PyTorch potrivită pentru placa grafică se alege de pe [pagina de instalare PyTorch](https://pytorch.org/get-started/locally/). Alte metode de instalare a bibliotecii Diffusers sunt descrise în [ghidul de instalare](https://huggingface.co/docs/diffusers/installation).
+Pe Linux și Windows, varianta de PyTorch potrivită pentru placa grafică se alege de pe [pagina de instalare PyTorch](https://pytorch.org/get-started/locally/). Alte metode de instalare a librăriei Diffusers sunt descrise în [ghidul de instalare](https://huggingface.co/docs/diffusers/installation).
 
 ## Rularea în Google Colab
 

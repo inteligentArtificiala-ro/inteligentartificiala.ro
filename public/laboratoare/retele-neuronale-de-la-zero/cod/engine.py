@@ -1,5 +1,5 @@
 """
-Un motor minimal de diferențiere automată, pentru numere (scalari).
+Un sistem minimal de diferențiere automată, pentru numere (scalari).
 
 Fiecare obiect Value ține un număr (data), gradientul pierderii în raport cu acel număr (grad) și legăturile spre
 valorile din care a fost calculat. Metoda backward parcurge aceste legături invers și aplică regula lanțului.

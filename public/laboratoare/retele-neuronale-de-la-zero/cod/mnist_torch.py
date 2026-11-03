@@ -1,5 +1,5 @@
 """
-Același MLP 784 → 128 → 10 pentru MNIST, în PyTorch. Biblioteca face singură retropropagarea (autograd).
+Același MLP 784 → 128 → 10 pentru MNIST, în PyTorch. Librăria face singură retropropagarea (autograd).
 
 Rulare: python mnist_torch.py (are nevoie de PyTorch: pip install torch).
 """

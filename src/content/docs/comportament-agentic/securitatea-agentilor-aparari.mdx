@@ -92,7 +92,7 @@ Tehnologiile folosite, de la izolarea cea mai ușoară la cea mai strictă, sunt
 | Gemini CLI | La alegere: profiluri Seatbelt, Docker sau Podman, gVisor |
 | Cursor | Seatbelt pe macOS, [Landlock și seccomp pe Linux](https://cursor.com/blog/agent-sandboxing) |
 | GitHub Copilot, agentul din cloud | Mașina GitHub Actions, cu [firewall](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/customize-the-agent-firewall) |
-| Docker Sandboxes (din ianuarie 2026) | O [mașină virtuală ușoară](https://www.docker.com/blog/docker-sandboxes-run-claude-code-and-other-coding-agents-unsupervised-but-safely/) pentru fiecare mediu, cu nucleu și motor Docker proprii |
+| Docker Sandboxes (din ianuarie 2026) | O [mașină virtuală ușoară](https://www.docker.com/blog/docker-sandboxes-run-claude-code-and-other-coding-agents-unsupervised-but-safely/) pentru fiecare mediu, cu nucleu și daemon Docker proprii |
 | OpenClaw | Docker (implicit), Podman, SSH și alte variante, când izolarea este activată |
 
 Izolarea ajută și la confort, nu doar la siguranță. [Anthropic](https://www.anthropic.com/engineering/claude-code-sandboxing) a raportat în octombrie 2025 că mediul izolat a redus cu 84% cererile de permisiune în folosirea internă, iar [Cursor](https://cursor.com/blog/agent-sandboxing) a scris în februarie 2026 că agenții izolați se opresc cu 40% mai rar decât cei neizolați. Anthropic subliniază că este nevoie de două izolări. Fără izolarea fișierelor, un agent păcălit poate modifica fișiere sensibile ale sistemului. Fără izolarea rețelei, poate trimite afară orice citește.

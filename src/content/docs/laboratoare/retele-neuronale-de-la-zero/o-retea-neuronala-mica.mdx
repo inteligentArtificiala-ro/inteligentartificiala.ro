@@ -27,7 +27,7 @@ for name in ["engine.py", "graph.py", "nn.py", "moons.py"]:
 sys.path.insert(0, ".")
 `;
 
-Motorul de diferențiere automată știe să calculeze gradienții oricărei expresii. O rețea neuronală este doar o expresie mai mare: sume ponderate, funcții de activare și, la final, o pierdere. Pe această pagină o construim din obiecte `Value`, în fișierul `nn.py`, și o antrenăm pe o problemă mică, în fișierul `moons.py`.
+Sistemul de diferențiere automată știe să calculeze gradienții oricărei expresii. O rețea neuronală este doar o expresie mai mare: sume ponderate, funcții de activare și, la final, o pierdere. Pe această pagină o construim din obiecte `Value`, în fișierul `nn.py`, și o antrenăm pe o problemă mică, în fișierul `moons.py`.
 
 ## Neuronul
 
@@ -37,7 +37,7 @@ Un [neuron artificial](/retele-neuronale/ce-sunt-retelele-neuronale/#definiție)
 
 Ponderile pornesc de la valori aleatoare între −1 și 1. Dacă ar porni toate de la aceeași valoare, neuronii unui strat ar calcula același lucru și ar primi aceiași gradienți, deci ar rămâne identici. Funcția `sum` primește _bias_-ul ca valoare de pornire, așa că rezultatul este un singur obiect `Value`, cu tot calculul în propriul graf.
 
-Clasa de bază `Module` adaugă metoda `zero_grad`, care readuce gradienții la zero. Pe [pagina despre motor](/laboratoare/retele-neuronale-de-la-zero/motorul-de-diferentiere/#de-ce-gradienții-se-adună) am văzut de ce este nevoie de această metodă: fiecare `backward()` adaugă la gradienții existenți.
+Clasa de bază `Module` adaugă metoda `zero_grad`, care readuce gradienții la zero. Pe [pagina despre diferențierea automată](/laboratoare/retele-neuronale-de-la-zero/sistemul-de-diferentiere/#de-ce-gradienții-se-adună) am văzut de ce este nevoie de această metodă: fiecare `backward()` adaugă la gradienții existenți.
 
 ## Straturi și rețea
 
@@ -172,9 +172,9 @@ La final, scriptul calculează scorul rețelei pe o grilă de puncte și desenea
 
 Câteva puncte, aflate chiar în zona în care semilunile se apropie, rămân de partea greșită. Cu mai mulți pași de antrenare, rețeaua le-ar putea învăța și pe acestea, dar ar risca să urmeze zgomotul, nu forma semilunilor. Pentru a ști cât de bine generalizează, am avea nevoie de un [set de testare separat](/retele-neuronale/ce-sunt-retelele-neuronale/#cum-învață-o-rețea-neuronală), ca pe pagina următoare.
 
-## Limita unui motor pentru scalari
+## Limita unui sistem pentru scalari
 
-Motorul nostru este ușor de urmărit, dar lent. Fiecare număr este un obiect Python, iar fiecare operație creează un obiect nou și o funcție nouă. Rețeaua cu 105 parametri, pe 100 de puncte, a avut nevoie de circa 30 de secunde pentru 200 de pași.
+Sistemul nostru este ușor de urmărit, dar lent. Fiecare număr este un obiect Python, iar fiecare operație creează un obiect nou și o funcție nouă. Rețeaua cu 105 parametri, pe 100 de puncte, a avut nevoie de circa 30 de secunde pentru 200 de pași.
 
 Rețeaua pentru cifrele MNIST, de pe pagina următoare, are 101.770 de parametri. Exemplul de mai jos construiește această rețea din obiecte `Value` și măsoară o singură propagare directă și retropropagare, pentru o singură imagine, aici cu pixeli aleatori.
 

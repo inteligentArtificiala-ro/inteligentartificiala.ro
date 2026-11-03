@@ -1,6 +1,6 @@
 ---
 title: Un model de limbaj local cu Transformers
-description: Laborator practic în care descărcăm de pe Hugging Face Hub un model de limbaj cu ponderi deschise și îl rulăm pe propriul calculator, în Python, cu bibliotecile Transformers și PyTorch.
+description: Laborator practic în care descărcăm de pe Hugging Face Hub un model de limbaj cu ponderi deschise și îl rulăm pe propriul calculator, în Python, cu librăriile Transformers și PyTorch.
 sidebar:
   order: 1
   label: Introducere
@@ -19,7 +19,7 @@ Conversația de mai jos rulează un model mic, SmolLM2 135M, direct în browser.
 
 <LlmChat />
 
-Instrumentul folosit este **Transformers**, biblioteca open-source a companiei Hugging Face, care descarcă modelul, îi încarcă ponderile în PyTorch și oferă aceeași interfață pentru mii de arhitecturi diferite. Biblioteca are o [documentație oficială](https://huggingface.co/docs/transformers/index) foarte bună, pe care nu o traducem aici. Laboratorul arată codul minim care pune un model în funcțiune, explică ce se întâmplă în fiecare pas și trimite la secțiunea potrivită din documentație pentru detalii.
+Instrumentul folosit este **Transformers**, librăria open-source a companiei Hugging Face, care descarcă modelul, îi încarcă ponderile în PyTorch și oferă aceeași interfață pentru mii de arhitecturi diferite. Librăria are o [documentație oficială](https://huggingface.co/docs/transformers/index) foarte bună, pe care nu o traducem aici. Laboratorul arată codul minim care pune un model în funcțiune, explică ce se întâmplă în fiecare pas și trimite la secțiunea potrivită din documentație pentru detalii.
 
 Toate exemplele au fost rulate cu Transformers 5.20 și PyTorch 2.14. Rezultatele afișate pe pagini vin din aceste rulări.
 
@@ -50,7 +50,7 @@ source .venv/bin/activate
 pip install torch transformers accelerate
 ```
 
-Pe Linux și Windows, varianta de PyTorch potrivită pentru placa grafică se alege de pe [pagina de instalare PyTorch](https://pytorch.org/get-started/locally/). Alte metode de instalare a bibliotecii Transformers sunt descrise în [ghidul de instalare](https://huggingface.co/docs/transformers/installation).
+Pe Linux și Windows, varianta de PyTorch potrivită pentru placa grafică se alege de pe [pagina de instalare PyTorch](https://pytorch.org/get-started/locally/). Alte metode de instalare a librăriei Transformers sunt descrise în [ghidul de instalare](https://huggingface.co/docs/transformers/installation).
 
 ## Rularea în Google Colab
 

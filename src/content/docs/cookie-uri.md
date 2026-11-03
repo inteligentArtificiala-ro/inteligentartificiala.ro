@@ -52,7 +52,7 @@ Unele pagini conțin exemple de cod Python care pot fi modificate și rulate în
 
 ## Demo-ul cu modelul de limbaj
 
-Modelul SmolLM2 135M și biblioteca care îl rulează (Transformers.js, cu ONNX Runtime) sunt servite de pe același domeniu, deci demo-ul nu contactează alte servicii. Mesajele scrise în demo și răspunsurile modelului rămân în browser și nu sunt trimise nicăieri.
+Modelul SmolLM2 135M și librăria care îl rulează (Transformers.js, cu ONNX Runtime) sunt servite de pe același domeniu, deci demo-ul nu contactează alte servicii. Mesajele scrise în demo și răspunsurile modelului rămân în browser și nu sunt trimise nicăieri.
 
 ## Contact
 

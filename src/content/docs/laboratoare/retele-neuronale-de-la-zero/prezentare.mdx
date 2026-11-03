@@ -1,6 +1,6 @@
 ---
 title: Rețele neuronale de la zero
-description: Un laborator pentru începători în care scriem de la zero, în Python, un motor de diferențiere automată, desenăm grafuri computaționale cu Graphviz și antrenăm rețele neuronale, până la recunoașterea cifrelor MNIST.
+description: Un laborator pentru începători în care scriem de la zero, în Python, un sistem de diferențiere automată, desenăm grafuri computaționale cu Graphviz și antrenăm rețele neuronale, până la recunoașterea cifrelor MNIST.
 sidebar:
   order: 1
   label: Introducere
@@ -14,16 +14,16 @@ import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 
 <Colab notebook='laboratoare/retele-neuronale-de-la-zero/retele-neuronale-de-la-zero.ipynb' />
 
-Paginile despre [rețelele neuronale](/retele-neuronale/ce-sunt-retelele-neuronale/) și despre [retropropagare](/retele-neuronale/retropropagare/) explică, în teorie, ce calculează un neuron, cum se măsoară eroarea și cum ajung gradienții de la eroare înapoi la fiecare pondere. În acest laborator scriem toate acestea în cod, pornind de la un singur număr. Nu folosim nicio bibliotecă de învățare automată până la ultima pagină, unde aceeași rețea este scrisă și în PyTorch.
+Paginile despre [rețelele neuronale](/retele-neuronale/ce-sunt-retelele-neuronale/) și despre [retropropagare](/retele-neuronale/retropropagare/) explică, în teorie, ce calculează un neuron, cum se măsoară eroarea și cum ajung gradienții de la eroare înapoi la fiecare pondere. În acest laborator scriem toate acestea în cod, pornind de la un singur număr. Nu folosim nicio librărie de învățare automată până la ultima pagină, unde aceeași rețea este scrisă și în PyTorch.
 
-Primul pas este un **motor de diferențiere automată** (_automatic differentiation_) pentru numere obișnuite: o clasă Python, `Value`, care ține minte din ce operații a rezultat fiecare număr și poate calcula singură gradienții prin retropropagare. Desenăm apoi, cu Graphviz, graful computațional pe care îl parcurge retropropagarea, înainte și după calculul gradienților. Din aceleași piese construim neuroni, straturi și o rețea cu mai multe straturi, pe care o antrenăm cu cod scris de mână. La final, trecem de la numere la matrice, cu NumPy, și antrenăm o rețea care recunoaște cifre scrise de mână.
+Primul pas este un **sistem de diferențiere automată** (_automatic differentiation_) pentru numere obișnuite: o clasă Python, `Value`, care ține minte din ce operații a rezultat fiecare număr și poate calcula singură gradienții prin retropropagare. Desenăm apoi, cu Graphviz, graful computațional pe care îl parcurge retropropagarea, înainte și după calculul gradienților. Din aceleași piese construim neuroni, straturi și o rețea cu mai multe straturi, pe care o antrenăm cu cod scris de mână. La final, trecem de la numere la matrice, cu NumPy, și antrenăm o rețea care recunoaște cifre scrise de mână.
 
-Motorul urmează ideea din [micrograd](https://github.com/karpathy/micrograd), scris de Andrej Karpathy, un motor de diferențiere automată pentru scalari, cu o mică bibliotecă de rețele neuronale construită peste motor, publicat cu licență MIT. Codul laboratorului este scris de la zero, cu comentarii în română, dar păstrează structura lui micrograd (`Value`, `Neuron`, `Layer`, `MLP`), ca cele două să poată fi comparate ușor. Karpathy construiește micrograd pas cu pas, în engleză, în videoclipul [The spelled-out intro to neural networks and backpropagation: building micrograd](https://www.youtube.com/watch?v=VMj-3S1tku0).
+Sistemul urmează ideea din [micrograd](https://github.com/karpathy/micrograd), scris de Andrej Karpathy, un sistem de diferențiere automată pentru scalari, cu o mică librărie de rețele neuronale construită peste sistem, publicat cu licență MIT. Codul laboratorului este scris de la zero, cu comentarii în română, dar păstrează structura lui micrograd (`Value`, `Neuron`, `Layer`, `MLP`), ca cele două să poată fi comparate ușor. Karpathy construiește micrograd pas cu pas, în engleză, în videoclipul [The spelled-out intro to neural networks and backpropagation: building micrograd](https://www.youtube.com/watch?v=VMj-3S1tku0).
 
 ## Etapele laboratorului
 
 <Steps>
-1. [**Un motor de diferențiere automată**](/laboratoare/retele-neuronale-de-la-zero/motorul-de-diferentiere/) construiește clasa `Value`: operațiile, derivatele locale și metoda `backward()`, care parcurge graful în ordine topologică inversă.
+1. [**Un sistem de diferențiere automată**](/laboratoare/retele-neuronale-de-la-zero/sistemul-de-diferentiere/) construiește clasa `Value`: operațiile, derivatele locale și metoda `backward()`, care parcurge graful în ordine topologică inversă.
 2. [**Grafuri computaționale cu Graphviz**](/laboratoare/retele-neuronale-de-la-zero/grafuri-computationale/) transformă graful unei expresii în text DOT și îl desenează, înainte și după calculul gradienților, pentru o expresie, un neuron și o rețea mică.
 3. [**O rețea neuronală mică**](/laboratoare/retele-neuronale-de-la-zero/o-retea-neuronala-mica/) construiește neuroni, straturi și un MLP din obiecte `Value` și îl antrenează să separe două semilune de puncte.
 4. [**Cifrele MNIST cu NumPy și PyTorch**](/laboratoare/retele-neuronale-de-la-zero/cifrele-mnist/) trece de la numere la matrice, scrie de mână retropropagarea unei rețele 784 → 128 → 10 și o antrenează pe 60.000 de cifre, apoi scrie aceeași rețea în PyTorch.
@@ -32,7 +32,7 @@ Motorul urmează ideea din [micrograd](https://github.com/karpathy/micrograd), s
 ## Ce rulează în browser și ce rulează local
 
 :::note[Python în pagină, diagrame și MNIST pe calculator]
-Motorul de diferențiere automată este scris doar în Python, fără alte pachete, așa că exemplele care îl folosesc rulează direct în pagină, cu Python în WebAssembly (Pyodide), și folosesc chiar fișierele laboratorului. Tot în browser rulează, cu NumPy, piesele rețelei pentru MNIST: propagarea directă, softmax și verificarea retropropagării.
+Sistemul de diferențiere automată este scris doar în Python, fără alte pachete, așa că exemplele care îl folosesc rulează direct în pagină, cu Python în WebAssembly (Pyodide), și folosesc chiar fișierele laboratorului. Tot în browser rulează, cu NumPy, piesele rețelei pentru MNIST: propagarea directă, softmax și verificarea retropropagării.
 
 Graphviz nu rulează în browser, așa că diagramele de pe pagini sunt imaginile desenate local de codul laboratorului. Antrenarea pe MNIST are nevoie de setul de date complet și rulează tot local. Paginile arată rezultatele obținute, ca să le putem compara cu ce obținem pe propriul calculator.
 :::

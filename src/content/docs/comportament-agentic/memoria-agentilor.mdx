@@ -140,7 +140,7 @@ De aici apar câteva probleme pe care RAG-ul clasic le are mai rar.
 - **Contradicțiile.** Dacă utilizatorul s-a mutat din Cluj în București, ambele fapte pot ajunge în baza de date, iar căutarea după asemănare le găsește pe amândouă. Sistemul trebuie să știe care este valabil acum.
 - **Duplicatele.** Același fapt, salvat de zece ori în formulări puțin diferite, ocupă primele locuri din rezultate și împinge afară informațiile utile.
 
-În practică, căutarea după sens se combină des cu căutarea după cuvinte. OpenClaw, de exemplu, folosește în motorul de memorie implicit o bază SQLite cu căutare text BM25 și cu vectori, iar rezultatele celor două căutări sunt îmbinate, cu o penalizare pentru amintirile vechi ([documentația](https://docs.openclaw.ai/concepts/memory-builtin)).
+În practică, căutarea după sens se combină des cu căutarea după cuvinte. OpenClaw, de exemplu, folosește în sistemul de memorie implicit o bază SQLite cu căutare text BM25 și cu vectori, iar rezultatele celor două căutări sunt îmbinate, cu o penalizare pentru amintirile vechi ([documentația](https://docs.openclaw.ai/concepts/memory-builtin)).
 
 ## Sisteme de memorie din cercetare
 

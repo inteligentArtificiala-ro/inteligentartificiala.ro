@@ -104,7 +104,7 @@ Observăm că gradientul în raport cu ieșirea neuronului, $\frac{\partial L}{\
 | Sigmoidă $f(z) = \frac{1}{1 + e^{-z}}$ | $f'(z) = f(z)(1 - f(z))$ |
 | Tangentă hiperbolică $f(z) = \tanh(z)$ | $f'(z) = 1 - \tanh^2(z)$ |
 
-În $z = 0$, derivata ReLU nu există. Bibliotecile folosesc, prin convenție, valoarea $0$.
+În $z = 0$, derivata ReLU nu există. Librăriile folosesc, prin convenție, valoarea $0$.
 
 ## Algoritmul complet
 
@@ -255,7 +255,7 @@ print(f"  loss = {new_loss:.6g}")
 
 ## Calculul automat al gradienților
 
-Bibliotecile moderne precum PyTorch și TensorFlow construiesc automat un **graf computațional** (_computational graph_) în timpul propagării directe. Fiecare operație (înmulțire, adunare, funcție de activare) devine un nod în graf, iar valorile intermediare circulă pe muchiile dintre noduri. Biblioteca știe derivata fiecărui tip de operație, așa că poate aplica regula lanțului pe tot graful, fără ca noi să scriem vreo derivată. Mecanismul se numește **diferențiere automată** (_automatic differentiation_), iar în PyTorch îl implementează modulul `autograd`.
+Librăriile moderne precum PyTorch și TensorFlow construiesc automat un **graf computațional** (_computational graph_) în timpul propagării directe. Fiecare operație (înmulțire, adunare, funcție de activare) devine un nod în graf, iar valorile intermediare circulă pe muchiile dintre noduri. Librăria știe derivata fiecărui tip de operație, așa că poate aplica regula lanțului pe tot graful, fără ca noi să scriem vreo derivată. Mecanismul se numește **diferențiere automată** (_automatic differentiation_), iar în PyTorch îl implementează modulul `autograd`.
 
 ### Cum funcționează `autograd`
 

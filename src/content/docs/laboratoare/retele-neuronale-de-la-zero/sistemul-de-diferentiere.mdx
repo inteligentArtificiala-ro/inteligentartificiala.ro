@@ -1,5 +1,5 @@
 ---
-title: Un motor de diferențiere automată
+title: Un sistem de diferențiere automată
 description: Clasa Value ține un număr, împreună cu gradientul și operația din care a rezultat. Scriem derivatele locale ale fiecărei operații și metoda backward(), care aplică regula lanțului în ordine topologică inversă.
 sidebar:
   order: 2
@@ -26,7 +26,7 @@ for name in ["engine.py", "graph.py", "nn.py", "moons.py"]:
 sys.path.insert(0, ".")
 `;
 
-Pe pagina despre [retropropagare](/retele-neuronale/retropropagare/), gradienții unei rețele cu un singur neuron ascuns sunt calculați de mână, verigă cu verigă. Pentru o rețea cu mii de ponderi, calculul de mână nu mai este o opțiune. Bibliotecile precum PyTorch fac acest lucru automat: în timpul calculului, construiesc un **graf computațional** (_computational graph_), apoi îl parcurg invers și aplică regula lanțului la fiecare nod.
+Pe pagina despre [retropropagare](/retele-neuronale/retropropagare/), gradienții unei rețele cu un singur neuron ascuns sunt calculați de mână, verigă cu verigă. Pentru o rețea cu mii de ponderi, calculul de mână nu mai este o opțiune. Librăriile precum PyTorch fac acest lucru automat: în timpul calculului, construiesc un **graf computațional** (_computational graph_), apoi îl parcurg invers și aplică regula lanțului la fiecare nod.
 
 Pe această pagină construim un astfel de mecanism, la scară mică. Lucrăm cu numere obișnuite (scalari), nu cu matrice, ca fiecare pas să poată fi urmărit. Tot codul se află în fișierul `engine.py`.
 
@@ -214,7 +214,7 @@ for tanh_from_exp in [False, True]:
 `}
 />
 
-Cele două variante dau aceiași gradienți, deși graful celei de-a doua are mai multe noduri. Motorul nu are nevoie să știe că expresia este tanh: îi este suficient să cunoască derivata fiecărei operații mici.
+Cele două variante dau aceiași gradienți, deși graful celei de-a doua are mai multe noduri. Sistemul nu are nevoie să știe că expresia este tanh: îi este suficient să cunoască derivata fiecărei operații mici.
 
 ## Aceeași expresie în PyTorch
 

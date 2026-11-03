@@ -18,7 +18,7 @@ import SourceFile from '@components/SourceFile.astro';
 
 Paginile introductive despre [învățarea prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/) și despre [gradientul strategiei și REINFORCE](/invatare-prin-consolidare/gradientul-politicii-reinforce/) explică ideile de bază: stări, acțiuni, recompense și optimizarea directă a unei strategii de decizie. În sarcinile discrete clasice, de exemplu alegerea unei mutări într-un joc sau a următorului token dintr-un vocabular, agentul alege dintr-un număr finit de acțiuni.
 
-În robotică și în automatizări, deciziile sunt continue. Motoarele nu primesc comenzi de tipul „stânga” sau „dreapta”, ci valori fizice continue, cum ar fi un **cuplu mecanic** (_torque_) sau o tensiune electrică aplicată fiecărei articulații. Acest tip de probleme se numește **control continuu** (_continuous control_).
+În robotică și în automatizări, deciziile sunt continue. Actuatoarele nu primesc comenzi de tipul „stânga” sau „dreapta”, ci valori fizice continue, cum ar fi un **cuplu mecanic** (_torque_) sau o tensiune electrică aplicată fiecărei articulații. Acest tip de probleme se numește **control continuu** (_continuous control_).
 
 În acest laborator construim o soluție completă de control continuu. Antrenăm robotul **HalfCheetah** să învețe de la zero să alerge înainte într-un simulator fizic foarte precis, **MuJoCo**, cu **PPO** (_Proximal Policy Optimization_), un algoritm de referință în domeniu. Codul complet se găsește pe GitHub, în repozitoriul [**inteligentArtificiala-ro/control-continuu-ppo**](https://github.com/inteligentArtificiala-ro/control-continuu-ppo).
 
@@ -33,20 +33,20 @@ export const video = '/laboratoare/control-continuu-ppo-halfcheetah/video';
   descriere='Rezultatul obținut cu codul și setările laboratorului: robotul HalfCheetah înainte de antrenare, cu o strategie aleatoare, apoi după 300.000 și după 1.000.000 de pași de antrenare cu PPO. Fiecare clip arată primele 10 secunde dintr-un episod de 50 de secunde, în timp real. În episodul întreg, strategia finală parcurge aproximativ 89 de metri.'
 />
 
-Robotul învață să alerge, dar pe spate. Recompensa din HalfCheetah răsplătește doar viteza spre înainte și penalizează puțin efortul motoarelor. Nu cere nicăieri ca robotul să stea pe picioare, așa că, pentru algoritm, alergarea pe spate este o soluție la fel de bună ca oricare alta. Cu aceleași setări, alte șase antrenări, pornite de la alte valori inițiale aleatoare (_seed_), au ajuns tot la alergarea pe spate. Agentul optimizează exact recompensa primită, nu intenția celui care a scris-o, iar aceasta este una dintre cele mai importante lecții ale învățării prin consolidare.
+Robotul învață să alerge, dar pe spate. Recompensa din HalfCheetah răsplătește doar viteza spre înainte și penalizează puțin efortul articulațiilor. Nu cere nicăieri ca robotul să stea pe picioare, așa că, pentru algoritm, alergarea pe spate este o soluție la fel de bună ca oricare alta. Cu aceleași setări, alte șase antrenări, pornite de la alte valori inițiale aleatoare (_seed_), au ajuns tot la alergarea pe spate. Agentul optimizează exact recompensa primită, nu intenția celui care a scris-o, iar aceasta este una dintre cele mai importante lecții ale învățării prin consolidare.
 
 ## Ce este HalfCheetah în MuJoCo?
 
 **MuJoCo** (_Multi-Joint dynamics with Contact_) este un simulator fizic dezvoltat de Emo Todorov și achiziționat apoi de DeepMind (astăzi Google DeepMind). A devenit standardul în cercetarea de învățare prin consolidare pentru robotică, pentru că este foarte rapid și simulează fidel contactele dintre corpurile rigide.
 
-**HalfCheetah** este un robot bidimensional cu două picioare, inspirat de ghepard, format din 7 segmente rigide articulate: un trunchi și două picioare, unul în față și unul în spate. Fiecare picior are trei articulații acționate de motoare (șold/coapsă, genunchi/tibie, gleznă/laba piciorului). La începutul antrenării acțiunile sunt complet aleatoare, iar robotul se zbate și cade. Cu PPO, agentul învață să coordoneze comenzile date motoarelor, ca să înainteze cât mai repede.
+**HalfCheetah** este un robot bidimensional cu două picioare, inspirat de ghepard, format din 7 segmente rigide articulate: un trunchi și două picioare, unul în față și unul în spate. Fiecare picior are trei articulații acționate (șold/coapsă, genunchi/tibie, gleznă/laba piciorului). La începutul antrenării acțiunile sunt complet aleatoare, iar robotul se zbate și cade. Cu PPO, agentul învață să coordoneze comenzile date articulațiilor, ca să înainteze cât mai repede.
 
 import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 
 ## Etapele laboratorului
 
 <Steps>
-1. [**Mediul și acțiunile continue**](/laboratoare/control-continuu-ppo-halfcheetah/mediul-si-actiunile-continue/) prezintă spațiul de observație cu 17 dimensiuni, cele 6 articulații acționate de motoare și felul în care modelăm o strategie stocastică printr-o distribuție gaussiană multivariată.
+1. [**Mediul și acțiunile continue**](/laboratoare/control-continuu-ppo-halfcheetah/mediul-si-actiunile-continue/) prezintă spațiul de observație cu 17 dimensiuni, cele 6 articulații acționate și felul în care modelăm o strategie stocastică printr-o distribuție gaussiană multivariată.
 2. [**Rețeaua Actor-Critic**](/laboratoare/control-continuu-ppo-halfcheetah/arhitectura-actor-critic/) construiește în PyTorch rețeaua actor-critic, cu inițializare ortogonală și cu deviația standard parametrizată separat.
 3. [**Algoritmul PPO și GAE**](/laboratoare/control-continuu-ppo-halfcheetah/algoritmul-ppo-si-gae/) explică funcția obiectiv tăiată (_clipped surrogate objective_), bufferul de traiectorii și estimarea generalizată a avantajului (GAE).
 4. [**Antrenare și evaluare**](/laboratoare/control-continuu-ppo-halfcheetah/antrenare-si-evaluare/) descrie antrenarea completă cu mai multe medii vectorizate, rulate în paralel, urmărirea metricilor și rularea deterministă a strategiei antrenate.

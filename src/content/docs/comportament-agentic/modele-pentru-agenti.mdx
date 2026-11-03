@@ -213,9 +213,9 @@ Laboratorul [Un model de limbaj local cu Transformers](/laboratoare/model-local-
 | :--- | :--- | :--- |
 | [Ollama](https://ollama.com) | aplicație și server care descarcă și rulează modele cu o singură comandă (licență MIT) | `http://localhost:11434/v1` |
 | [LM Studio](https://lmstudio.ai) | aplicație desktop, cu cod închis, care rulează modele GGUF prin llama.cpp și, pe cipurile Apple Silicon, modele MLX | `http://localhost:1234/v1` |
-| [llama.cpp](https://github.com/ggml-org/llama.cpp) (`llama-server`) | motor de inferență în C/C++, pentru modele cuantizate în formatul GGUF (licență MIT) | `http://localhost:9931/v1`, din octombrie 2026 |
+| [llama.cpp](https://github.com/ggml-org/llama.cpp) (`llama-server`) | sistem de inferență în C/C++, pentru modele cuantizate în formatul GGUF (licență MIT) | `http://localhost:9931/v1`, din octombrie 2026 |
 | [vLLM](https://github.com/vllm-project/vllm) | server pentru plăcile grafice din centrele de date (licență Apache 2.0) | `http://localhost:8000/v1` |
-| [MLX LM](https://github.com/ml-explore/mlx-lm) (`mlx_lm.server`) | biblioteca Apple pentru cipurile Apple Silicon (licență MIT) | `http://localhost:8080/v1` |
+| [MLX LM](https://github.com/ml-explore/mlx-lm) (`mlx_lm.server`) | librăria Apple pentru cipurile Apple Silicon (licență MIT) | `http://localhost:8080/v1` |
 
 Câteva detalii fac diferența în practică.
 
@@ -229,7 +229,7 @@ Câteva detalii fac diferența în practică.
 
 Un model scrie apelul de instrument în formatul învățat la antrenare, cu tokenurile speciale din șablonul de chat. Serverul trebuie să recunoască acest format și să îl transforme în câmpul `tool_calls` al răspunsului compatibil OpenAI. Fiecare program rezolvă problema altfel.
 
-- În biblioteca Ollama, modelele care pot face apeluri au eticheta `tools`. Eticheta spune doar că șablonul de chat acceptă instrumente, nu cât de bine le folosește modelul. O cerere cu instrumente către un model fără această etichetă eșuează cu mesajul „does not support tools”. Comanda `ollama show <model>` listează capabilitățile modelului.
+- În librăria Ollama, modelele care pot face apeluri au eticheta `tools`. Eticheta spune doar că șablonul de chat acceptă instrumente, nu cât de bine le folosește modelul. O cerere cu instrumente către un model fără această etichetă eșuează cu mesajul „does not support tools”. Comanda `ollama show <model>` listează capabilitățile modelului.
 - LM Studio marchează cu o pictogramă în formă de ciocan modelele cu suport nativ. Pentru celelalte modele, LM Studio descrie instrumentele în promptul de sistem, iar documentația avertizează că modelele mici sau neantrenate pentru instrumente pot produce apeluri greșit formate.
 - `llama-server` folosește șablonul Jinja al modelului (opțiunea `--jinja`, activă implicit), cu rutine dedicate pentru familiile de modele cunoscute și una generică pentru restul.
 - vLLM are nevoie de parserul potrivit, ales la pornire.
@@ -248,7 +248,7 @@ Un context mai mare cere mai multă memorie pentru [memoria cache pentru chei ș
 
 ### Ce încape în memorie
 
-Memoria ocupată de un model este aproximativ numărul de parametri înmulțit cu numărul de octeți pe parametru (vezi tabelul din laboratorul despre [memorie și cuantizare](/laboratoare/model-local-transformers/memorie-si-dispozitive/#de-câtă-memorie-are-nevoie-un-model)), plus memoria cache a contextului. Modelele din biblioteca Ollama sunt cuantizate implicit pe aproximativ 4 biți, deci un model de 30 de miliarde de parametri ocupă în jur de 18–20 GB. Primele șase modele din tabelul de mai jos au eticheta `tools` în biblioteca Ollama.
+Memoria ocupată de un model este aproximativ numărul de parametri înmulțit cu numărul de octeți pe parametru (vezi tabelul din laboratorul despre [memorie și cuantizare](/laboratoare/model-local-transformers/memorie-si-dispozitive/#de-câtă-memorie-are-nevoie-un-model)), plus memoria cache a contextului. Modelele din librăria Ollama sunt cuantizate implicit pe aproximativ 4 biți, deci un model de 30 de miliarde de parametri ocupă în jur de 18–20 GB. Primele șase modele din tabelul de mai jos au eticheta `tools` în librăria Ollama.
 
 | Model (eticheta Ollama) | Arhitectură | Descărcare | Licență |
 | :--- | :--- | :--- | :--- |
@@ -364,7 +364,7 @@ Ce face un harnașament cu un astfel de server, cerere cu cerere, se vede cel ma
 - Ollama (2026). [Claude Code with Anthropic API compatibility](https://ollama.com/blog/claude). Blogul Ollama.
 - Ollama (2026). [ollama launch](https://ollama.com/blog/launch). Blogul Ollama.
 - Ollama (f.a.). [Context length](https://docs.ollama.com/context-length). Documentația Ollama.
-- Ollama (f.a.). [Models with tool support](https://ollama.com/search?c=tools). Biblioteca Ollama.
+- Ollama (f.a.). [Models with tool support](https://ollama.com/search?c=tools). Librăria Ollama.
 - Ollama (f.a.). [OpenAI compatibility](https://docs.ollama.com/api/openai-compatibility). Documentația Ollama.
 - Ollama (f.a.). [OpenCode](https://docs.ollama.com/integrations/opencode). Documentația Ollama.
 - OpenAI (2024). [Introducing SWE-bench Verified](https://openai.com/index/introducing-swe-bench-verified/). Blogul OpenAI.

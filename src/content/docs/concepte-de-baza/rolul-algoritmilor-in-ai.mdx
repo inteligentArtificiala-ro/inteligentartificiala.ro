@@ -56,7 +56,7 @@ Dacă euristica este admisibilă (adică nu supraestimează niciodată costul re
 
 ### Grafuri de calcul și propagarea înapoi a erorii
 
-Grafurile nu descriu doar lumea exterioară, ci și ce se întâmplă în interiorul unui model de învățare profundă. În biblioteci precum PyTorch sau JAX, operațiile matematice sunt organizate ca un **graf aciclic direcționat** (_directed acyclic graph_, **DAG**).
+Grafurile nu descriu doar lumea exterioară, ci și ce se întâmplă în interiorul unui model de învățare profundă. În librării precum PyTorch sau JAX, operațiile matematice sunt organizate ca un **graf aciclic direcționat** (_directed acyclic graph_, **DAG**).
 
 Nodurile acestui graf sunt tensori și operații matematice (adunări, înmulțiri de matrice, funcții de activare neliniare). Algoritmul de **propagare înapoi a erorii** (_backpropagation_) parcurge graful în sens invers și aplică regula de derivare a funcțiilor compuse (_chain rule_) ca să calculeze gradientul funcției de pierdere în raport cu fiecare pondere.
 

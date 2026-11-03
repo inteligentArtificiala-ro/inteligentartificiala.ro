@@ -1,6 +1,6 @@
 ---
 title: O hartă a harnașamentelor
-description: Harnașamentele pentru agenți în noiembrie 2026, grupate după locul în care lucrează (terminal, editor, cloud, biblioteci) și comparate după licență, aprobări, fișiere de instrucțiuni, MCP și modele.
+description: Harnașamentele pentru agenți în noiembrie 2026, grupate după locul în care lucrează (terminal, editor, cloud, librării) și comparate după licență, aprobări, fișiere de instrucțiuni, MCP și modele.
 sidebar:
   order: 3
   label: 'Harnașamente: o hartă'
@@ -10,7 +10,7 @@ tags:
   - Modele de limbaj mari (LLM)
 ---
 
-Pagina despre [harnașament](/comportament-agentic/harnasamentul/) a descris sistemul construit în jurul unui model de limbaj: pregătește contextul, rulează instrumentele cerute de model și îi trimite modelului rezultatele, până când sarcina este gata. În noiembrie 2026 există zeci de astfel de sisteme. Unele rulează în terminal, altele sunt editoare de cod, altele lucrează singure în cloud, iar câteva sunt biblioteci din care ne putem construi propriul agent.
+Pagina despre [harnașament](/comportament-agentic/harnasamentul/) a descris sistemul construit în jurul unui model de limbaj: pregătește contextul, rulează instrumentele cerute de model și îi trimite modelului rezultatele, până când sarcina este gata. În noiembrie 2026 există zeci de astfel de sisteme. Unele rulează în terminal, altele sunt editoare de cod, altele lucrează singure în cloud, iar câteva sunt librării din care ne putem construi propriul agent.
 
 Multe dintre aceste sisteme pot folosi aceleași modele, așa că o bună parte din diferențe vine din harnașament. Se vede și în evaluări: clasamentul [Terminal-Bench](https://www.tbench.ai/news/terminal-bench-4-0) nu ordonează modele, ci perechi formate dintr-un agent și un model, iar același model obține scoruri diferite în harnașamente diferite. Pagina [Modele pentru agenți](/comportament-agentic/modele-pentru-agenti/) discută aceste cifre.
 
@@ -58,15 +58,15 @@ Diferă apoi felul în care harnașamentul își administrează fereastra de con
 
 ### Modelele
 
-Unele harnașamente lucrează doar cu modelele unui singur furnizor. Gemini CLI folosește doar Gemini, Kiro doar modele servite de AWS, iar Claude Code, oficial, doar modele Claude (totuși, [Ollama documentează](https://docs.ollama.com/integrations/claude-code) cum poate fi legat Claude Code de modele locale). Altele lasă alegerea deschisă. [OpenCode](https://opencode.ai/docs/providers/) lucrează cu peste 75 de furnizori, Aider și OpenHands ajung la aproape orice model prin biblioteca LiteLLM, iar Cline, Goose, Crush, pi și Qwen Code pot folosi direct un model rulat local, prin programe precum Ollama, LM Studio, llama.cpp sau vLLM.
+Unele harnașamente lucrează doar cu modelele unui singur furnizor. Gemini CLI folosește doar Gemini, Kiro doar modele servite de AWS, iar Claude Code, oficial, doar modele Claude (totuși, [Ollama documentează](https://docs.ollama.com/integrations/claude-code) cum poate fi legat Claude Code de modele locale). Altele lasă alegerea deschisă. [OpenCode](https://opencode.ai/docs/providers/) lucrează cu peste 75 de furnizori, Aider și OpenHands ajung la aproape orice model prin librăria LiteLLM, iar Cline, Goose, Crush, pi și Qwen Code pot folosi direct un model rulat local, prin programe precum Ollama, LM Studio, llama.cpp sau vLLM.
 
 Contează și de unde pleacă cererile către model. Cursor acceptă chei API proprii (_bring your own key_, BYOK), dar trimite toate cererile prin serverele Cursor, iar Amp și Warp folosesc tot propriile servere. Un model care rulează doar pe calculatorul nostru nu este vizibil pentru aceste servere, de aceea Warp cere ca modelul local să fie expus printr-un tunel HTTPS public.
 
 ## În terminal
 
-Cele mai multe harnașamente noi au pornit ca programe pentru linia de comandă (CLI) sau ca interfețe text în terminal (TUI). Același motor ajunge apoi, de obicei, și în extensii pentru editoare, în aplicații desktop și pe web. Împărțirea de pe această pagină arată deci unde este folosit un harnașament mai des, nu singurul loc în care rulează.
+Cele mai multe harnașamente noi au pornit ca programe pentru linia de comandă (CLI) sau ca interfețe text în terminal (TUI). Același sistem ajunge apoi, de obicei, și în extensii pentru editoare, în aplicații desktop și pe web. Împărțirea de pe această pagină arată deci unde este folosit un harnașament mai des, nu singurul loc în care rulează.
 
-- **Claude Code** (Anthropic) rulează în terminal, în extensii pentru VS Code și JetBrains, într-o aplicație desktop și pe web, iar [documentația](https://code.claude.com/docs/en/overview) spune că toate aceste variante folosesc același motor. Codul sursă nu este public: repozitoriul de pe GitHub conține doar tichetele, pluginurile și notele de versiune.
+- **Claude Code** (Anthropic) rulează în terminal, în extensii pentru VS Code și JetBrains, într-o aplicație desktop și pe web, iar [documentația](https://code.claude.com/docs/en/overview) spune că toate aceste variante folosesc același sistem. Codul sursă nu este public: repozitoriul de pe GitHub conține doar tichetele, pluginurile și notele de versiune.
 - **OpenAI Codex** are un [CLI open source](https://github.com/openai/codex) (Apache-2.0), scris în Rust, plus extensii pentru editoare, o aplicație desktop și un agent în cloud, care nu este open source.
 - **Antigravity CLI** (comanda `agy`, Google) a luat locul Gemini CLI pentru cei mai mulți utilizatori. Google lansase [Gemini CLI](https://blog.google/innovation-and-ai/technology/developers-tools/introducing-gemini-cli-open-source-ai-agent/) pe 25 iunie 2025, ca agent open source (Apache-2.0). Pe 19 mai 2026, Google a [anunțat](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/) Antigravity CLI, scris în Go, care folosește același harnașament ca aplicația desktop Antigravity 2.0. De la 18 iunie 2026, Gemini CLI nu mai servește abonamentele individuale Google AI Pro și Ultra și nici utilizatorii gratuiți ai Gemini Code Assist. Rămâne pentru clienții Gemini Code Assist Standard și Enterprise și pentru cheile API plătite, iar fișierul README avertizează că nu este optimizat pentru Gemini 4. Antigravity CLI nu este open source.
 - **OpenCode** (Anomaly, compania din spatele SST) este open source (MIT) și rulează în terminal, ca aplicație desktop și ca extensie de editor, cu doi agenți de bază, `build` și `plan`. La 2 noiembrie 2026, repozitoriul avea aproximativ 224.000 de stele pe GitHub, cele mai multe dintre harnașamentele de pe această pagină. Versiunea 2, rescrisă, a apărut în octombrie 2026, iar versiunea 1 primește în continuare actualizări.
@@ -93,7 +93,7 @@ Al doilea grup lucrează în editorul de cod. Agentul vede aceleași fișiere ca
 - **Devin Desktop** (Cognition) este fostul Windsurf. Cognition a semnat [acordul de cumpărare](https://cognition.com/blog/windsurf) a Windsurf pe 14 iulie 2025, iar pe 2 iunie 2026 editorul a fost [redenumit](https://docs.devin.ai/desktop/devin-desktop-faq) Devin Desktop, printr-o actualizare automată. Agentul local se numește acum Devin Local și are aceeași arhitectură ca Devin CLI.
 - **GitHub Copilot în VS Code** are un mod agent din aprilie 2025. Între timp, VS Code a separat editorul de harnașament: utilizatorul [alege](https://code.visualstudio.com/docs/agents/run/agent-harnesses) între harnașamentul Copilot, harnașamentul local al VS Code, Claude (prin Claude Agent SDK) și Codex. Este cel mai clar exemplu că editorul și harnașamentul sunt piese diferite.
 - **Cline** ([Cline Bot Inc.](https://github.com/cline/cline)) a pornit ca extensie pentru VS Code, inițial cu numele „Claude Dev”, și este open source (Apache-2.0), cu excepția pluginului pentru JetBrains. Are un mod de planificare și unul de execuție (_Plan_ și _Act_), poate folosi un browser și cere aprobare pentru fiecare modificare și pentru fiecare comandă. Același nucleu rulează și într-un CLI, într-o aplicație desktop și într-un SDK, iar comanda `cline connect` face agentul accesibil din Telegram, Slack sau Discord.
-- **Kilo Code** (Kilo, MIT) a pornit în 2025 ca fork al Roo Code, care era la rândul său un fork al Cline. În 2026, Kilo și-a [reconstruit extensia](https://blog.kilo.ai/p/new-kilo-for-vs-code-is-live) pentru VS Code pe serverul OpenCode, astfel încât extensia, CLI-ul și agenții din cloud folosesc același motor. Prin Kilo Gateway oferă peste 500 de modele, la prețul furnizorilor.
+- **Kilo Code** (Kilo, MIT) a pornit în 2025 ca fork al Roo Code, care era la rândul său un fork al Cline. În 2026, Kilo și-a [reconstruit extensia](https://blog.kilo.ai/p/new-kilo-for-vs-code-is-live) pentru VS Code pe serverul OpenCode, astfel încât extensia, CLI-ul și agenții din cloud folosesc același sistem. Prin Kilo Gateway oferă peste 500 de modele, la prețul furnizorilor.
 - **Zed** este un editor open source (GPL) cu agent propriu, care tratează `AGENTS.md` drept fișierul principal de instrucțiuni. Pe 27 august 2025, Zed a [lansat](https://zed.dev/blog/bring-your-own-agent-to-zed) Agent Client Protocol (ACP), prin care orice agent poate lucra în editor. Primul agent conectat așa a fost Gemini CLI. Protocolul este descris pe pagina [Protocoale și standarde](/comportament-agentic/protocoale-si-standarde/).
 - **Antigravity** (Google) a [apărut](https://antigravity.google/blog/introducing-google-antigravity) pe 18 noiembrie 2025, odată cu Gemini 3, ca platformă gândită de la început pentru agenți, cu o vedere de editor și o suprafață din care sunt administrați mai mulți agenți care lucrează în paralel. Agenții produc artefacte (liste de sarcini, planuri, capturi de ecran, înregistrări din browser), ca utilizatorul să poată verifica munca agenților. Versiunea 2.0, prezentată la Google I/O pe [19 mai 2026](https://techcrunch.com/2026/05/19/google-launches-antigravity-2-0-with-an-updated-desktop-app-and-cli-tool-at-io-2026/), este o aplicație desktop separată, însoțită de Antigravity CLI și de un SDK pentru Python. La 2 noiembrie 2026, Antigravity oferea [modelele](https://antigravity.google/docs/models) Gemini 4 Argon (în planurile plătite), Gemini 3.8 Flash, Claude Sonnet 5.5 și Claude Opus 5.5, iar documentația nu menționa posibilitatea de a folosi chei API proprii.
 - **Kiro** (AWS) are un mediu de dezvoltare, un CLI și o variantă web, toate construite pe [un singur harnașament](https://kiro.dev/docs/). Pune accent pe dezvoltarea pornind de la specificații: întâi cerințele, apoi designul, apoi sarcinile. Regulile proiectului stau în directorul `.kiro/steering/`.
@@ -110,9 +110,9 @@ Agenții din cloud primesc o sarcină, de obicei un tichet, lucrează singuri î
 - **Devin**, [anunțat](https://cognition.ai/blog/introducing-devin) de Cognition în 2024, este agentul în cloud al companiei care face acum și Devin Desktop.
 - **Jules** (Google Labs) se închide: devine doar pentru citire după 11 noiembrie 2026 și se oprește pe 31 decembrie 2026, iar munca echipei continuă în Antigravity.
 
-## Biblioteci pentru agenți proprii
+## Librării pentru agenți proprii
 
-Unele harnașamente pot fi folosite și ca biblioteci (SDK), ca să construim un agent propriu peste același proces, cu instrumentele și regulile noastre.
+Unele harnașamente pot fi folosite și ca librării (SDK), ca să construim un agent propriu peste același proces, cu instrumentele și regulile noastre.
 
 - **Claude Agent SDK** (Anthropic) oferă [procesul din Claude Code](https://code.claude.com/docs/en/agent-sdk/agent-loop): limite de pași și de cost (`max_turns`, `max_budget_usd`), modurile de permisiuni, compactarea automată a contextului și funcții de tip _hook_, care pot bloca un apel înainte să ruleze.
 - **OpenHands Software Agent SDK** (Python, MIT) are instrumente pentru terminal, editarea fișierelor și urmărirea sarcinilor și poate lucra local sau în containere Docker și Kubernetes.
@@ -152,7 +152,7 @@ Tabelul rezumă situația de la 2 noiembrie 2026. Coloana „Aprobare implicită
 
 Multe harnașamente pornesc unele din altele, iar câteva au dispărut în 2026.
 
-- **Cline, Roo Code, Kilo Code, OpenCode**: Roo Code a pornit ca fork al Cline, Kilo Code ca fork al Roo Code, iar în 2026 Kilo a trecut pe motorul OpenCode.
+- **Cline, Roo Code, Kilo Code, OpenCode**: Roo Code a pornit ca fork al Cline, Kilo Code ca fork al Roo Code, iar în 2026 Kilo a trecut pe nucleul OpenCode.
 - **opencode și Crush**: proiectul opencode original, scris în Go, a continuat la Charm sub numele Crush, cu autorul inițial. OpenCode de azi este alt proiect.
 - **Gemini CLI și Qwen Code**: Qwen Code a pornit de la Gemini CLI 0.8.2 și s-a despărțit de proiectul original încă de la versiunea 0.1.
 - **Roo Code** a fost oprit pe 15 mai 2026, iar [repozitoriul](https://github.com/RooCodeInc/Roo-Code) a fost arhivat în aceeași zi. Fișierul README trimite utilizatorii la ZooCode, un fork al comunității, și la Cline.

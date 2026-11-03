@@ -26,7 +26,7 @@ for name in ["mnist_data.py", "mnist_numpy.py"]:
 sys.path.insert(0, ".")
 `;
 
-Pe [pagina anterioară](/laboratoare/retele-neuronale-de-la-zero/o-retea-neuronala-mica/), motorul pentru scalari a avut nevoie de circa o secundă pentru o singură imagine. Rețeaua rămâne aceeași, dar calculul se poate organiza altfel: toate sumele ponderate ale unui strat, pentru un lot întreg de imagini, sunt un singur produs de matrice. Pe această pagină scriem rețeaua cu NumPy, o bibliotecă Python pentru calcul cu matrice, și scriem de mână, pentru matrice, aceleași derivate pe care motorul le aplica număr cu număr.
+Pe [pagina anterioară](/laboratoare/retele-neuronale-de-la-zero/o-retea-neuronala-mica/), sistemul pentru scalari a avut nevoie de circa o secundă pentru o singură imagine. Rețeaua rămâne aceeași, dar calculul se poate organiza altfel: toate sumele ponderate ale unui strat, pentru un lot întreg de imagini, sunt un singur produs de matrice. Pe această pagină scriem rețeaua cu NumPy, o librărie Python pentru calcul cu matrice, și scriem de mână, pentru matrice, aceleași derivate pe care sistemul le aplica număr cu număr.
 
 ## Setul de date MNIST
 
@@ -54,7 +54,7 @@ Elementul $(Z_1)_{ij}$ este exact suma ponderată calculată de `Neuron` pentru 
 
 </DeepDive>
 
-Exemplul de mai jos calculează o singură sumă ponderată în ambele feluri, cu o sumă în Python, ca motorul pentru scalari, și din produsul de matrice.
+Exemplul de mai jos calculează o singură sumă ponderată în ambele feluri, cu o sumă în Python, ca sistemul pentru scalari, și din produsul de matrice.
 
 <Python
   packages={['numpy']}
@@ -67,7 +67,7 @@ params = init_params()
 rng = np.random.default_rng(0)
 x = rng.random((5, 784)).astype(np.float32)  # 5 „imagini”, cu pixeli aleatori
 
-# Neuronul 0 al stratului ascuns, pentru prima imagine, ca în motorul pentru scalari.
+# Neuronul 0 al stratului ascuns, pentru prima imagine, ca în sistemul pentru scalari.
 z = params["b1"][0] + sum(params["W1"][k, 0] * x[0, k] for k in range(784))
 print("o sumă în Python:      ", z)
 
@@ -144,7 +144,7 @@ Pe ultimul rând, rețeaua este foarte sigură pe clasa greșită, iar probabili
 
 ## Retropropagarea scrisă de mână
 
-Motorul pentru scalari aplica regula lanțului nod cu nod. Pentru matrice, aceleași reguli se scriu o singură dată pentru fiecare strat. Pornim de la pierdere și mergem înapoi:
+Sistemul pentru scalari aplica regula lanțului nod cu nod. Pentru matrice, aceleași reguli se scriu o singură dată pentru fiecare strat. Pornim de la pierdere și mergem înapoi:
 
 - Pentru softmax urmat de entropie încrucișată, gradientul în raport cu scorurile are o formă foarte simplă: probabilitățile, din care se scade 1 la cifra corectă, împărțite la numărul de imagini din lot. Dacă rețeaua a dat cifrei corecte probabilitatea 0,7, gradientul este −0,3, iar scorul cifrei corecte va fi împins în sus.
 - Pentru un strat liniar, gradientul ponderilor este produsul dintre intrările stratului, transpuse, și gradientul ieșirilor stratului. Gradientul _bias_-ului este suma gradienților ieșirilor pe tot lotul. Gradientul trimis stratului anterior este produsul dintre gradientul ieșirilor și ponderile transpuse.
@@ -166,7 +166,7 @@ $$
 \frac{\partial L}{\partial Z_1} = \frac{\partial L}{\partial H} \odot [Z_1 > 0], \qquad \frac{\partial L}{\partial W_1} = X^\top \frac{\partial L}{\partial Z_1}, \qquad \frac{\partial L}{\partial b_1} = \sum_{i=1}^{N} \left(\frac{\partial L}{\partial Z_1}\right)_i
 $$
 
-unde $\odot$ este înmulțirea element cu element, iar $[Z_1 > 0]$ este 1 unde suma ponderată a fost pozitivă și 0 în rest. Fiecare formulă este regula lanțului de pe [pagina despre motor](/laboratoare/retele-neuronale-de-la-zero/motorul-de-diferentiere/#derivatele-locale-ale-operațiilor), aplicată tuturor elementelor unei matrice deodată: în $\frac{\partial L}{\partial W_2}$, de exemplu, fiecare pondere primește suma, pe tot lotul, a gradientului ieșirii în care intră, înmulțit cu intrarea pe care o înmulțește.
+unde $\odot$ este înmulțirea element cu element, iar $[Z_1 > 0]$ este 1 unde suma ponderată a fost pozitivă și 0 în rest. Fiecare formulă este regula lanțului de pe [pagina despre diferențierea automată](/laboratoare/retele-neuronale-de-la-zero/sistemul-de-diferentiere/#derivatele-locale-ale-operațiilor), aplicată tuturor elementelor unei matrice deodată: în $\frac{\partial L}{\partial W_2}$, de exemplu, fiecare pondere primește suma, pe tot lotul, a gradientului ieșirii în care intră, înmulțit cu intrarea pe care o înmulțește.
 
 </DeepDive>
 

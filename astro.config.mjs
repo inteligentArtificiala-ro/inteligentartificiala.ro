@@ -17,6 +17,7 @@ export default defineConfig({
   trailingSlash: 'ignore',
   redirects: {
     '/concepte-de-baza/comportament-agentic': '/comportament-agentic/ce-este-comportamentul-agentic/',
+    '/laboratoare/retele-neuronale-de-la-zero/motorul-de-diferentiere': '/laboratoare/retele-neuronale-de-la-zero/sistemul-de-diferentiere/',
   },
   integrations: [
     starlight({

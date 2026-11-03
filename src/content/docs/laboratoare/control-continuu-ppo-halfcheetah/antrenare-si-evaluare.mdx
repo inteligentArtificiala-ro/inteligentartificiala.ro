@@ -86,13 +86,13 @@ Recompensa afișată este cea a mediului, înainte de normalizare. Cele 4 medii 
 În rularea de mai sus, media recompenselor pe episod a trecut prin trei etape:
 
 <Steps>
-1. **Faza inițială (0–200.000 de pași)**: recompensele sunt negative, în medie între -300 și -100. Robotul se zbate, cade și aproape nu înaintează, iar penalizarea pentru efortul motoarelor depășește câștigul din viteză.
+1. **Faza inițială (0–200.000 de pași)**: recompensele sunt negative, în medie între -300 și -100. Robotul se zbate, cade și aproape nu înaintează, iar penalizarea pentru efortul articulațiilor depășește câștigul din viteză.
 2. **Descoperirea locomoției (200.000–500.000 de pași)**: criticul învață să deosebească stările bune de cele proaste, iar avantajele GAE împing actorul spre mișcările care îl duc înainte. Media urcă repede, de la circa 170 la circa 900 de puncte.
 3. **Rafinarea (500.000–1.000.000 de pași)**: mișcarea devine un ciclu periodic, tot mai lin. Rata de învățare scade spre zero, iar media crește tot mai încet, până la circa 1.150 de puncte.
 </Steps>
 
 :::caution[Un robot care aleargă pe spate]
-Cu aceste setări, robotul se răstoarnă și învață să alerge pe spate. Am obținut același rezultat în toate cele șapte antrenări încercate, cu valori inițiale aleatoare (_seed_) diferite. Recompensa din HalfCheetah conține doar viteza spre înainte și o mică penalizare pentru efortul motoarelor, iar alergarea pe spate le satisface pe amândouă. Clipurile de pe [pagina de introducere](/laboratoare/control-continuu-ppo-halfcheetah/prezentare/) arată această strategie. Un agent optimizează recompensa pe care o primește, nu intenția celui care a scris-o.
+Cu aceste setări, robotul se răstoarnă și învață să alerge pe spate. Am obținut același rezultat în toate cele șapte antrenări încercate, cu valori inițiale aleatoare (_seed_) diferite. Recompensa din HalfCheetah conține doar viteza spre înainte și o mică penalizare pentru efortul articulațiilor, iar alergarea pe spate le satisface pe amândouă. Clipurile de pe [pagina de introducere](/laboratoare/control-continuu-ppo-halfcheetah/prezentare/) arată această strategie. Un agent optimizează recompensa pe care o primește, nu intenția celui care a scris-o.
 :::
 
 ## Monitorizarea cu TensorBoard

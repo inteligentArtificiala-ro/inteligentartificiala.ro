@@ -17,7 +17,7 @@ Primul laborator, despre rețelele neuronale construite de la zero, este punctul
 
 ## Rețele neuronale de la zero
 
-Scriem de la zero, în Python, tot ce se află sub o rețea neuronală. Pornim de la un **motor de diferențiere automată** (_automatic differentiation_) pentru numere obișnuite, în spiritul proiectului [micrograd](https://github.com/karpathy/micrograd) al lui Andrej Karpathy, și desenăm cu Graphviz grafurile computaționale pe care le parcurge retropropagarea, înainte și după calculul gradienților. Din aceleași piese construim neuroni, straturi și o rețea cu mai multe straturi, pe care o antrenăm cu cod scris de mână. La final, trecem de la numere la matrice: cu NumPy, scriem de mână retropropagarea unei rețele care recunoaște cifrele scrise de mână din setul MNIST, apoi scriem aceeași rețea în PyTorch.
+Scriem de la zero, în Python, tot ce se află sub o rețea neuronală. Pornim de la un **sistem de diferențiere automată** (_automatic differentiation_) pentru numere obișnuite, în spiritul proiectului [micrograd](https://github.com/karpathy/micrograd) al lui Andrej Karpathy, și desenăm cu Graphviz grafurile computaționale pe care le parcurge retropropagarea, înainte și după calculul gradienților. Din aceleași piese construim neuroni, straturi și o rețea cu mai multe straturi, pe care o antrenăm cu cod scris de mână. La final, trecem de la numere la matrice: cu NumPy, scriem de mână retropropagarea unei rețele care recunoaște cifrele scrise de mână din setul MNIST, apoi scriem aceeași rețea în PyTorch.
 
 - **Nivel**: începător.
 - **Cerințe**: orice procesor obișnuit, fără placă grafică, și programul `dot` din Graphviz pentru diagrame. Antrenarea pe MNIST durează câteva secunde.
@@ -28,7 +28,7 @@ Laboratorul începe cu [prezentarea laboratorului și pregătirea mediului de lu
 
 ## Control continuu cu PPO în MuJoCo
 
-Robotul **HalfCheetah**, un robot bidimensional inspirat de ghepard, cu 6 articulații acționate de motoare, învață de la zero să alerge în simulatorul fizic **MuJoCo**. Motoarele primesc valori continue, nu comenzi dintr-o listă finită, așa că problema este una de **control continuu** (_continuous control_). Agentul este antrenat cu **PPO** (_Proximal Policy Optimization_), implementat în PyTorch, cu o rețea actor-critic, o strategie gaussiană și estimarea generalizată a avantajului (GAE). Laboratorul se încheie cu evaluarea strategiei antrenate și cu un videoclip al robotului care aleargă.
+Robotul **HalfCheetah**, un robot bidimensional inspirat de ghepard, cu 6 articulații acționate, învață de la zero să alerge în simulatorul fizic **MuJoCo**. Articulațiile primesc valori continue, nu comenzi dintr-o listă finită, așa că problema este una de **control continuu** (_continuous control_). Agentul este antrenat cu **PPO** (_Proximal Policy Optimization_), implementat în PyTorch, cu o rețea actor-critic, o strategie gaussiană și estimarea generalizată a avantajului (GAE). Laboratorul se încheie cu evaluarea strategiei antrenate și cu un videoclip al robotului care aleargă.
 
 - **Nivel**: avansat.
 - **Cerințe**: un procesor cu 4–8 nuclee. O antrenare completă, de 1 milion de pași, durează câteva minute pe procesor (circa 7 minute pe un calculator cu cip Apple Silicon).
@@ -52,7 +52,7 @@ Laboratorul începe cu [prezentarea modelului și pregătirea mediului de lucru]
 
 ## Un model de limbaj local cu Transformers
 
-Descărcăm de pe [Hugging Face Hub](https://huggingface.co/models) un model de limbaj cu **ponderi deschise** (_open weights_) și îl rulăm în Python, cu bibliotecile Transformers și PyTorch. Laboratorul pornește de la funcția `pipeline`, care pune un model în funcțiune în câteva linii de cod. Apoi refacem de mână pașii pe care această funcție îi ascunde: tokenizarea, șablonul de chat și generarea. Ultimele pagini arată de câtă memorie are nevoie un model, cum îl micșorăm prin **cuantizare** (_quantization_) și cum rulăm local un model de raționament.
+Descărcăm de pe [Hugging Face Hub](https://huggingface.co/models) un model de limbaj cu **ponderi deschise** (_open weights_) și îl rulăm în Python, cu librăriile Transformers și PyTorch. Laboratorul pornește de la funcția `pipeline`, care pune un model în funcțiune în câteva linii de cod. Apoi refacem de mână pașii pe care această funcție îi ascunde: tokenizarea, șablonul de chat și generarea. Ultimele pagini arată de câtă memorie are nevoie un model, cum îl micșorăm prin **cuantizare** (_quantization_) și cum rulăm local un model de raționament.
 
 - **Nivel**: începător.
 - **Cerințe**: un calculator cu cel puțin 8 GB de memorie RAM și între 700 MB și 4 GB de spațiu pe disc pentru modele.
@@ -63,7 +63,7 @@ Laboratorul începe cu [instalarea și primul model](/laboratoare/model-local-tr
 
 ## Imagini și sunete cu modele de difuzie
 
-Generăm imagini și sunete cu modele de difuzie cu ponderi deschise, în Python, cu biblioteca **Diffusers** a companiei Hugging Face și cu Transformers. Laboratorul pornește de la un pipeline care generează o imagine dintr-o descriere în câteva linii de cod. Apoi scriem de mână procesul de difuzie, pe un model care generează pisici, și desfacem Stable Diffusion în componente: codificatorul de text, U-Net-ul, autoencoderul VAE și **ghidarea fără clasificator** (_classifier-free guidance_). Ultima pagină generează sunete dintr-o descriere, cu AudioLDM 2, și arată spectrograma mel din care vocoderul face sunetul.
+Generăm imagini și sunete cu modele de difuzie cu ponderi deschise, în Python, cu librăria **Diffusers** a companiei Hugging Face și cu Transformers. Laboratorul pornește de la un pipeline care generează o imagine dintr-o descriere în câteva linii de cod. Apoi scriem de mână procesul de difuzie, pe un model care generează pisici, și desfacem Stable Diffusion în componente: codificatorul de text, U-Net-ul, autoencoderul VAE și **ghidarea fără clasificator** (_classifier-free guidance_). Ultima pagină generează sunete dintr-o descriere, cu AudioLDM 2, și arată spectrograma mel din care vocoderul face sunetul.
 
 - **Nivel**: începător.
 - **Cerințe**: o placă grafică NVIDIA cu cel puțin 8 GB de memorie sau un cip Apple Silicon și aproximativ 8 GB de spațiu pe disc pentru modele.

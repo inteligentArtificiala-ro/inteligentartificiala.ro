@@ -15,7 +15,7 @@ import Python from '@components/Python.astro';
 
 În problemele clasice de [învățare prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/), agentul alege de obicei dintr-un set finit de acțiuni discrete: apasă o tastă într-un joc, trage una dintre cele trei manete ale unui automat sau, în cazul unui [model de limbaj](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/), alege un token din vocabular. În astfel de cazuri, rețeaua neuronală produce scoruri nenormalizate (_logits_), iar funcția softmax le transformă în probabilitatea fiecărei opțiuni.
 
-Un robot fizic funcționează altfel. Motoarele și actuatoarele robotului primesc valori continue: tensiuni electrice, presiuni hidraulice sau **cupluri mecanice** (_torques_). Spațiul acțiunilor nu mai este o mulțime discretă, ci un interval multidimensional din $\mathbb{R}^d$.
+Un robot fizic funcționează altfel. Actuatoarele robotului primesc valori continue: tensiuni electrice, presiuni hidraulice sau **cupluri mecanice** (_torques_). Spațiul acțiunilor nu mai este o mulțime discretă, ci un interval multidimensional din $\mathbb{R}^d$.
 
 ## Mediul HalfCheetah în MuJoCo
 
@@ -34,7 +34,7 @@ La fiecare pas de timp $t$, MuJoCo returnează o **observație** (_state / obser
 | --- | --- |
 | $s[0]$ | Poziția pe verticală a corpului (înălțimea $z$) |
 | $s[1]$ | Unghiul de înclinare al trunchiului |
-| $s[2..7]$ | Unghiurile celor 6 articulații acționate de motoare |
+| $s[2..7]$ | Unghiurile celor 6 articulații acționate |
 | $s[8]$ | Viteza de înaintare pe orizontală ($v_x$) |
 | $s[9]$ | Viteza pe verticală ($v_z$) |
 | $s[10]$ | Viteza unghiulară a trunchiului |
@@ -44,7 +44,7 @@ Poziția absolută pe orizontală, $x$, lipsește intenționat din observația p
 
 ### Spațiul de acțiune
 
-**Acțiunea** $a_t \in \mathbb{R}^6$ este un vector de 6 numere reale din intervalul $[-1, 1]$. Fiecare element este cuplul mecanic normalizat aplicat motorului unei articulații:
+**Acțiunea** $a_t \in \mathbb{R}^6$ este un vector de 6 numere reale din intervalul $[-1, 1]$. Fiecare element este cuplul mecanic normalizat aplicat unei articulații:
 - $a_0, a_1, a_2$ sunt cuplurile aplicate articulațiilor piciorului din spate (coapsă, tibie, labă),
 - $a_3, a_4, a_5$ sunt cuplurile aplicate articulațiilor piciorului din față (coapsă, tibie, labă).
 
@@ -110,7 +110,7 @@ Exemplul de mai jos rulează direct în browser. Eșantionează o acțiune pentr
 import numpy as np
 
 rng = np.random.default_rng(seed=42)
-d = 6  # 6 articulații motorizate
+d = 6  # 6 articulații acționate
 
 # Presupunem că rețeaua actor a returnat următoarea medie mu și log_std:
 mu = np.array([0.5, -0.2, 0.1, 0.8, -0.4, 0.0])
