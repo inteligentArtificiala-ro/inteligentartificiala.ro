@@ -40,11 +40,11 @@ Laboratorul începe cu [prezentarea robotului și a simulatorului](/laboratoare/
 
 ## Un model de limbaj de la zero
 
-Construim și antrenăm de la zero **mvGPT** (_Minimum Viable GPT_), un model de tip GPT cu 14,6 milioane de parametri. Codul, scris în Python și PyTorch, trece prin pregătirea datelor din setul TinyStories, tokenizare, preantrenare, generarea textului și **ajustarea fină supervizată** (_supervised fine-tuning_, SFT). Laboratorul însoțește, cu explicații în limba română, primele trei episoade ale seriei video [Minimum Viable GPT](https://mvgpt.nenuadrian.com). Un proiect asemănător, mai amplu, este [nanochat](https://github.com/karpathy/nanochat), scris de Andrej Karpathy.
+Construim și antrenăm de la zero **mvGPT** (_Minimum Viable GPT_), un model de tip GPT cu 14,6 milioane de parametri. Codul, scris în Python și PyTorch, trece prin pregătirea datelor din setul TinyStories, tokenizare, mecanismul de atenție, preantrenare, generarea textului și **ajustarea fină supervizată** (_supervised fine-tuning_, SFT). La final, modelul este aliniat cu o recompensă scrisă în cod, prin **optimizarea directă a preferințelor** (_direct preference optimization_, DPO) și prin învățare prin consolidare, cu GRPO. Laboratorul are propria serie video, în limba română, și a pornit de la primele trei episoade ale seriei [Minimum Viable GPT](https://mvgpt.nenuadrian.com), în limba engleză. Un proiect asemănător, mai amplu, este [nanochat](https://github.com/karpathy/nanochat), scris de Andrej Karpathy.
 
 - **Nivel**: intermediar.
-- **Cerințe**: circa 1 GB de spațiu pe disc. Preantrenarea și ajustarea fină durează câte 10 minute pe un laptop modern.
-- **Înainte de laborator**: paginile despre [rețelele neuronale](/retele-neuronale/ce-sunt-retelele-neuronale/) și despre [mecanismul de atenție](/modele-lingvistice/avem-nevoie-doar-de-atentie/).
+- **Cerințe**: circa 1 GB de spațiu pe disc. Preantrenarea, ajustarea fină și GRPO durează câte 10 minute pe un laptop modern, iar perechile de preferințe pentru DPO, circa 12 minute.
+- **Înainte de laborator**: paginile despre [rețelele neuronale](/retele-neuronale/ce-sunt-retelele-neuronale/) și despre [mecanismul de atenție](/modele-lingvistice/avem-nevoie-doar-de-atentie/), iar pentru ultimele două etape, pagina despre [învățarea prin consolidare pentru LLM-uri](/modele-lingvistice/invatare-prin-consolidare-pentru-llm/).
 - **Cod sursă**: repozitoriul [inteligentArtificiala-ro/laborator-lm-de-la-zero](https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero).
 - **Google Colab**: un notebook pentru tot laboratorul.
 

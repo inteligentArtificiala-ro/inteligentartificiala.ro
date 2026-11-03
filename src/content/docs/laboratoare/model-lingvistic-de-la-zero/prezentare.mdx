@@ -1,6 +1,6 @@
 ---
 title: Un model de limbaj de la zero
-description: Un laborator practic în care construim și antrenăm de la zero un model de tip GPT cu 14,6 milioane de parametri, trecând prin pregătirea datelor, tokenizare, preantrenare și ajustare fină supervizată (SFT).
+description: Construim și antrenăm de la zero un model de tip GPT cu 14,6 milioane de parametri, de la date și tokenizare, prin atenție, preantrenare și ajustare fină supervizată (SFT), până la alinierea cu DPO și cu GRPO.
 sidebar:
   order: 1
   label: Introducere
@@ -15,15 +15,15 @@ import LlmChat from '@components/LlmChat.astro';
 
 <Colab notebook='laboratoare/model-lingvistic-de-la-zero/model-lingvistic-de-la-zero.ipynb' />
 
-Paginile despre [modelele de limbaj mari](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) și despre [arhitectura Transformer](/modele-lingvistice/arhitectura-transformer/) explică, în teorie, cum funcționează un astfel de model. În acest laborator construim unul de la zero, pornind de la un director gol și ajungând până la primele povești coerente.
+Paginile despre [modelele de limbaj mari](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/) și despre [arhitectura Transformer](/modele-lingvistice/arhitectura-transformer/) explică, în teorie, cum funcționează un astfel de model. În acest laborator construim unul de la zero, pornind de la un director gol și ajungând până la un model care scrie povești la cerere. La final, modelul este aliniat cu o recompensă scrisă în cod, întâi prin DPO, apoi prin învățare prin consolidare, cu GRPO.
 
 import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 
-Modelul se numește **mvGPT** (_Minimum Viable GPT_) și este o implementare minimală, dar complet funcțională, a unui model de tip GPT. Are 14,6 milioane de parametri (de aproximativ 12.000 de ori mai puțini decât GPT-3) și se antrenează în circa zece minute pe un laptop modern. Codul, scris în Python și PyTorch, este împărțit în șapte fișiere, pe care le explicăm integral pe parcursul laboratorului.
+Modelul se numește **mvGPT** (_Minimum Viable GPT_) și este o implementare minimală, dar complet funcțională, a unui model de tip GPT. Are 14,6 milioane de parametri (de aproximativ 12.000 de ori mai puțini decât GPT-3), iar preantrenarea durează circa zece minute pe un laptop modern. Codul, scris în Python și PyTorch, este împărțit în fișiere mici, câte unul sau două pentru fiecare etapă, pe care le explicăm integral pe parcursul laboratorului.
 
 ## Un model antrenat, direct în browser
 
-Conversația de mai jos rulează SmolLM2 135M, un model de același tip, dezvoltat de Hugging Face în 2024. Are 135 de milioane de parametri, de circa nouă ori mai mulți decât mvGPT, și a fost preantrenat pe 2.000 de miliarde de tokenuri, mai ales în limba engleză. Varianta din conversație a trecut apoi printr-o ajustare fină pentru dialog. Sunt aceleași etape pe care le parcurgem în laborator, preantrenarea și ajustarea fină supervizată, la o scară mult mai mare.
+Conversația de mai jos rulează SmolLM2 135M, un model de același tip, dezvoltat de Hugging Face în 2024. Are 135 de milioane de parametri, de circa nouă ori mai mulți decât mvGPT, și a fost preantrenat pe 2.000 de miliarde de tokenuri, mai ales în limba engleză. Varianta din conversație a trecut apoi printr-o ajustare fină pentru dialog și a fost aliniată cu DPO. Sunt aceleași etape pe care le parcurgem în laborator, preantrenarea, ajustarea fină supervizată și alinierea, la o scară mult mai mare.
 
 :::tip[Totul rulează în browser]
 Modelul rulează direct în browser, **cuantizat** (_quantized_) pe 8 biți, prin librăria [Transformers.js](https://huggingface.co/docs/transformers.js), cu WebGPU sau WebAssembly. Mesajele nu sunt trimise la niciun server.
@@ -35,7 +35,9 @@ Modelul răspunde în engleză și are limitele firești ale unui model atât de
 
 ## Codul și seria video
 
-Laboratorul urmărește primele trei episoade ale seriei video [Minimum Viable GPT](https://mvgpt.nenuadrian.com) și le însoțește cu explicații în limba română. Codul complet, cu comentarii tot în română, se află pe GitHub, în repozitoriul [**inteligentArtificiala-ro/laborator-lm-de-la-zero**](https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero).
+Codul complet se află pe GitHub, în repozitoriul [**inteligentArtificiala-ro/laborator-lm-de-la-zero**](https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero). Comentariile din cod sunt minimale, pentru că explicațiile sunt pe paginile laboratorului. Laboratorul are și o [serie video](#seria-video) proprie, în limba română, în care codul fiecărei etape este scris pas cu pas.
+
+Laboratorul a pornit de la primele trei episoade ale seriei video [Minimum Viable GPT](https://mvgpt.nenuadrian.com), în limba engleză, care construiește același model.
 
 Un proiect asemănător, dar mai amplu, este [nanochat](https://github.com/karpathy/nanochat), scris de Andrej Karpathy. Cu un cod minimal, ușor de citit și de modificat, nanochat parcurge tot drumul până la un asistent conversațional: tokenizatorul, preantrenarea, ajustarea fină supervizată, învățarea prin consolidare, evaluarea și o interfață de chat. Este gândit în principal pentru un server cu 8 plăci grafice H100. Pe un laptop se poate antrena doar o variantă mult mai mică.
 
@@ -43,16 +45,19 @@ Un proiect asemănător, dar mai amplu, este [nanochat](https://github.com/karpa
 
 <Steps>
 1. [**Datele și tokenizarea**](/laboratoare/model-lingvistic-de-la-zero/date-si-tokenizare/) prezintă setul de date TinyStories, un tokenizator la nivel de cuvânt și felul în care poveștile devin șiruri de numere.
-2. [**Modelul GPT**](/laboratoare/model-lingvistic-de-la-zero/modelul-gpt/) construiește, clasă cu clasă, un Transformer doar cu decodor și îi numără parametrii.
-3. [**Preantrenarea**](/laboratoare/model-lingvistic-de-la-zero/preantrenare/) explică predicția următorului token, loturile de antrenare, optimizatorul AdamW, rata de învățare și procesul de antrenare.
-4. [**Generarea textului**](/laboratoare/model-lingvistic-de-la-zero/generarea-textului/) arată eșantionarea autoregresivă, cu temperatură și filtrare top-k.
-5. [**Ajustarea fină supervizată**](/laboratoare/model-lingvistic-de-la-zero/ajustare-fina-supervizata/) învață modelul să urmeze instrucțiuni (SFT).
+2. [**Atenția, scrisă de mână**](/laboratoare/model-lingvistic-de-la-zero/atentia-scrisa-de-mana/) calculează atenția cauzală pas cu pas, verifică rezultatul cu PyTorch și construiește stratul de atenție cu șase capete al modelului.
+3. [**Modelul GPT**](/laboratoare/model-lingvistic-de-la-zero/modelul-gpt/) construiește, clasă cu clasă, un Transformer doar cu decodor și îi numără parametrii.
+4. [**Preantrenarea**](/laboratoare/model-lingvistic-de-la-zero/preantrenare/) explică predicția următorului token, loturile de antrenare, optimizatorul AdamW, rata de învățare și procesul de antrenare.
+5. [**Generarea textului**](/laboratoare/model-lingvistic-de-la-zero/generarea-textului/) arată eșantionarea autoregresivă, cu temperatură și filtrare top-k, și locul în care privește atenția modelului antrenat.
+6. [**Ajustarea fină supervizată**](/laboratoare/model-lingvistic-de-la-zero/ajustare-fina-supervizata/) învață modelul să urmeze instrucțiuni (SFT).
+7. [**Recompensa și DPO**](/laboratoare/model-lingvistic-de-la-zero/recompensa-si-dpo/) scrie o recompensă în cod, construiește perechi de povești preferate și respinse și aliniază modelul prin optimizarea directă a preferințelor (DPO).
+8. [**Învățare prin consolidare cu GRPO**](/laboratoare/model-lingvistic-de-la-zero/invatare-prin-consolidare-cu-grpo/) lasă modelul să învețe din propriile povești: modelul scrie grupuri de povești, primește recompense și este ajustat spre poveștile mai bune decât media grupului.
 </Steps>
 
 ## Ce rulează în browser și ce rulează local
 
 :::note[Pyodide în browser, PyTorch local]
-Exemplele despre prelucrarea datelor rulează direct în pagină, cu Python rulat în WebAssembly (Pyodide), și folosesc un eșantion de 300 de povești și chiar fișierul `tokenizer.py` al laboratorului. Tot în browser putem încerca și calcule mici, de exemplu numărul de parametri, curba ratei de învățare sau eșantionarea.
+Exemplele despre prelucrarea datelor rulează direct în pagină, cu Python rulat în WebAssembly (Pyodide), și folosesc un eșantion de 300 de povești și chiar fișierul `tokenizer.py` al laboratorului. Tot în browser putem încerca și calcule mici, de exemplu numărul de parametri, curba ratei de învățare, eșantionarea, recompensa sau avantajele din GRPO.
 
 Antrenarea propriu-zisă are nevoie de PyTorch și de câteva sute de megaocteți de date, așa că se face local. Paginile arată comenzile și rezultatele de referință, ca să puteți compara ușor ce obțineți local cu rezultatele din laborator.
 :::
@@ -65,7 +70,7 @@ Antrenarea propriu-zisă are nevoie de PyTorch și de câteva sute de megaocteț
   - O placă grafică NVIDIA cu CUDA (varianta recomandată și cea mai rapidă).
   - Un cip Apple Silicon (M1 sau mai nou), prin MPS.
   - Procesorul obișnuit (CPU), mai lent, dar suficient pentru a parcurge toți pașii.
-- **Timp estimat**: câteva minute pentru pregătirea datelor, plus 10 minute pentru preantrenare și 10 minute pentru ajustarea fină.
+- **Timp estimat**: câteva minute pentru pregătirea datelor, plus 10 minute pentru preantrenare, 10 minute pentru ajustarea fină, circa 12 minute pentru perechile de preferințe (pe un cip Apple Silicon), 2 minute pentru DPO și 10 minute pentru GRPO. Preantrenarea, ajustarea fină, DPO și GRPO au un buget fix de timp, așa că pe un calculator mai lent fac doar mai puțini pași. Perechile de preferințe nu au un buget de timp: pe procesor pot cere câteva ore, iar numărul perechilor se poate micșora din linia de comandă, cum arată pagina despre [DPO](/laboratoare/model-lingvistic-de-la-zero/recompensa-si-dpo/#perechile-de-preferințe).
 
 Pentru a urmări codul, sunt suficiente cunoștințele de bază de Python. [Rețelele neuronale](/retele-neuronale/ce-sunt-retelele-neuronale/) și [mecanismul de atenție](/modele-lingvistice/avem-nevoie-doar-de-atentie/) sunt explicate în secțiunile teoretice ale documentației.
 
@@ -87,7 +92,8 @@ Puteți clona tot repozitoriul cu Git sau puteți descărca fișierele unul cât
   <TabItem label="Descărcare cu curl">
   ```bash
   mkdir mvgpt && cd mvgpt
-  for f in tokenizer.py data.py model.py checkpoint.py sample.py pretrain.py sft.py requirements.txt; do
+  for f in tokenizer.py data.py attention.py model.py checkpoint.py pretrain.py sample.py attention_map.py \
+           sft.py reward.py preferences.py dpo.py grpo.py requirements.txt; do
     curl -fsSO "https://inteligentartificiala.ro/laboratoare/model-lingvistic-de-la-zero/cod/$f"
   done
 
@@ -106,26 +112,30 @@ Tot laboratorul se reduce la câteva comenzi, explicate pe paginile următoare.
 
 ```bash
 python data.py                 # datele, vocabularul și fișierele cu tokenuri
+python attention.py            # atenția scrisă de mână, comparată cu PyTorch
+python model.py                # numărul de parametri și pierderea de la început
 python pretrain.py 10          # preantrenare timp de 10 minute
 python sample.py checkpoints/pretrain/model.pt "Once upon a time"
-python sft.py 10               # ajustare fină timp de 10 minute
-python sample.py checkpoints/sft/model.pt "Words: dog, ball, happy. Story:"
-tensorboard --logdir runs      # graficele antrenărilor, la http://localhost:6006
+python attention_map.py checkpoints/pretrain/model.pt
+python sft.py 10               # ajustare fină supervizată timp de 10 minute
+python sample.py checkpoints/sft/model.pt "Words: rain, cake, jump Story:"
+python reward.py checkpoints/pretrain/model.pt checkpoints/sft/model.pt
+python preferences.py          # perechile de preferințe, scrise de modelul ajustat
+python dpo.py 2                # DPO timp de 2 minute
+python grpo.py 10              # GRPO timp de 10 minute
+python reward.py checkpoints/sft/model.pt checkpoints/dpo/model.pt checkpoints/grpo/model.pt
+tensorboard --logdir runs      # graficele preantrenării și ale ajustării fine
 ```
 
 ## Rularea în Google Colab
 
-Laboratorul poate rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser, fără nicio instalare pe calculatorul propriu. Notebookul laboratorului, care se deschide în Colab cu butonul de la începutul paginii, descarcă fișierele de mai sus și rulează, în ordine, aceleași comenzi, cu graficele din TensorBoard afișate direct în notebook. Preantrenarea și ajustarea fină durează tot câte 10 minute, iar fișierele create se șterg la sfârșitul sesiunii Colab.
+Laboratorul poate rula și în [Google Colab](https://colab.research.google.com), un serviciu Google care rulează notebookuri Jupyter în browser, fără nicio instalare pe calculatorul propriu. Notebookul laboratorului, care se deschide în Colab cu butonul de la începutul paginii, descarcă fișierele de mai sus și rulează, în ordine, aceleași comenzi, cu graficele din TensorBoard afișate direct în notebook. Preantrenarea, ajustarea fină și GRPO durează tot câte 10 minute, iar DPO, 2 minute. Pe o placă grafică, notebookul scrie aceleași 550 de perechi de preferințe ca pe pagina despre DPO. Pe procesor scrie doar 40, ca rularea să nu dureze ore, deci DPO învață mult mai puțin. Fișierele create se șterg la sfârșitul sesiunii Colab.
 
 ## Seria video
 
-Etapele laboratorului sunt acoperite de trei episoade din seria Minimum Viable GPT. În aceste episoade, codul este scris în timp real, iar rulările sunt arătate cu tot cu rezultate.
+Fiecare etapă a laboratorului are un episod în seria video a proiectului, în limba română, pe [canalul YouTube InteligentArtificiala.ro](https://www.youtube.com/@inteligentArtificiala). În episoade, codul este scris pas cu pas, iar rulările sunt arătate cu tot cu rezultate, aceleași ca pe paginile laboratorului. Fiecare pas din videouri are o etichetă git în repozitoriul laboratorului, de exemplu `ep006/step-1`, așa că, într-un repozitoriu clonat, comanda `git checkout ep006/step-1` aduce codul exact în starea din acel moment al episodului. Episoadele publicate, cu capitolele, transcrierea și legăturile către codul fiecărui pas, se află pe pagina [Videouri](/videouri/).
 
-- [Episodul 1: modelul](https://www.youtube.com/watch?v=Vff1s2GzI_o)
-- [Episodul 2: preantrenarea](https://www.youtube.com/watch?v=KA0aVTQ5Wak)
-- [Episodul 3: ajustarea fină supervizată](https://www.youtube.com/watch?v=WUsVr66Bgq0)
-
-Seria continuă cu etapele de după acest laborator, de exemplu alinierea modelului prin DPO și PPO. Ambele metode sunt descrise pe pagina despre [învățarea prin consolidare pentru LLM-uri](/modele-lingvistice/invatare-prin-consolidare-pentru-llm/).
+Seria Minimum Viable GPT, de la care a pornit laboratorul, continuă în limba engleză cu alinierea aceluiași model prin DPO și PPO. Metodele de aliniere sunt descrise pe pagina despre [învățarea prin consolidare pentru LLM-uri](/modele-lingvistice/invatare-prin-consolidare-pentru-llm/).
 
 ## Bibliografie
 
@@ -137,4 +147,6 @@ Seria continuă cu etapele de după acest laborator, de exemplu alinierea modelu
 - Karpathy, A. (2025). [nanochat](https://github.com/karpathy/nanochat). Cod sursă, GitHub.
 - Nenu, A. M. (2026). [Minimum Viable GPT](https://mvgpt.nenuadrian.com). Serie video, YouTube.
 - Radford, A. et al. (2019). [Language Models are Unsupervised Multitask Learners](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf). Raport tehnic OpenAI.
+- Rafailov, R. et al. (2023). [Direct Preference Optimization: Your Language Model is Secretly a Reward Model](https://arxiv.org/abs/2305.18290). _NeurIPS 2023_.
+- Shao, Z. et al. (2024). [DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models](https://arxiv.org/abs/2402.03300). Preprint arXiv:2402.03300.
 - Vaswani, A. et al. (2017). [Attention Is All You Need](https://arxiv.org/abs/1706.03762). _NeurIPS 2017_.

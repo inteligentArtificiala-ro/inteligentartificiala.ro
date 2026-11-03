@@ -33,6 +33,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Autoencoder | Autoencoder | Rețea formată dintr-un codificator, care comprimă datele într-o reprezentare mai mică, și un decodor, care reconstruiește datele din această reprezentare. |
 | Autoencoder variațional (VAE) | Variational Autoencoder | Autoencoder care învață o reprezentare latentă continuă, folosit pentru a comprima imaginile și clipurile video înaintea difuziei latente. |
 | Autoconsecvență | Self-Consistency | Metodă care generează mai multe lanțuri de gânduri pentru aceeași întrebare și păstrează răspunsul final cel mai frecvent (vot majoritar). |
+| Avantaj | Advantage | În învățarea prin consolidare, cât de mult mai bun decât de obicei este un răspuns sau o acțiune. În GRPO, recompensa unui răspuns minus media grupului de răspunsuri la același prompt, împărțită la abaterea standard a grupului. |
 | A2A | Agent2Agent | Protocol deschis prin care agenții se descoperă unii pe alții, își delegă sarcini și primesc rezultatele. |
 
 ## B
@@ -82,8 +83,10 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Diferențiere automată | Automatic Differentiation (autograd) | Calculul automat și exact al derivatelor unui program pe baza grafului computațional, oferit în PyTorch de `autograd`. |
 | Difuzie cu mască | Masked Diffusion | Model de difuzie pentru date discrete, precum textul, în care procesul direct înlocuiește tokenurile cu un token de mască, iar rețeaua învață să le completeze. |
 | Difuzie latentă | Latent Diffusion | Model de difuzie care lucrează pe reprezentarea comprimată a unei imagini, produsă de un autoencoder, nu direct pe pixeli. |
+| Divergența Kullback-Leibler (KL) | Kullback-Leibler Divergence | Măsură a diferenței dintre două distribuții de probabilitate. La alinierea LLM-urilor, penalizează îndepărtarea modelului antrenat de modelul de referință. |
 | Dimensiune | Dimension | Numărul de valori dintr-un vector, de exemplu dintr-o reprezentare vectorială. |
 | Dimensiunea lotului | Batch Size | Numărul de exemple dintr-un lot folosit la un pas de antrenare. |
+| DPO | DPO (Direct Preference Optimization) | Metodă de aliniere care învață direct din perechi de răspunsuri preferate și respinse, față de un model de referință înghețat, fără model de recompensă separat și fără învățare prin consolidare. |
 | Distilare | Knowledge Distillation | Tehnică prin care un model mai mic este antrenat pe ieșirile unui model mai mare, ca să-i preia comportamentul. |
 
 ## E
@@ -96,6 +99,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Eșantionare top-p (nucleus) | Top-p (Nucleus) Sampling | Metodă de generare care alege următorul token doar din cel mai mic set de tokenuri a căror probabilitate cumulată atinge pragul p. |
 | Evaluare | Evaluation | Testarea performanței modelului pe un set de date pe care nu l-a văzut la antrenare. |
 | Exfiltrarea datelor | Data Exfiltration | Scoaterea datelor dintr-un sistem către un atacator, prin imagini, legături, cereri DNS sau apeluri de instrumente. |
+| Exploatarea recompensei | Reward Hacking | Obținerea unor recompense mari pe căi nedorite, care respectă litera recompensei, dar nu și intenția celui care a scris-o, de exemplu prin repetarea cuvintelor numărate de recompensă. |
 
 ## F
 
@@ -179,6 +183,8 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Model de limbaj cauzal | Causal Language Model | Model care prezice următorul token dintr-o secvență pe baza tokenurilor anterioare, folosit la generarea de text. |
 | Model de limbaj mare (LLM) | Large Language Model (LLM) | Model de limbaj cu miliarde de parametri, antrenat pe cantități foarte mari de text. |
 | Model de raționament | Reasoning Model | Model de limbaj antrenat special să genereze un raționament lung înainte de răspunsul final. |
+| Model de recompensă | Reward Model | Model, de obicei tot un model de limbaj, antrenat pe preferințe umane să dea un scor răspunsurilor, folosit ca recompensă la alinierea LLM-urilor. |
+| Model de referință | Reference Model | Copie înghețată a modelului de dinaintea alinierii, față de care DPO, PPO și GRPO măsoară cât s-a schimbat modelul antrenat. |
 | Model închis | Closed Model | Model folosit doar prin API-ul furnizorului, fără ponderi publice. |
 | Model salvat | Checkpoint | Fișier care salvează starea modelului (ponderile și starea optimizatorului) la un moment dat. |
 | _Momentum_ | Momentum | Tehnică de optimizare care accelerează convergența prin păstrarea unei „inerții” din pașii anteriori. |
@@ -210,6 +216,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 |-------------|-------------|------------|
 | Parametru | Parameter | Valoare ajustabilă a modelului (o pondere sau un _bias_), învățată din date. |
 | pass^k | pass^k | Măsură de fiabilitate: șansa ca un agent să rezolve aceeași sarcină în toate cele k încercări. |
+| Pereche de preferințe | Preference Pair | Un prompt împreună cu un răspuns preferat și unul respins, folosită de DPO și la antrenarea modelelor de recompensă. |
 | Perplexitate | Perplexity | Măsură a cât de bine prezice un model tokenurile unui text, la care valorile mai mici înseamnă predicții mai bune. |
 | Petic | Patch | Bloc mic dintr-o imagine sau dintr-un clip video, tratat ca un singur token de un Transformer. |
 | Poartă de acces | Gateway | Procesul de lungă durată al unui asistent personal, care administrează conversațiile, sesiunile, instrumentele și conexiunile cu aplicațiile de mesagerie; prin extensie, un serviciu care rutează cererile către modele. |
@@ -219,6 +226,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Ponderi | Weights | Parametrii care stabilesc cât contează fiecare intrare pentru fiecare neuron. |
 | Potrivirea fluxului | Flow Matching | Metodă înrudită cu difuzia, în care rețeaua învață direcția (viteza) care leagă zgomotul de date, de-a lungul unor drumuri aproape drepte. |
 | Preantrenare | Pretraining | Prima etapă de antrenare, pe un corpus foarte mare de text, înainte de ajustarea fină. |
+| PPO | PPO (Proximal Policy Optimization) | Algoritm de învățare prin consolidare care limitează, prin decuparea raportului dintre probabilitățile noii strategii și ale celei vechi, cât se poate schimba strategia la o actualizare. |
 | Precizie | Precision | Proporția predicțiilor pozitive care sunt cu adevărat pozitive. |
 | Program de zgomot | Noise Schedule | Regula după care crește cantitatea de zgomot de la un pas la altul în procesul direct al unui model de difuzie. |
 | Prompt | Prompt | Textul de intrare dat unui model de limbaj pentru a genera o ieșire. |
@@ -234,6 +242,7 @@ Acesta este un glosar de termeni frecvent folosiți în inteligența artificial�
 | Rată de eșantionare | Sample Rate | Numărul de măsurători (eșantioane) pe secundă ale unui semnal audio, de exemplu 24.000 (24 kHz). |
 | Rată de învățare | Learning Rate | Hiperparametrul care controlează mărimea actualizărilor parametrilor la fiecare pas. |
 | Regula lanțului | Chain Rule | Regula din calculul diferențial după care derivata unei funcții compuse este produsul derivatelor funcțiilor care o compun. |
+| Recompensă | Reward | Numărul primit de un agent după o acțiune sau după un episod întreg, care spune cât de bun a fost rezultatul. La LLM-uri, vine de la un model de recompensă sau de la un program care verifică răspunsul. |
 | Reprezentare latentă | Latent Representation | Forma comprimată a datelor produsă de codificatorul unui autoencoder, din care decodorul le poate reconstrui. |
 | Reprezentare vectorială | Embedding | Vector dens care reprezintă un token, un cuvânt sau un text, astfel încât sensurile asemănătoare să aibă vectori apropiați. |
 | Retropropagare | Backpropagation | Algoritmul care calculează eficient gradienții tuturor parametrilor, aplicând regula lanțului de la ieșire spre intrare. |
