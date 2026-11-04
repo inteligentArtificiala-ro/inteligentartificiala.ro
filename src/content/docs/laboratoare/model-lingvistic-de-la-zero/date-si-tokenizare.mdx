@@ -11,6 +11,7 @@ tags:
 import Python from '@components/Python.astro';
 import SourceFile from '@components/SourceFile.astro';
 import { FileTree } from '@astrojs/starlight/components';
+import Video from '@components/Video.astro';
 
 export const labSetup = String.raw`
 import os, sys
@@ -29,6 +30,8 @@ sys.path.insert(0, ".")
 `;
 
 Un model de limbaj învață doar din textul pe care îl primește. În această primă etapă pregătim datele și le aducem la forma pe care rețeaua o poate prelucra: un șir de numere de identificare (ID-uri), câte unul pentru fiecare token.
+
+<Video id="ep003-tokenizare" capitol="Setul de date TinyStories" />
 
 ## Setul de date TinyStories
 

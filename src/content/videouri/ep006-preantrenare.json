@@ -1,0 +1,148 @@
+{
+  "id": "ep006-preantrenare",
+  "number": 6,
+  "title": "Preantrenarea (pretraining) unui GPT de la zero",
+  "youtubeTitle": "Preantrenarea (pretraining) unui GPT de la zero | Inteligență Artificială #6",
+  "headline": "Preantrenarea\nunui GPT\n(pretraining)",
+  "subtitle": "Antrenăm modelul GPT să prezică următorul token din povești, cu AdamW, încălzire și scădere după cosinus, limitarea gradientului și un buget de zece minute.",
+  "description": "Modelul GPT din episodul 5 învață din poveștile TinyStories să prezică următorul token. Desenăm întâi obiectivul pe prima poveste din date: intrările și țintele, deplasate cu o poziție, câte o predicție pentru fiecare poziție. Adăugăm modelului generarea token cu token, ca să vedem ce scrie pe parcurs, apoi scriem antrenarea: ferestre aleatoare de 256 de tokenuri, loturi de câte 48, optimizatorul AdamW cu descreșterea ponderilor doar pentru matrice, 100 de pași de încălzire și scăderea ratei de învățare după cosinus, de la 6·10⁻⁴ la 6·10⁻⁵, limitarea gradientului, evaluări cu modele salvate și TensorBoard. Rulăm preantrenarea zece minute, urmărim pierderea pe antrenare și pe validare și poveștile, de la cuvinte la întâmplare la propoziții corecte, și spunem cât din date a văzut modelul. Episodul urmează laboratorul „Un model de limbaj de la zero” de pe InteligentArtificiala.ro.",
+  "tags": [
+    "preantrenare",
+    "pretraining",
+    "GPT",
+    "model de limbaj",
+    "language model",
+    "predicția următorului token",
+    "next-token prediction",
+    "AdamW",
+    "weight decay",
+    "rată de învățare",
+    "learning rate",
+    "warmup",
+    "cosine decay",
+    "gradient clipping",
+    "TinyStories",
+    "PyTorch",
+    "TensorBoard",
+    "de la zero",
+    "inteligență artificială",
+    "învățare automată"
+  ],
+  "duration": 677.7,
+  "youtube": {
+    "id": "8XwwRSSGNPk",
+    "published": "2026-11-04"
+  },
+  "chapters": [
+    {
+      "t": 0,
+      "title": "Introducere"
+    },
+    {
+      "t": 47,
+      "title": "Predicția următorului token"
+    },
+    {
+      "t": 92,
+      "title": "AdamW și limitarea gradientului"
+    },
+    {
+      "t": 148,
+      "title": "Rata de învățare"
+    },
+    {
+      "t": 171,
+      "title": "Generarea, token cu token"
+    },
+    {
+      "t": 256,
+      "title": "Codul antrenării"
+    },
+    {
+      "t": 487,
+      "title": "Rularea de zece minute"
+    },
+    {
+      "t": 549,
+      "title": "Pierderea, pas cu pas"
+    },
+    {
+      "t": 592,
+      "title": "Cât a văzut modelul"
+    },
+    {
+      "t": 637,
+      "title": "Laboratorul"
+    }
+  ],
+  "transcript": [
+    {
+      "t": 0.5,
+      "text": "În episodul șase trecem la preantrenare, în engleză pretraining, etapa în care un model de limbaj învață, din foarte mult text, să prezică următorul token. Să privim întâi rezultatul, adică ce scrie modelul nostru înainte și după zece minute de preantrenare."
+    },
+    {
+      "t": 17.2,
+      "text": "Înainte de antrenare, modelul înșiră cuvinte luate la întâmplare din vocabular. După aproape zece minute de preantrenare, scrie povești scurte, cu un personaj care are un nume, Max, și cu propoziții corecte în engleză."
+    },
+    {
+      "t": 31.1,
+      "text": "În episodul trecut am construit modelul GPT complet, cu șase blocuri și ponderi legate, în total paisprezece virgulă șase milioane de parametri, deocamdată cu valori aleatoare. Astăzi antrenăm modelul pe poveștile din TinyStories, cu un buget de zece minute."
+    },
+    {
+      "t": 47.8,
+      "text": "Pornim de la începutul primei povești din datele de antrenare. Pe rândul de sus sunt tokenurile de intrare, cu ID-urile corespunzătoare. Ținta fiecărei poziții este tokenul următor, așa că rândul de jos este același text, deplasat cu o poziție. De exemplu, după Once upon a time, ținta este there. Masca cauzală nu lasă nicio poziție să vadă tokenul pe care îl are de prezis, așa că o fereastră de două sute cincizeci și șase de tokenuri dă două sute cincizeci și șase de predicții, calculate în paralel. Pierderea este entropia încrucișată, mediată pe toate pozițiile. Sarcina se numește predicția următorului token, în engleză next-token prediction, și este tot ce învață modelul la preantrenare."
+    },
+    {
+      "t": 93.4,
+      "text": "Fiecare pas de antrenare se încheie cu actualizarea ponderilor. Întâi, gradienții tuturor parametrilor sunt priviți ca un singur vector, iar dacă vectorul este mai lung decât unu, îl micșorăm la lungimea unu. Aceasta este limitarea gradientului, în engleză gradient clipping, și împiedică un lot neobișnuit să strice ponderile într-un singur pas. Apoi optimizatorul AdamW ține, pentru fiecare parametru, o medie mobilă a gradienților, m, și una a pătratelor gradienților, v. Pasul urmează media m, împărțită la rădăcina lui v, așa că mărimea pasului nu depinde de mărimea gradienților, iar unde gradienții sunt zgomotoși, pașii sunt mai mici. Litera W vine de la descreșterea ponderilor, în engleză weight decay: la fiecare pas, matricele sunt micșorate puțin, cu coeficientul zero virgulă unu."
+    },
+    {
+      "t": 148.6,
+      "text": "Rata de învățare nu este constantă: în primii o sută de pași crește liniar până la valoarea maximă. Această încălzire, în engleză warmup, ține pașii mici la început, cât timp gradienții modelului aleator sunt mari și instabili, iar mediile din AdamW nu s-au format încă. Apoi rata scade după o curbă cosinus, în engleză cosine decay, până la o zecime din maxim."
+    },
+    {
+      "t": 172.4,
+      "text": "Ca să vedem ce scrie modelul în timpul antrenării, adăugăm clasei GPT o metodă de generare. Decoratorul no grad oprește construirea grafului, pentru că la generare nu avem nevoie de gradienți. La fiecare pas, modelul primește cel mult ultimele două sute cincizeci și șase de tokenuri, cât încape în fereastra de context, iar noi păstrăm doar scorurile ultimei poziții, cele pentru tokenul următor. Temperatura și filtrarea top-k schimbă felul în care este ales tokenul, iar efectul acestor parametri îl vedem separat, când ne ocupăm de generare. Softmax face din scoruri probabilități, iar multinomial extrage un token după aceste probabilități. Tokenul ales se adaugă la secvență și devine intrare la pasul următor. Generarea se oprește mai devreme dacă modelul alege tokenul de sfârșit de poveste. În fișierul nou sample, funcția write scrie o poveste pornind de la un prompt, implicit cu cel mult două sute de tokenuri noi, temperatura zero virgulă opt și top-k cincizeci. Ține minte dacă modelul era în modul de antrenare și trece modelul în modul de evaluare, fără dropout. Apoi află dispozitivul din parametrii modelului, transformă promptul în ID-uri pe acel dispozitiv și apelează generate. La final, readuce modelul în modul de dinainte și transformă ID-urile înapoi în text."
+    },
+    {
+      "t": 257.2,
+      "text": "Fișierul nou checkpoint salvează pe disc ponderile modelului, configurația și vocabularul. Load checkpoint reface din fișierul salvat modelul și tokenizatorul. Antrenarea propriu-zisă este în scriptul nou pretrain, unde importăm math, pentru cosinus, sys, pentru argumentul din linia de comandă, și time, pentru buget. SummaryWriter scrie valorile pentru TensorBoard, un instrument care desenează graficele antrenării în browser. Din fișierele noastre luăm salvarea modelului, directorul datelor, tokenizatorul, modelul și funcția write, iar modelele salvate vor sta în directorul pretrain. Constantele dau planul: loturi de câte patruzeci și opt de ferestre, rata de învățare maximă și cea minimă, de zece ori mai mică, o sută de pași de încălzire și o evaluare la fiecare două sute cincizeci de pași. Get batch alege la întâmplare patruzeci și opt de poziții de start în fișierul de tokenuri. Intrarea x este fereastra de două sute cincizeci și șase de tokenuri de la fiecare poziție, iar ținta y este aceeași fereastră, deplasată cu un token, ca în diagramă. Ferestrele trec peste granițele dintre povești, așa că modelul învață și că după tokenul de sfârșit începe o poveste nouă. Estimate loss măsoară pierderea medie pe douăzeci de loturi din datele de antrenare și din cele de validare. Trece modelul în modul de evaluare, fără dropout, iar la final readuce modelul în modul de antrenare. Douăzeci de loturi dau o estimare destul de stabilă, fără să oprească mult antrenarea. Learning rate este programul din grafic, calculat din pas și din partea consumată din buget. Main fixează sămânța, alege dispozitivul, încarcă tokenizatorul și construiește modelul. Fișierele de tokenuri sunt deschise cu memmap din NumPy, care citește de pe disc doar bucățile cerute. Apoi afișăm dispozitivul, câte tokenuri are partea de antrenare a datelor și numărul de parametri. Optimizatorul AdamW primește parametrii în două grupuri: matricele, cu descreșterea ponderilor zero virgulă unu, și vectorii, adică bias-urile și parametrii normalizărilor, fără descreștere. Fiecare rulare scrie într-un director nou din runs, cu data și ora în nume. Evaluate măsoară cele două pierderi și scrie începutul unei povești, de cel mult patruzeci de tokenuri noi, pornind de la Once upon a time. Pierderile și povestea ajung în TensorBoard, iar scriptul afișează un rând cu toate trei. Tot aici salvăm modelul, cu pasul în numele fișierului, ca să putem compara mai târziu modelele de pe parcurs. Bugetul trece în secunde, pornim cronometrul și facem o primă evaluare, la pasul zero. Antrenarea continuă cât timp mai avem din buget. Operatorul două puncte egal atribuie și compară timpul scurs în aceeași expresie. La fiecare pas, calculăm rata de învățare și o dăm optimizatorului. Luăm un lot, calculăm pierderea, ștergem gradienții vechi și facem retropropagarea. Limităm norma gradientului la unu, apoi optimizatorul face pasul. La fiecare cincizeci de pași calculăm viteza: cincizeci de pași, ori patruzeci și opt de ferestre, ori două sute cincizeci și șase de poziții, împărțit la timpul trecut de la ultima afișare. Pierderea lotului, rata de învățare și viteza, în tokenuri pe secundă, ajung în TensorBoard și pe ecran. La fiecare două sute cincizeci de pași facem o evaluare. La final, mai facem o evaluare dacă ultimul pas nu a căzut pe una. Salvăm modelul final și afișăm câți pași și câte tokenuri au încăput în buget, plus durata, în minute. Bugetul vine din primul argument al comenzii, implicit zece minute."
+    },
+    {
+      "t": 488.4,
+      "text": "Pornim preantrenarea cu un buget de zece minute, pe procesorul grafic al cipului Apple, prin MPS, iar pe ecran cele zece minute trec în jumătate de minut. După două sute cincizeci de pași, povestea are deja un personaj, Lily, dar a doua propoziție nu are sens. La pasul cinci sute, Lily este o pisică deșteaptă care vrea să cumpere un pistol de jucărie, iar povestea are un fir. La pasul șapte sute cincizeci, toate propozițiile sunt corecte: Lily se joacă în parc și vede o clădire mare. La pasul o mie, modelul încă amestecă lucrurile, iar o minge roșie devine, în propoziția următoare, o pisică prietenoasă. Ultima poveste, a modelului final, are propoziții corecte, dar se învârte în jurul aceleiași mingi roșii. Bugetul s-a terminat la pasul o mie două sute optzeci și patru, după zece minute. Viteza, afișată la fiecare cincizeci de pași, a fost de aproximativ douăzeci și opt de mii de tokenuri pe secundă."
+    },
+    {
+      "t": 550.4,
+      "text": "Pe grafic, pierderea pe validare pornește de la aproximativ nouă virgulă trei, aproape de logaritmul natural al lui zece mii, ca în episodul trecut. În primii două sute cincizeci de pași scade la aproximativ trei virgulă doi, apoi tot mai încet. La final ajunge la aproximativ doi virgulă doi, iar pierderile pe antrenare și pe validare rămân aproape egale, deci modelul nu a memorat datele de antrenare. Exponențiala pierderii se numește perplexitate, în engleză perplexity, și aici este aproximativ nouă. În medie, modelul ezită ca între atâtea tokenuri, din zece mii posibile."
+    },
+    {
+      "t": 592.7,
+      "text": "În zece minute, modelul a făcut o mie două sute optzeci și patru de pași, cu loturi de câte patruzeci și opt de ferestre de două sute cincizeci și șase de tokenuri, adică aproape cincisprezece virgulă opt milioane de tokenuri. Aceasta înseamnă aproximativ șaptezeci și nouă la sută din tokenurile de antrenare, mai puțin de o trecere completă prin date. Ferestrele sunt alese la întâmplare, așa că unele bucăți de text au fost văzute de mai multe ori, iar altele deloc. Pentru comparație, modelele de limbaj mari sunt preantrenate pe mii de miliarde de tokenuri. Bugetul este de timp, nu de pași, așa că rezultatul depinde de calculator: o placă grafică mai rapidă face mai mulți pași în aceleași zece minute, iar un procesor obișnuit face mult mai puțini."
+    },
+    {
+      "t": 638.4,
+      "text": "Pagina laboratorului, Preantrenarea, are aceleași explicații în scris, cu exemple mici care rulează în browser, de exemplu pentru loturi, pentru programul ratei de învățare și pentru limitarea gradientului. Tot acolo este comanda care pornește TensorBoard, cu graficele antrenării și cu poveștile scrise la fiecare evaluare."
+    },
+    {
+      "t": 658.5,
+      "text": "Codul preantrenării, cu câte o etichetă git pentru fiecare pas, este pe pagina episodului de pe InteligentArtificiala.ro, alături de capitole și de transcriere. Dacă ceva nu este clar sau ați găsit o greșeală, scrieți-ne în comentarii. Ca să urmăriți și restul laboratorului, abonați-vă la canal."
+    }
+  ],
+  "code": {
+    "repo": "https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero",
+    "end": "ep006/end",
+    "steps": [
+      {
+        "t": 171.9,
+        "from": "ep005/end",
+        "to": "ep006/step-1"
+      },
+      {
+        "t": 256.7,
+        "from": "ep006/step-1",
+        "to": "ep006/step-2"
+      }
+    ]
+  }
+}

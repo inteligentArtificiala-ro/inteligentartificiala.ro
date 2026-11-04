@@ -1,0 +1,161 @@
+{
+  "id": "ep007-generare",
+  "number": 7,
+  "title": "Generarea textului (sampling) cu temperatură și top-k",
+  "youtubeTitle": "Generarea textului (sampling) cu temperatură și top-k | Inteligență Artificială #7",
+  "headline": "Generarea\ntextului\n(sampling)",
+  "subtitle": "Modelul preantrenat scrie povești token cu token, cu temperatură și top-k, de la modelul neantrenat la cel antrenat, apoi vedem la ce se uită capetele de atenție.",
+  "description": "Modelul GPT preantrenat în episodul 6 scrie povești, token cu token. Reluăm metoda generate: fereastra de 256 de tokenuri, scorurile ultimei poziții, temperatura, filtrul top-k, softmax și extragerea cu torch.multinomial. Pe probabilitățile reale ale modelului vedem cum o temperatură mică ascute distribuția, iar una mare o aplatizează, și cât din probabilitate taie filtrul top-k. Scriem linia de comandă a scriptului sample și comparăm modelul neantrenat cu cel antrenat, apoi o temperatură de 0,3 cu una de 1,5 fără top-k. La final, recalculăm de mână ponderile atenției și vedem la ce tokenuri se uită fiecare cap al modelului antrenat, în propoziția „Tom and Lily went to the park. Tom gave the ball to”. Episodul urmează pagina „Generarea textului” a laboratorului „Un model de limbaj de la zero” de pe InteligentArtificiala.ro.",
+  "tags": [
+    "generarea textului",
+    "text generation",
+    "eșantionare",
+    "sampling",
+    "temperatură",
+    "temperature",
+    "top-k",
+    "top-p",
+    "softmax",
+    "decodare greedy",
+    "greedy decoding",
+    "GPT",
+    "model de limbaj",
+    "language model",
+    "atenție",
+    "attention",
+    "PyTorch",
+    "TinyStories",
+    "de la zero",
+    "inteligență artificială",
+    "învățare automată"
+  ],
+  "duration": 729.3,
+  "youtube": {
+    "id": "PoSIXSv6gL8",
+    "published": "2026-11-04"
+  },
+  "chapters": [
+    {
+      "t": 0,
+      "title": "Introducere"
+    },
+    {
+      "t": 53,
+      "title": "Generarea textului, token cu token"
+    },
+    {
+      "t": 149,
+      "title": "Probabilitățile tokenului următor"
+    },
+    {
+      "t": 176,
+      "title": "Temperatura la eșantionare"
+    },
+    {
+      "t": 239,
+      "title": "Eșantionarea top-k"
+    },
+    {
+      "t": 287,
+      "title": "Scriptul de generare"
+    },
+    {
+      "t": 365,
+      "title": "Modelul neantrenat și modelul antrenat"
+    },
+    {
+      "t": 426,
+      "title": "Temperatură mică și temperatură mare"
+    },
+    {
+      "t": 473,
+      "title": "Unde se uită capetele de atenție"
+    },
+    {
+      "t": 677,
+      "title": "Laboratorul"
+    }
+  ],
+  "transcript": [
+    {
+      "t": 0.5,
+      "text": "Modelul nostru GPT știe acum să scrie povești, iar în episodul șapte vedem cum le scrie, token cu token. Felul în care alegem fiecare token se numește eșantionare, în engleză sampling, și îl controlăm cu temperatura și cu filtrul top-k. Mai întâi, să vedem ce fel de povești obținem."
+    },
+    {
+      "t": 20.5,
+      "text": "Pe pagina laboratorului sunt două povești scrise de un model ca al nostru, preantrenat tot zece minute. Prima, despre o fetiță, Sue, cu un trenuleț și o mașinuță, are început, conflict și final. Gramatica este aproape corectă, chiar dacă logica se pierde din când în când."
+    },
+    {
+      "t": 39.1,
+      "text": "Data trecută am preantrenat modelul zece minute, iar pierderea pe validare a scăzut de la nouă virgulă trei la doi virgulă doi. La fiecare două sute cincizeci de pași am salvat modelul, iar acum punem modelele salvate să scrie."
+    },
+    {
+      "t": 54.7,
+      "text": "Generarea pornește de la un text de început, promptul, de exemplu Once upon a time. Modelul primește cel mult ultimele două sute cincizeci și șase de tokenuri, câte poziții a învățat. Modelul calculează scoruri pentru toate pozițiile, dar pentru tokenul următor ne trebuie doar cele ale ultimei poziții. Scorurile se împart la temperatură, iar filtrul top-k păstrează doar scorurile cele mai mari. Softmax le transformă în probabilități, iar torch punct multinomial extrage un token la întâmplare, după aceste probabilități. Tokenul ales se adaugă la context și pașii se repetă, până la tokenul de sfârșit sau la limita de tokenuri noi. Fiecare token nou depinde de cele generate înainte, de aceea generarea se numește autoregresivă, în engleză autoregressive."
+    },
+    {
+      "t": 106.4,
+      "text": "În cod, pașii sunt în metoda generate a modelului, scrisă în episodul trecut, care rulează fără gradienți. La fiecare token nou, modelul recalculează toată fereastra, deși s-a adăugat un singur token. Sistemele reale păstrează cheile și valorile deja calculate, în memoria cache pentru chei și valori, în engleză KV cache. Din scoruri păstrăm ultima poziție, împărțită la temperatură. Cel mai mic dintre primele k scoruri date de torch punct topk devine pragul, iar tot ce este sub prag primește minus infinit. Torch punct cat lipește la secvență tokenul extras, iar generarea se oprește la tokenul de sfârșit."
+    },
+    {
+      "t": 150.4,
+      "text": "Să vedem probabilitățile reale ale modelului nostru, după promptul Once upon a time, there was a little. La temperatura unu, modelul dă cuvântului girl patruzeci și cinci la sută, iar cuvântului boy treizeci și unu la sută. Urmează animalele, dog, bird și cat, cu mai puțin de cinci la sută fiecare. Toate celelalte tokenuri din vocabular au împreună unsprezece la sută, fiecare cu o probabilitate foarte mică."
+    },
+    {
+      "t": 177,
+      "text": "Temperatura, în engleză temperature, este numărul la care împărțim scorurile înainte de softmax. Cu T egal cu unu, probabilitățile rămân cele calculate de model. Raportul dintre probabilitățile a două tokenuri depinde de diferența dintre scoruri, împărțită la T. Cu T sub unu, diferențele cresc, iar tokenurile probabile devin și mai probabile. Cu T peste unu, diferențele scad, iar tokenurile rare primesc șanse mai mari. Când T se apropie de zero, rămâne doar tokenul cu scorul cel mai mare, adică decodarea greedy, în engleză greedy decoding."
+    },
+    {
+      "t": 215.2,
+      "text": "Pe același prompt schimbăm acum temperatura, iar pe axa orizontală sunt primele douăzeci de tokenuri, în ordinea probabilității. La temperatura zero virgulă cinci, girl urcă la șaizeci și șapte la sută, boy rămâne la treizeci și doi la sută, iar animalele aproape dispar. La unu virgulă cinci, girl coboară la șaptesprezece la sută, iar restul probabilității se împrăștie pe mii de tokenuri."
+    },
+    {
+      "t": 240,
+      "text": "Eșantionarea top-k, în engleză top-k sampling, păstrează doar cele mai mari k scoruri, la noi cincizeci, iar celelalte primesc minus infinit. Exponențiala dă zero pentru minus infinit, așa că softmax împarte toată probabilitatea între cele cincizeci de tokenuri rămase. La temperatura unu, primele cincizeci au oricum nouăzeci și cinci la sută din probabilitate, deci filtrul taie doar coada distribuției. La unu virgulă cinci însă, coada are patruzeci și patru la sută, iar fără filtru, după acest prompt, aproape una din două extrageri ar veni din coadă. Sistemele reale folosesc des și eșantionarea top-p, în engleză nucleus sampling, care păstrează cele mai probabile tokenuri până când suma probabilităților ajunge la p."
+    },
+    {
+      "t": 287.5,
+      "text": "Scriptul sample are deja, din episodul trecut, funcția write, care trece modelul în modul de evaluare, fără dropout, și apelează generate. Acum îi adăugăm o linie de comandă, ca să putem încărca orice model salvat. Importăm argparse, modulul standard pentru argumentele din linia de comandă, și textwrap, care împarte textul pe rânduri. Din fișierele noastre luăm load checkpoint, care citește modelul salvat, și pick device, care alege procesorul grafic, dacă există. În main, primul argument este calea modelului salvat, iar al doilea, opțional, este promptul, implicit Once upon a time. Urmează numărul de povești, implicit două, și limita de tokenuri noi, două sute. Temperatura implicită este zero virgulă opt, iar filtrul top-k păstrează cincizeci de tokenuri. Sămânța fixă face ca aceleași argumente să dea aceleași povești la fiecare rulare. Fișierul salvat conține și configurația, și vocabularul, așa că primim modelul și tokenizatorul deodată. Pentru fiecare poveste apelăm write, iar valoarea zero pentru top-k devine None, adică fără filtru. Textwrap fill așază apoi povestea pe rânduri de cel mult nouăzeci de caractere."
+    },
+    {
+      "t": 365.7,
+      "text": "Rulăm întâi sample pe modelul neantrenat, salvat la pasul zero, pentru o singură poveste de patruzeci de tokenuri. După Once upon a time urmează cuvinte luate la întâmplare din vocabular, ca recommended, honeycomb sau Captain. Ponderile aleatoare dau probabilități aproape egale tuturor celor zece mii de tokenuri. Apoi rulăm modelul de la finalul preantrenării, cu setările implicite, care cer două povești. Prima poveste începe cu o fetiță, Sue, care are o pisică de jucărie, Lucy, și un trenuleț. Pe parcurs, cuvântul voice apare de două ori la rând, apoi apare din senin un Tim, iar spre final, propoziția She had an idea se repetă. Povestea se oprește la limita de două sute de tokenuri, în mijlocul unei propoziții. A doua poveste, despre câinele Spot și pisica Kitty, se termină singură, după aproximativ o sută cincizeci de tokenuri, deși și aici apare din senin un Tim, întristat de o piatră."
+    },
+    {
+      "t": 427.1,
+      "text": "Coborâm temperatura la zero virgulă trei, pentru o singură poveste. Modelul alege aproape mereu continuarea cea mai probabilă: o fetiță pe nume Lily, cel mai frecvent nume din datele noastre, cu jucăriile și mama fetiței. Textul este sigur, dar plat, iar greșelile nu dispar: Lily vede o cutie în cutie, apoi îi mulțumește chiar lui Lily. Povestea se încheie singură, după puțin peste o sută de tokenuri. Acum urcăm temperatura la unu virgulă cinci și oprim filtrul, cu top-k zero. Imediat după Once upon a time vine shook, iar textul devine un șir de cuvinte fără sens, până la limita de două sute de tokenuri. Tokenurile din coadă, tăiate de obicei de top-k, sunt acum alese foarte des."
+    },
+    {
+      "t": 473.7,
+      "text": "Ultimul pas al episodului privește în interiorul modelului antrenat, cu fișierul nou attention map. Modelul calculează atenția cu scaled dot product attention din PyTorch, care întoarce doar rezultatul, nu și ponderile atenției. Așa că le calculăm separat, pornind de la intrarea fiecărui strat de atenție. Funcția attention maps rulează fără gradienți, pentru că nu antrenăm nimic. Pentru fiecare bloc, înregistrăm un forward hook, adică o funcție pe care PyTorch o apelează după propagarea directă a stratului de atenție. Funcția păstrează intrarea stratului, vectorii normalizați ai tuturor tokenurilor. O singură trecere prin model umple lista, apoi scoatem funcțiile, ca modelul să rămână neschimbat. Pentru fiecare bloc refacem de mână calculul din episodul patru. Interogările și cheile vin din proiecțiile stratului, împărțite pe cele șase capete de câte șaizeci și patru de valori. Scorurile se împart la radical din șaizeci și patru, ca varianța scorurilor să rămână aproape de unu. Masca cauzală ascunde tokenurile de după fiecare poziție, iar softmax se aplică pe fiecare rând. Funcția întoarce ponderile tuturor straturilor și scorurile ultimei poziții. Propoziția implicită este Tom and Lily went to the park. Tom gave the ball to, după care tokenul următor ar trebui să fie un nume. Modelul se încarcă pe dispozitivul ales și trece în modul de evaluare, fără dropout. Codificăm propoziția, păstrăm și textul fiecărui token, pentru afișare, apoi apelăm attention maps. Afișăm tokenurile propoziției și cele mai probabile trei continuări, cu probabilitățile date de softmax. Apoi păstrăm doar rândul ultimului token, to, din fiecare strat și din fiecare cap. Pentru fiecare cap, argmax dă poziția care primește cea mai mare pondere. Fiecare strat devine un rând, cu tokenul ales de fiecare dintre cele șase capete și ponderea primită, rotunjită la două zecimale. Ca la celelalte scripturi, condiția de la final apelează main când fișierul este rulat direct."
+    },
+    {
+      "t": 610.1,
+      "text": "Rulăm attention map pe modelul de la finalul preantrenării, cu propoziția implicită. Pe primul rând sunt cele treisprezece tokenuri ale propoziției, cu punctul ca token separat. Modelul dă numelui Lily cincizeci și doi la sută, tokenului the douăzeci la sută și numelui Tom opt la sută. Lily este continuarea potrivită, pentru că Tom nu își dă mingea singur. În primele trei straturi, cele mai multe capete se uită la gave sau la ball, iar un singur cap se uită la un nume, Tom, cu o pondere mică. În stratul patru, al patrulea cap se uită la Tom, cu ponderea zero virgulă optzeci și trei, iar ultimele două capete se uită la Lily. În stratul cinci, primul cap se uită la Lily, iar ultimele trei se uită la Tom. În stratul șase, al treilea cap se uită la Lily, iar al patrulea la Tom, fiecare cu o pondere de peste zero virgulă cinci. Prin atenție, modelul poate aduce un nume de la începutul propoziției până la ultima poziție, unde se alege tokenul următor. Este însă o singură propoziție, iar o pondere arată doar unde se uită un cap, nu și ce informație preia de acolo."
+    },
+    {
+      "t": 677.5,
+      "text": "Pe pagina laboratorului, Generarea textului, pașii generării sunt descriși pe rând, iar o casetă rezumă efectul temperaturii și al filtrului top-k. Mai jos, un program Python aplică în browser aceiași pași unui model mult mai simplu, construit din trei sute de povești, care vede un singur token înapoi. Modelul nostru vede până la două sute cincizeci și șase de tokenuri, așa că poate păstra un personaj de la o propoziție la alta."
+    },
+    {
+      "t": 706.5,
+      "text": "Codul episodului, cu câte o etichetă git pentru fiecare pas, capitolele și transcrierea sunt pe pagina episodului de pe InteligentArtificiala.ro, iar documentația explică pe larg cum este generat textul de modelele de limbaj mari. Pentru întrebări sau greșeli găsite, ne puteți scrie în comentarii. Iar dacă vreți să urmăriți tot laboratorul, abonați-vă la canal."
+    }
+  ],
+  "code": {
+    "repo": "https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero",
+    "end": "ep007/end",
+    "steps": [
+      {
+        "t": 287,
+        "from": "ep006/end",
+        "to": "ep007/step-1"
+      },
+      {
+        "t": 473.2,
+        "from": "ep007/step-1",
+        "to": "ep007/step-2"
+      }
+    ]
+  }
+}

@@ -11,6 +11,7 @@ tags:
 import Python from '@components/Python.astro';
 import SourceFile from '@components/SourceFile.astro';
 import { Steps } from '@astrojs/starlight/components';
+import Video from '@components/Video.astro';
 
 export const labSetup = String.raw`
 import os, sys
@@ -29,6 +30,8 @@ sys.path.insert(0, ".")
 `;
 
 La antrenare, modelul vede textul întreg și prezice toate pozițiile deodată. La generare, textul nu există încă, așa că modelul îl scrie câte un token la fiecare pas, după schema din secțiunea [cum este generat textul](/modele-lingvistice/ce-sunt-modelele-lingvistice-de-scara-larga/#cum-este-generat-textul).
+
+<Video id="ep007-generare" capitol="Generarea textului, token cu token" />
 
 ## Procesul de generare
 

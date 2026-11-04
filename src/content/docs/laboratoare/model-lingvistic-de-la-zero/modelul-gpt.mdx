@@ -13,10 +13,13 @@ import DeepDive from '@components/DeepDive.astro';
 import Python from '@components/Python.astro';
 import SourceFile from '@components/SourceFile.astro';
 import { Steps } from '@astrojs/starlight/components';
+import Video from '@components/Video.astro';
 
 Modelul laboratorului este un **Transformer doar cu decodor** (_decoder-only Transformer_), forma folosită de modelele GPT. Componentele sunt toate cele din [GPT-2](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf), publicat de OpenAI în 2019: reprezentări învățate ale pozițiilor, normalizare pe strat, atenție cu capete multiple (multi-head) și o rețea feed-forward cu funcția GELU. Pagina [Arhitectura Transformer](/modele-lingvistice/arhitectura-transformer/) descrie variantele care le-au înlocuit în modelele actuale, de exemplu RMSNorm, RoPE și SwiGLU. Variantele clasice sunt mai ușor de urmărit, iar la această mărime diferența de calitate este mică.
 
 Tot modelul se află în fișierul `model.py`. Stratul de atenție, `CausalSelfAttention`, a fost scris și verificat pe [pagina anterioară](/laboratoare/model-lingvistic-de-la-zero/atentia-scrisa-de-mana/). Pe această pagină construim restul modelului în jurul stratului de atenție.
+
+<Video id="ep005-modelul-gpt" capitol="Modelul, de la tokenuri la scoruri" />
 
 ## Configurația
 

@@ -11,6 +11,7 @@ tags:
 import DeepDive from '@components/DeepDive.astro';
 import Python from '@components/Python.astro';
 import SourceFile from '@components/SourceFile.astro';
+import Video from '@components/Video.astro';
 
 export const wordsUsed = String.raw`
 import re
@@ -41,6 +42,8 @@ ${wordsUsed}`;
 După [ajustarea fină](/laboratoare/model-lingvistic-de-la-zero/ajustare-fina-supervizata/), modelul scrie povești de la început, dar folosește doar o parte din cuvintele cerute de instrucțiune. În această etapă transformăm problema într-un număr, o **recompensă** (_reward_) scrisă în cod. Cu ajutorul recompensei alegem, dintre poveștile scrise chiar de model, perechi formate dintr-o poveste preferată și una respinsă. Perechile devin apoi datele unei noi etape de antrenare, **optimizarea directă a preferințelor** (_direct preference optimization_, DPO).
 
 Pagina despre [învățarea prin consolidare pentru LLM-uri](/modele-lingvistice/invatare-prin-consolidare-pentru-llm/) descrie alinierea modelelor mari, de la modelul de recompensă la DPO. Codul acestei etape se află în trei fișiere noi: `reward.py`, `preferences.py` și `dpo.py`.
+
+<Video id="ep009-dpo" capitol="O recompensă scrisă în cod" />
 
 ## Recompensa
 

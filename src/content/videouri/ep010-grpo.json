@@ -1,0 +1,155 @@
+{
+  "id": "ep010-grpo",
+  "number": 10,
+  "title": "Învățare prin consolidare (reinforcement learning) cu GRPO",
+  "youtubeTitle": "Învățare prin consolidare (reinforcement learning) cu GRPO | Inteligență Artificială #10",
+  "headline": "Învățare prin\nconsolidare\n(GRPO)",
+  "subtitle": "Modelul scrie grupuri de povești, primește o recompensă pentru fiecare și învață din propriile încercări, cu GRPO și o penalizare KL față de modelul de referință.",
+  "description": "Ultimul pas al modelului nostru este învățarea prin consolidare (reinforcement learning). Descriem modelul de limbaj în termenii învățării prin consolidare (strategie, stare, acțiune, recompensă), vedem de ce GRPO compară fiecare poveste cu restul grupului în locul unui model de valoare și desenăm avantajul calculat în grup și pierderea cu penalizarea KL față de modelul de referință. Scriem GRPO în PyTorch, spunem ce am simplificat față de varianta din DeepSeekMath și antrenăm modelul timp de zece minute. La final, comparăm modelul ajustat, modelul antrenat cu DPO și modelul antrenat cu GRPO, cu tot ce recompensa nu măsoară. Episodul încheie seria care însoțește laboratorul „Un model de limbaj de la zero” de pe InteligentArtificiala.ro, iar pagina „Învățare prin consolidare pentru LLM-uri” explică PPO și GRPO.",
+  "tags": [
+    "GRPO",
+    "group relative policy optimization",
+    "învățare prin consolidare",
+    "reinforcement learning",
+    "RL",
+    "strategie",
+    "policy",
+    "recompensă",
+    "reward",
+    "avantaj",
+    "divergența KL",
+    "exploatarea recompensei",
+    "reward hacking",
+    "DeepSeekMath",
+    "model de limbaj",
+    "language model",
+    "GPT",
+    "PyTorch",
+    "de la zero",
+    "inteligență artificială"
+  ],
+  "duration": 748.8,
+  "youtube": {
+    "id": "1k42iqZvawM",
+    "published": "2026-11-04"
+  },
+  "chapters": [
+    {
+      "t": 0,
+      "title": "Introducere"
+    },
+    {
+      "t": 62,
+      "title": "Modelul de limbaj ca strategie"
+    },
+    {
+      "t": 105,
+      "title": "De ce un grup de povești"
+    },
+    {
+      "t": 144,
+      "title": "Avantajul în grup și penalizarea KL"
+    },
+    {
+      "t": 221,
+      "title": "GRPO în PyTorch"
+    },
+    {
+      "t": 449,
+      "title": "Ce am simplificat față de DeepSeekMath"
+    },
+    {
+      "t": 516,
+      "title": "Antrenarea cu GRPO"
+    },
+    {
+      "t": 584,
+      "title": "SFT, DPO și GRPO"
+    },
+    {
+      "t": 616,
+      "title": "Exploatarea recompensei în DPO și GRPO"
+    },
+    {
+      "t": 664,
+      "title": "GRPO în documentație"
+    },
+    {
+      "t": 692,
+      "title": "Laboratorul de pe InteligentArtificiala.ro"
+    }
+  ],
+  "transcript": [
+    {
+      "t": 0.5,
+      "text": "Ajungem la episodul zece și la ultima etapă a modelului nostru, învățarea prin consolidare, în engleză reinforcement learning. Modelul scrie singur povești, primește o recompensă pentru fiecare și învață din propriile încercări, cu metoda GRPO. Începem cu povestea de test, înainte și după antrenare."
+    },
+    {
+      "t": 22.6,
+      "text": "Pentru instrucțiunea cu rain, cake și jump, modelul ajustat scrie o poveste cu jump și rain, dar fără cake. După șaisprezece runde de GRPO, povestea de test folosește toate cele trei cuvinte, dar se umple de propoziții repetate, ca The rain was wet. Recompensa a crescut, dar povestea nu a devenit mai bună."
+    },
+    {
+      "t": 44.4,
+      "text": "Episodul trecut s-a încheiat cu modelul antrenat prin DPO, care folosește aproape de două ori mai multe cuvinte cerute, dar termină mai puține povești. Astăzi păstrăm recompensa, proporția de cuvinte cerute din poveste, dar modelul învață direct din recompensă, pe poveștile pe care le scrie în timpul antrenării."
+    },
+    {
+      "t": 62.8,
+      "text": "Termenii învățării prin consolidare se potrivesc direct pe un model de limbaj. Starea, în engleză state, este promptul, împreună cu tokenurile scrise până acum. Strategia, în engleză policy, este chiar modelul nostru, pi theta, care dă probabilitățile următorului token. Acțiunea, în engleză action, este tokenul ales, unul din cele zece mii ale vocabularului. Tokenurile se adaugă unul după altul, până la tokenul de sfârșit, iar povestea întreagă este un episod, în engleză episode. Recompensa, cea scrisă în cod data trecută, vine o singură dată, la final, pentru toată povestea. Din recompensă nu aflăm însă care dintre tokenurile poveștii a contat."
+    },
+    {
+      "t": 105.9,
+      "text": "Pagina despre învățarea prin consolidare pentru modelele de limbaj mari compară două metode. PPO a fost folosit pentru InstructGPT, cu un model de recompensă învățat din preferințe umane. Avantajul fiecărui token se calculează cu un al doilea model, numit model de valoare sau critic, în engleză value model, de obicei de mărime comparabilă cu modelul antrenat. GRPO, în engleză group relative policy optimization, propus în 2024 pentru modelul DeepSeekMath, renunță la critic. Pentru același prompt, modelul scrie un grup de răspunsuri, iar fiecare răspuns este comparat cu media grupului."
+    },
+    {
+      "t": 145.2,
+      "text": "Avantajul unei povești, în engleză advantage, se calculează în grup: din recompensa poveștii scădem media celor opt recompense și împărțim la abaterea standard a grupului. Să luăm un grup scris de noi: o poveste folosește toate cele trei cuvinte, cinci folosesc câte unul, iar două, niciunul. Media este o treime, deci poveștile cu un cuvânt au avantajul zero, povestea cu toate trei primește plus doi virgulă șaisprezece, iar cele fără niciun cuvânt, minus unu virgulă zero opt. Dacă toate cele opt povești au aceeași recompensă, toate avantajele sunt zero, iar din acel grup modelul nu învață nimic despre recompensă. Pierderea unei povești este o medie pe tokenurile poveștii, iar fiecare token primește avantajul întregii povești. Astfel, tokenurile poveștilor peste media grupului devin mai probabile, iar cele de sub medie, mai puțin probabile. Al doilea termen este penalizarea KL, în engleză KL penalty, iar divergența KL măsoară cât s-a îndepărtat modelul de referință. Divergența se estimează pe fiecare token, cu formula din ultima linie, care nu este niciodată negativă și este zero doar când cele două probabilități ale tokenului sunt egale."
+    },
+    {
+      "t": 222,
+      "text": "Învățarea prin consolidare o scriem în fișierul nou grpo, care refolosește multe funcții din episodul trecut. Importăm modulul copy, pentru copia înghețată, textwrap și time, ca la ajustarea fină, NumPy și PyTorch, cu funcțiile din functional. Din fișierele noastre luăm funcțiile pentru modelele salvate, directorul datelor și, din dpo, instrucțiunea de test. Din preferences, reward și sample luăm funcțiile pentru instrucțiuni, pentru recompensă și pentru povestea de test. O rundă are șaisprezece instrucțiuni, cu câte opt povești fiecare, iar actualizarea se face pe bucăți de câte șaisprezece povești, cu povestea de test la fiecare patru runde. Rollout strânge încercările unei runde, fără gradienți, pentru șaisprezece instrucțiuni diferite, alese la întâmplare. Pentru fiecare instrucțiune, modelul scrie opt povești deodată, din același prompt, la temperatura unu și fără filtrul top-k. Formula presupune că poveștile vin din distribuția modelului, iar filtrul top-k ar schimba această distribuție. Fiecare poveste, tăiată la tokenul de sfârșit, se păstrează cu promptul și cu recompensa calculată de words used. Advantages așază recompensele câte opt pe rând, un rând pentru fiecare grup, și calculează avantajele din formulă, cu media și abaterea standard a fiecărui rând. Pack pune toate poveștile într-un singur tensor, fiecare cu promptul în față și completată la final. Masca are unu pe pozițiile care prezic tokenurile poveștii și zero în rest, ca țintele mascate de la ajustarea fină. Token log probs dă logaritmul probabilității fiecărui token, poziție cu poziție, fără suma de la DPO, pentru că penalizarea KL se calculează pe fiecare token. Main pornește tot de la modelul ajustat, nu de la cel antrenat cu DPO, ca să comparăm la final două metode care pleacă din același loc. Referința este din nou o copie înghețată, iar dropout este oprit în ambele modele. Instrucțiunile vin din fișierul de antrenare, toate cele care încap, împreună cu povestea, în fereastra modelului. Nu le mai grupăm după lungime, pentru că un grup repetă un singur prompt, iar scriptul afișează câte sunt. Evaluate scrie doar povestea de test, pentru că aici nu avem perechi de validare. Antrenarea are tot un buget de minute și începe cu povestea de test a modelului ajustat. Fiecare rundă începe cu rollout, apoi calculăm recompensele, într-un tensor, avantajele din fiecare grup și tensorul cu poveștile, împreună cu masca. Amestecăm cele o sută douăzeci și opt de povești și le luăm în bucăți de câte șaisprezece. Pentru fiecare bucată, calculăm logaritmii probabilităților sub modelul antrenat și sub referință, fără gradienți. Estimarea KL pe fiecare token este cea din formulă. Pe fiecare token, avantajul poveștii înmulțește logaritmul probabilității, iar din rezultat scădem penalizarea KL, doar pe pozițiile poveștii. Pierderea este media pe tokenurile fiecărei povești, cu semnul minus, ca optimizatorul să crească recompensa. Urmează pasul obișnuit, cu gradientul limitat la norma unu, deci opt pași de optimizare pe rundă. Drift adună estimările KL pe tokenurile fiecărei povești și face media pe poveștile rundei. După fiecare rundă afișăm recompensa medie și KL-ul, iar după fiecare a patra rundă, povestea de test. La final salvăm modelul în directorul grpo și afișăm numărul de runde și durata antrenării. Bugetul de timp este singurul argument al scriptului, ca la ajustarea fină."
+    },
+    {
+      "t": 449.6,
+      "text": "Față de GRPO-ul din DeepSeekMath, am făcut câteva simplificări. Varianta din lucrare folosește raportul dintre probabilitatea nouă a unui token și cea din modelul care a scris răspunsul. Ca la PPO, raportul are o decupare, în engleză clipping, care limitează cât se poate schimba modelul pe aceleași răspunsuri. Noi am renunțat la raport și folosim o rată de învățare mică. La prima bucată a rundei, gradientul nostru este egal cu cel cu raport, dar după primul pas modelul este puțin diferit de cel care a scris poveștile. În experimentele din lucrare, strategia are o singură actualizare după fiecare etapă de explorare, iar noi facem opt pași pe rundă. Și scara este alta: DeepSeekMath a pornit de la un model cu șapte miliarde de parametri și a generat șaizeci și patru de răspunsuri la fiecare întrebare, iar noi avem paisprezece virgulă șase milioane de parametri și opt povești. Pentru problemele de raționament, DeepSeek-R1 a folosit recompense după reguli, pentru răspunsul corect și pentru format, iar recompensa noastră numără cuvinte."
+    },
+    {
+      "t": 517.1,
+      "text": "Pornim GRPO pentru zece minute, pe cele treizeci și cinci de mii cinci sute unu instrucțiuni cu cuvinte cerute din fișierul de antrenare, iar înregistrarea trece repede prin toată rularea. În runda șaptesprezece, ultima, recompensa medie ajunge la aproximativ zero virgulă șaizeci și cinci, iar KL-ul, la aproximativ optsprezece virgulă nouă. Mai sus, povestea de test din runda șaisprezece repetă The rain was wet. O rundă a durat puțin peste o jumătate de minut, iar toată antrenarea, zece minute și jumătate."
+    },
+    {
+      "t": 552.4,
+      "text": "Pe grafic, recompensa medie variază mult de la o rundă la alta, pentru că fiecare rundă are alte instrucțiuni. Tendința este însă clară: de la aproximativ zero virgulă patruzeci și patru în primele patru runde la zero virgulă șaizeci în ultimele patru. KL-ul crește repede în primele zece runde, apoi mai încet, de la unu virgulă cinci la optsprezece virgulă nouă, deci modelul se îndepărtează tot mai mult de referință. Penalizarea, cu un coeficient de zero virgulă zero cinci, nu oprește această îndepărtare."
+    },
+    {
+      "t": 585.3,
+      "text": "La final, măsurăm cele trei modele pe aceleași cincizeci de instrucțiuni de validare, cu aceeași sămânță. Modelul ajustat și cel antrenat cu DPO au numerele din episodul trecut. Modelul antrenat cu GRPO folosește cincizeci și șase virgulă șapte la sută dintre cuvintele cerute, mai mult decât modelul ajustat, dar mai puțin decât cel antrenat cu DPO. Ca la DPO, mai puține povești se termină înainte de două sute de tokenuri, doar patruzeci și șase la sută."
+    },
+    {
+      "t": 616.6,
+      "text": "Ambele metode au crescut proporția de cuvinte cerute folosite, și ambele au plătit cu povești care nu se mai termină și cu repetiții. Este aceeași exploatare a recompensei, în engleză reward hacking, ca în episodul trecut: recompensa numără cuvintele, nu și o poveste bună, iar antrenarea găsește ce recompensa nu penalizează. Comparația dintre DPO și GRPO trebuie citită cu grijă. Fiecare metodă a rulat o singură dată, iar DPO a avut nevoie, pe lângă cele două minute de antrenare, și de cele unsprezece minute și jumătate în care am scris perechile. Cu cincizeci de instrucțiuni, o poveste terminată în plus sau în minus mută proporția cu două puncte procentuale, deci patruzeci și opt față de patruzeci și șase la sută înseamnă o singură poveste."
+    },
+    {
+      "t": 664.7,
+      "text": "Pe aceeași pagină a documentației, secțiunea despre GRPO explică avantajul calculat în grup, cu un program Python care rulează direct în browser. Mai jos, secțiunea despre recompensele verificabile arată de ce o recompensă care verifică răspunsul, la matematică sau la programare, este mult mai greu de exploatat decât o numărătoare de cuvinte. Mai sus pe pagină, caseta despre exploatarea recompensei descrie aceeași problemă la modelele de limbaj mari."
+    },
+    {
+      "t": 693.4,
+      "text": "Laboratorul Un model de limbaj de la zero, de pe InteligentArtificiala.ro, parcurge același drum până la ajustarea fină, cu explicații și exemple care rulează în browser. Fiecare etapă are o pagină, cu comenzile și rezultatele de referință, ca să puteți compara ce obțineți pe calculatorul vostru, iar notebookul laboratorului rulează și în Google Colab."
+    },
+    {
+      "t": 715.4,
+      "text": "Am pornit de la un director gol și am ajuns la un model de paisprezece virgulă șase milioane de parametri, preantrenat, ajustat pe instrucțiuni și antrenat apoi din preferințe și din recompense. Codul tuturor pașilor, cu câte o etichetă git pentru fiecare, este în repozitoriul laboratorului, iar pe pagina episodului de pe InteligentArtificiala.ro găsiți capitolele și transcrierea. Pentru întrebări sau greșeli găsite, ne puteți scrie în comentarii. Dacă vreți să urmăriți și celelalte laboratoare, abonați-vă la canal."
+    }
+  ],
+  "code": {
+    "repo": "https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero",
+    "end": "ep010/end",
+    "steps": [
+      {
+        "t": 221.5,
+        "from": "ep009/end",
+        "to": "ep010/step-1"
+      }
+    ]
+  }
+}

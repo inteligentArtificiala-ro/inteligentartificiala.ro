@@ -1,0 +1,171 @@
+{
+  "id": "ep004-atentie",
+  "number": 4,
+  "title": "Mecanismul de atenție (attention) pas cu pas",
+  "youtubeTitle": "Mecanismul de atenție (attention) pas cu pas | Inteligență Artificială #4",
+  "headline": "Atenția\npas cu pas\n(attention)",
+  "subtitle": "Mecanismul de atenție desenat pas cu pas, apoi scris de mână în PyTorch, de la interogări, chei și valori la masca cauzală și la atenția cu șase capete a modelului GPT.",
+  "description": "Desenăm pas cu pas mecanismul de atenție dintr-un model de tip GPT: fiecare token ca vector, interogările, cheile și valorile, scorul ca produs scalar, scalarea cu radical din d, masca cauzală, softmax pe rânduri și ieșirea ca medie ponderată a valorilor. Apoi scriem atenția de mână, în PyTorch, pe propoziția „Lily has a red ball.”, citim tabelul ponderilor și verificăm rezultatul cu F.scaled_dot_product_attention. La final, construim stratul de atenție cu capete multiple al modelului, cu 6 capete de câte 64 de dimensiuni, urmărim formele tensorilor și numărăm cei 591.360 de parametri ai stratului. Episodul face parte din laboratorul „Un model de limbaj de la zero” de pe InteligentArtificiala.ro, iar pagina „Avem nevoie doar de atenție?” explică aceeași teorie.",
+  "tags": [
+    "atenție",
+    "attention",
+    "auto-atenție",
+    "self-attention",
+    "interogare",
+    "cheie",
+    "valoare",
+    "query",
+    "key",
+    "value",
+    "mască cauzală",
+    "causal mask",
+    "softmax",
+    "atenție cu capete multiple",
+    "multi-head attention",
+    "produs scalar",
+    "Transformer",
+    "GPT",
+    "PyTorch",
+    "scaled_dot_product_attention",
+    "de la zero",
+    "inteligență artificială",
+    "învățare automată"
+  ],
+  "duration": 722.2,
+  "youtube": {
+    "id": "2-x8vOqvRIE",
+    "published": "2026-11-04"
+  },
+  "chapters": [
+    {
+      "t": 0,
+      "title": "Introducere"
+    },
+    {
+      "t": 35,
+      "title": "Interogări, chei și valori"
+    },
+    {
+      "t": 72,
+      "title": "Scorul ca produs scalar"
+    },
+    {
+      "t": 111,
+      "title": "Masca cauzală"
+    },
+    {
+      "t": 142,
+      "title": "Softmax și media ponderată"
+    },
+    {
+      "t": 179,
+      "title": "Atenția scrisă de mână"
+    },
+    {
+      "t": 302,
+      "title": "Tabelul ponderilor"
+    },
+    {
+      "t": 348,
+      "title": "Ponderile unui token"
+    },
+    {
+      "t": 376,
+      "title": "Atenția cu capete multiple"
+    },
+    {
+      "t": 446,
+      "title": "Stratul de atenție al modelului"
+    },
+    {
+      "t": 612,
+      "title": "Parametrii stratului de atenție"
+    },
+    {
+      "t": 669,
+      "title": "Pagina despre atenție"
+    }
+  ],
+  "transcript": [
+    {
+      "t": 0.5,
+      "text": "Bine ați revenit la construcția modelului nostru GPT, de data aceasta cu atenția, în engleză attention, mecanismul prin care fiecare token preia informație de la tokenurile de dinainte."
+    },
+    {
+      "t": 12.6,
+      "text": "La finalul episodului ajungem la stratul de atenție al modelului, cu șase capete, așa cum apare pe pagina Modelul GPT a laboratorului."
+    },
+    {
+      "t": 23.3,
+      "text": "În episodul trecut, poveștile din TinyStories au devenit un șir de ID-uri. Astăzi desenăm întâi calculul atenției, apoi scriem același calcul de mână și verificăm rezultatul cu PyTorch."
+    },
+    {
+      "t": 36.4,
+      "text": "În model, fiecare token ajunge la atenție ca un vector de numere, aici tokenul has, al doilea din propoziția Lily has a red ball. Vectorul descrie tokenul și poziția sa în propoziție. Înmulțit cu trei matrice de ponderi, învățate la antrenare, vectorul dă trei vectori noi. Interogarea, în engleză query, descrie ce informație caută tokenul. Cheia, în engleză key, este vectorul cu care se compară interogările celorlalte tokenuri. Valoarea, în engleză value, este informația pe care tokenul o transmite mai departe."
+    },
+    {
+      "t": 73.5,
+      "text": "Cât de mult se uită tokenul i la tokenul j depinde de un scor: produsul scalar dintre interogarea lui i și cheia lui j, împărțit la radical din d. Produsul scalar, în engleză dot product, înmulțește componentele două câte două și adună rezultatele, iar scorul este mare când cei doi vectori sunt orientați la fel. Pentru componente independente, cu media zero și varianța unu, produsul scalar are varianța d, iar împărțirea la radical din d, în engleză scaling, readuce varianța la unu. Cu scoruri mari, softmax ar da aproape toată ponderea unui singur token, iar gradienții ar fi foarte mici."
+    },
+    {
+      "t": 112.4,
+      "text": "Un model de tip GPT scrie textul de la stânga la dreapta, deci un token poate folosi doar propriul vector și tokenurile dinaintea sa. Masca cauzală, în engleză causal mask, pune minus infinit în locul scorurilor spre tokenurile următoare, adică deasupra diagonalei. Exponențiala lui minus infinit este zero, așa că, după softmax, tokenurile următoare primesc ponderea zero. Fără mască, la antrenare, modelul ar vedea chiar tokenul care trebuie prezis."
+    },
+    {
+      "t": 143.3,
+      "text": "Pe fiecare rând, softmax, folosit și la MNIST, transformă scorurile în ponderi pozitive, cu suma unu. Ieșirea tokenului i este media ponderată a valorilor, în engleză weighted average, cu aceste ponderi. Dacă un token primește ponderea zero virgulă cinci, jumătate din ieșire vine din valoarea acelui token. Pentru toate tokenurile deodată, cu vectorii pe rândurile matricelor Q, K și V, calculul se scrie într-o singură formulă: un produs de matrice, scalarea, masca M, softmax pe rânduri și încă un produs de matrice."
+    },
+    {
+      "t": 180.4,
+      "text": "Calculul de mână este în fișierul nou attention, scris cu PyTorch. Importăm modulul math, pentru radical, torch și modulul functional al lui PyTorch, cu numele scurt F. Funcția attention primește interogările, cheile și valorile unei secvențe, câte un rând pentru fiecare token. T este numărul de tokenuri, iar d, dimensiunea vectorilor. Toate scorurile vin dintr-un singur produs de matrice, q înmulțit cu k transpus, împărțit la radical din d. Masca marchează viitorul: triu păstrează partea de deasupra diagonalei dintr-o matrice de valori adevărat, iar diagonal egal unu lasă pe dinafară diagonala principală, ca fiecare token să se vadă pe sine. Masked fill pune minus infinit acolo unde masca este adevărată. Softmax pe ultima dimensiune, adică pe fiecare rând, dă ponderile, iar funcția întoarce media ponderată a valorilor, împreună cu ponderile. Show afișează ponderile ca tabel, cu tokenurile pe rânduri și pe coloane, cu două zecimale, iar ponderile zero devin puncte. Fixăm sămânța generatorului de numere aleatoare, ca fiecare rulare să dea aceleași numere. Propoziția are șase tokenuri: Lily has a red ball și punctul. Ca exemplul să rămână mic, vectorii tokenurilor au doar șaisprezece componente, iar interogările, cheile și valorile, opt. Vectorii tokenurilor și cele trei matrice de ponderi sunt aleatori, nu învățați, iar împărțirea matricelor la radical din șaisprezece păstrează valorile pe aceeași scară. Trei produse de matrice dau interogările, cheile și valorile tuturor tokenurilor. Apelăm funcția attention, apoi afișăm formele și tabelul ponderilor. La final, comparăm rezultatul cu funcția scaled dot product attention din PyTorch, cu is causal adevărat, adică cu masca cauzală. Funcția primește loturi, așa că adăugăm în față o dimensiune de lot, cu None, și o scoatem după. Afișăm cea mai mare diferență dintre cele două ieșiri."
+    },
+    {
+      "t": 302.9,
+      "text": "Rulăm scriptul attention pe propoziția noastră de șase tokenuri. Șase tokenuri cu vectori de șaisprezece numere dau interogări, chei și valori de câte opt, iar ieșirea are tot șase rânduri de câte opt. Tabelul se citește pe rânduri, iar primul token, Lily, vede doar propriul vector, așa că ponderea lui Lily este unu. Has își împarte atenția între Lily și propriul vector, aproape la jumătate. Punctele de deasupra diagonalei sunt viitorul mascat, cu ponderea zero. Pe fiecare rând, ponderile au suma unu, de exemplu pe ultimul, al punctului. Diferența față de PyTorch este de ordinul a zece la minus șapte, cât permite precizia numerelor în virgulă mobilă pe treizeci și doi de biți, deci calculul nostru este corect."
+    },
+    {
+      "t": 349.2,
+      "text": "Graficul arată rândul ultimului token, punctul, care vede toată propoziția. Cea mai mare pondere merge la a, zero virgulă patruzeci, urmată de has și de propriul vector, cu aproximativ două zecimi fiecare. Matricele noastre de ponderi sunt aleatoare, așa că graficul arată mecanismul, nu un sens. Nimic nu face din a cel mai important cuvânt pentru punct, iar ponderile capătă sens abia după antrenare."
+    },
+    {
+      "t": 377.4,
+      "text": "Modelul nostru folosește atenția cu capete multiple, în engleză multi-head attention. Un singur cap face, pentru fiecare token, o singură medie ponderată, deci poate urmări un singur fel de legătură între tokenuri, iar mai multe capete pot urmări în paralel legături diferite. Intrarea are forma B, T, C: B secvențe dintr-un lot, cu câte T tokenuri, fiecare cu un vector de C, adică trei sute optzeci și patru de numere. Trei straturi liniare calculează interogările, cheile și valorile, cu aceeași formă. Fiecare vector se împarte în șase bucăți de câte șaizeci și patru, câte una pentru fiecare cap, iar capetele trec pe a doua dimensiune. Fiecare cap calculează separat propriile ponderi de atenție, pe vectori de șaizeci și patru. Rezultatele celor șase capete se alătură la loc în vectori de trei sute optzeci și patru, iar al patrulea strat liniar, proiecția de ieșire, amestecă informația venită de la capete. De exemplu, după antrenare, un cap poate urmări cuvântul de dinainte, iar altul, personajul despre care este vorba."
+    },
+    {
+      "t": 447.1,
+      "text": "Stratul de atenție al modelului este în fișierul nou model, în care construim pas cu pas tot modelul GPT. Importăm dataclass, torch, modulul nn, cu straturile lui PyTorch, și F. Pick device alege dispozitivul pe care rulează modelul: o placă grafică NVIDIA, prin CUDA, un cip Apple Silicon, prin MPS, sau procesorul. GPTConfig este o clasă de date cu mărimile modelului: un vocabular de zece mii de tokenuri și o fereastră de context, în engleză context window, de două sute cincizeci și șase de tokenuri. Modelul are șase blocuri, șase capete de atenție și vectori de trei sute optzeci și patru. Dropout-ul pune la zero, la antrenare, o zecime din valori, la întâmplare, ca modelul să nu depindă de câteva valori izolate, iar straturile liniare au bias. Clasa CausalSelfAttention implementează auto-atenția cauzală, în engleză causal self-attention, în care interogările, cheile și valorile vin toate din aceeași secvență. Clasa păstrează numărul de capete și are patru straturi liniare, fiecare cu C intrări și C ieșiri. Primele trei calculează interogările, cheile și valorile tuturor capetelor deodată, iar al patrulea face proiecția de ieșire. Păstrăm probabilitatea de dropout pentru ponderile de atenție și un strat Dropout pentru ieșire. Forward ia din forma intrării valorile B, T și C. După fiecare proiecție, view împarte vectorii în șase capete de câte șaizeci și patru, iar transpose mută capetele înaintea tokenurilor, la forma B, șase, T, șaizeci și patru. Atenția propriu-zisă vine din scaled dot product attention, funcția cu care am verificat calculul de mână, tot cu masca cauzală. Pe plăcile grafice NVIDIA, PyTorch poate folosi aici FlashAttention, care face același calcul pe blocuri. Astfel, matricea ponderilor, de T pe T, nu este păstrată întreagă în memoria principală a plăcii grafice. Dropout-ul pe ponderi este activ doar la antrenare. Apoi capetele se alătură la loc, cu transpose și view, iar contiguous copiază datele în ordinea nouă, pentru că view are nevoie de date așezate continuu în memorie. La final vin proiecția de ieșire și dropout-ul. În attention importăm din model clasa de atenție și configurația. Construim un strat de atenție cu valorile implicite și trecem stratul în modul de evaluare, cu eval, care oprește dropout-ul. Intrarea este un lot de două secvențe a câte zece tokenuri, cu vectori de trei sute optzeci și patru. Numărăm parametrii stratului și afișăm formele intrării și ieșirii, împreună cu numărul de parametri."
+    },
+    {
+      "t": 613.3,
+      "text": "Rulăm din nou scriptul attention, iar tabelul ponderilor rămâne cel de mai devreme, pentru că sămânța este aceeași. Pe ultimul rând, lotul de forma doi, zece, trei sute optzeci și patru iese din stratul cu șase capete cu aceeași formă. Stratul are cinci sute nouăzeci și una de mii trei sute șaizeci de parametri."
+    },
+    {
+      "t": 635.9,
+      "text": "Fiecare dintre cele patru straturi liniare are o matrice de trei sute optzeci și patru pe trei sute optzeci și patru de ponderi și trei sute optzeci și patru de bias-uri. Numărul de parametri nu depinde de câte capete avem: șase capete de câte șaizeci și patru folosesc matrice de aceeași mărime ca un singur cap de trei sute optzeci și patru. Nici calculul nu crește mult, pentru că fiecare cap lucrează pe doar șaizeci și patru de dimensiuni, deci cele șase capete fac împreună aproximativ tot atâtea operații cât un singur cap de trei sute optzeci și patru."
+    },
+    {
+      "t": 670.2,
+      "text": "Pagina Avem nevoie doar de atenție, de pe site, explică mecanismul și arhitectura Transformer. Exemplul de pe pagină arată la ce se uită pronumele din propoziția despre o pisică și o stradă, iar când ultimul cuvânt devine lată, cea mai mare pondere trece de la pisică la stradă. Ponderile din exemplu sunt alese pentru ilustrare, nu calculate de un model. Mai jos, pagina desenează atenția cu capete multiple, iar formulele sunt în casete separate, pentru cei interesați de detalii."
+    },
+    {
+      "t": 702.2,
+      "text": "Codul de astăzi, capitolele și transcrierea sunt pe pagina episodului de pe InteligentArtificiala.ro, cu legături spre laborator și spre pagina despre atenție. Pentru întrebări sau greșeli, ne puteți scrie în comentarii. Dacă vreți să urmăriți construcția modelului mai departe, abonați-vă la canal."
+    }
+  ],
+  "code": {
+    "repo": "https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero",
+    "end": "ep004/end",
+    "steps": [
+      {
+        "t": 179.9,
+        "from": "ep003/end",
+        "to": "ep004/step-1"
+      },
+      {
+        "t": 446.6,
+        "from": "ep004/step-1",
+        "to": "ep004/step-2"
+      }
+    ]
+  }
+}

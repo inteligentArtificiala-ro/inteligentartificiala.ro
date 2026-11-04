@@ -13,10 +13,13 @@ import DeepDive from '@components/DeepDive.astro';
 import Python from '@components/Python.astro';
 import SourceFile from '@components/SourceFile.astro';
 import { Steps } from '@astrojs/starlight/components';
+import Video from '@components/Video.astro';
 
 Pe [pagina anterioară](/laboratoare/model-lingvistic-de-la-zero/recompensa-si-dpo/), modelul a învățat din perechi de povești scrise o singură dată, înainte de antrenare. În **învățarea prin consolidare** (_reinforcement learning_), modelul învață din încercările pe care le face chiar în timpul antrenării: scrie povești, primește recompense, este ajustat spre poveștile cu recompense mari, apoi scrie din nou, cu ponderile noi. Pagina despre [învățarea prin consolidare](/invatare-prin-consolidare/ce-este-invatarea-prin-consolidare/) explică ideea în general, iar pagina despre [gradientul strategiei și REINFORCE](/invatare-prin-consolidare/gradientul-politicii-reinforce/) arată cum devine o recompensă un gradient.
 
 Folosim **GRPO** (_group relative policy optimization_), metoda propusă în 2024 de [Shao și colaboratorii](https://arxiv.org/abs/2402.03300), la DeepSeek, pentru modelul DeepSeekMath, și folosită apoi și pentru modelul de raționament [DeepSeek-R1](https://arxiv.org/abs/2501.12948). Pagina despre [învățarea prin consolidare pentru LLM-uri](/modele-lingvistice/invatare-prin-consolidare-pentru-llm/#grpo) descrie metoda la scara modelelor mari. Recompensa este aceeași ca la DPO, proporția de cuvinte cerute care apar în poveste, iar codul se află în fișierul `grpo.py`.
+
+<Video id="ep010-grpo" capitol="Modelul de limbaj ca strategie" />
 
 ## Modelul de limbaj ca strategie de decizie
 

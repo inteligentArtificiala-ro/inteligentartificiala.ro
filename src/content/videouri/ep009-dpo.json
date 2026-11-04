@@ -1,0 +1,163 @@
+{
+  "id": "ep009-dpo",
+  "number": 9,
+  "title": "Optimizarea directă a preferințelor (DPO) pe un GPT mic",
+  "youtubeTitle": "Optimizarea directă a preferințelor (DPO) pe un GPT mic | Inteligență Artificială #9",
+  "headline": "Preferințe\ncu DPO\n(alignment)",
+  "subtitle": "Măsurăm cât de bine urmează modelul o cerere, scriem perechi de povești preferate și respinse și antrenăm modelul cu DPO, față de o copie înghețată.",
+  "description": "Modelul ajustat în episodul trecut scrie povești pentru o instrucțiune, dar nu folosește toate cuvintele cerute. Scriem o recompensă în cod, proporția de cuvinte cerute care apar în poveste, și o a doua măsură, poveștile care se termină singure, apoi comparăm modelul preantrenat cu cel ajustat. Modelul ajustat scrie patru povești pentru fiecare instrucțiune: povestea cu cele mai multe cuvinte cerute devine povestea preferată, iar cea cu cele mai puține, povestea respinsă. Desenăm pierderea DPO (direct preference optimization), cu modelul de referință, β și funcția sigmoidă, o scriem în PyTorch și antrenăm modelul timp de două minute. La final, comparăm modelul ajustat cu cel antrenat cu DPO și vedem ce a câștigat și ce a pierdut. Episodul continuă laboratorul „Un model de limbaj de la zero” de pe InteligentArtificiala.ro, iar pagina „Învățare prin consolidare pentru LLM-uri” explică DPO.",
+  "tags": [
+    "DPO",
+    "direct preference optimization",
+    "optimizarea directă a preferințelor",
+    "preferințe",
+    "aliniere",
+    "alignment",
+    "recompensă",
+    "reward",
+    "model de referință",
+    "exploatarea recompensei",
+    "reward hacking",
+    "model de limbaj",
+    "language model",
+    "GPT",
+    "PyTorch",
+    "de la zero",
+    "inteligență artificială",
+    "învățare automată"
+  ],
+  "duration": 746.2,
+  "youtube": {
+    "id": "XnFwuJSALYg",
+    "published": "2026-11-04"
+  },
+  "chapters": [
+    {
+      "t": 0,
+      "title": "Introducere"
+    },
+    {
+      "t": 49,
+      "title": "O recompensă scrisă în cod"
+    },
+    {
+      "t": 204,
+      "title": "Perechi de preferințe"
+    },
+    {
+      "t": 324,
+      "title": "Pierderea DPO"
+    },
+    {
+      "t": 394,
+      "title": "DPO în PyTorch"
+    },
+    {
+      "t": 582,
+      "title": "Antrenarea cu DPO"
+    },
+    {
+      "t": 642,
+      "title": "Modelul ajustat și modelul DPO"
+    },
+    {
+      "t": 668,
+      "title": "Exploatarea recompensei (reward hacking)"
+    },
+    {
+      "t": 693,
+      "title": "DPO în documentație"
+    }
+  ],
+  "transcript": [
+    {
+      "t": 0.5,
+      "text": "Bine ați revenit la episodul nouă, în care modelul nostru învață din perechi de povești, cu optimizarea directă a preferințelor, în engleză direct preference optimization, pe scurt DPO. Începem cu rezultatul pe care îl obținem la sfârșitul episodului."
+    },
+    {
+      "t": 17.3,
+      "text": "Modelul ajustat în episodul trecut folosește treizeci și șase virgulă șapte la sută dintre cuvintele cerute de instrucțiuni. După două minute de DPO, ajunge la șaptezeci și doi virgulă șapte la sută, dar mai puține povești se termină."
+    },
+    {
+      "t": 33.2,
+      "text": "În episodul opt, modelul ajustat pe instrucțiuni a început să scrie povești de la capăt, dar din cuvintele cerute rain, cake și jump a folosit doar cake. Astăzi transformăm această problemă într-un număr, iar numărul devine semnalul unei noi etape de antrenare."
+    },
+    {
+      "t": 50.2,
+      "text": "Recompensa, în engleză reward, este numărul care spune cât de bună este o poveste, iar la noi este proporția de cuvinte cerute care apar în poveste. Povestea de data trecută, cu doar cake, primește o treime. Un cuvânt se numără și cu terminațiile s, es, d, ed sau ing, ca jumped să conteze pentru jump. Recompensa nu vede cum se încheie povestea, așa că a doua măsură este proporția de povești care se termină singure, cu tokenul de sfârșit, în cel mult două sute de tokenuri."
+    },
+    {
+      "t": 83.2,
+      "text": "Recompensa și măsurarea unui model le scriem în fișierul nou reward. Importăm modulul re, pentru expresii regulate, funcția care încarcă un model salvat și, din sft, funcțiile parse și instruction, scrise în episodul trecut. Măsurăm fiecare model pe cincizeci de instrucțiuni, cu povești de cel mult două sute de tokenuri. Words used caută fiecare cuvânt cerut cu o expresie regulată, cu terminațiile de mai devreme și indiferent de literele mari. Load instructions împarte fișierul în documente, la tokenul de sfârșit, și desparte fiecare document în câmpuri, cu parse. Păstrăm primele n documente care au cuvinte cerute și o poveste, iar pentru fiecare întoarcem instrucțiunea și lista cuvintelor. Measure rulează fără gradienți, cu modelul în modul de evaluare, câte o instrucțiune pe rând. Modelul scrie povestea cu temperatura zero virgulă opt și filtrul top-k de cincizeci, ca în episodul șapte, până la tokenul de sfârșit. Adunăm cuvintele cerute folosite, iar o poveste al cărei ultim token este tokenul de sfârșit se numără ca terminată. Main pornește de la fișierul de validare, ale cărui documente modelul nu le-a văzut la antrenare. Ia primele cincizeci de instrucțiuni și măsoară, pe rând, fiecare model salvat dat în linia de comandă, de fiecare dată cu aceeași sămânță, ca modelele să fie comparate în aceleași condiții. Fiecare model apare pe ecran cu numele directorului în care a fost salvat și cu cele două proporții."
+    },
+    {
+      "t": 177.6,
+      "text": "Rulăm reward pe modelul preantrenat și pe cel ajustat. Cele cincizeci de instrucțiuni de validare cer, în total, o sută cincizeci de cuvinte. Modelul preantrenat folosește doar șase la sută dintre cuvintele cerute, iar modelul ajustat, treizeci și șase virgulă șapte la sută. La poveștile terminate, ordinea se inversează: opt din zece la modelul preantrenat, față de șapte din zece la modelul ajustat."
+    },
+    {
+      "t": 205.2,
+      "text": "DPO învață din perechi de preferințe, în engleză preference pairs, adică din două răspunsuri la aceeași instrucțiune. Perechile noastre le scrie chiar modelul ajustat, cu patru povești pentru fiecare instrucțiune. Povestea cu recompensa cea mai mare devine povestea preferată, în engleză chosen, aici cu toate cele trei cuvinte, sail, mountain și clever. Povestea cu recompensa cea mai mică devine povestea respinsă, în engleză rejected, aici cu smart în loc de clever, deci cu două treimi. La modelele mari, perechile vin de la oameni sau de la un alt model, iar la noi preferința este o regulă scrisă în cod."
+    },
+    {
+      "t": 244.6,
+      "text": "Perechile le construiește fișierul nou preferences, adăugat întreg, pentru că mare parte din cod pregătește datele. Load asks grupează instrucțiunile care cer cuvinte după lungimea promptului. Funcția generate nu folosește completarea, așa că prompturile scrise deodată trebuie să aibă aceeași lungime. Make pairs ia opt instrucțiuni de aceeași lungime, repetă fiecare prompt de patru ori și scrie toate cele treizeci și două de povești deodată, la temperatura unu, ca poveștile să fie mai variate. Fiecare poveste primește recompensa, iar o instrucțiune ale cărei patru povești au aceeași recompensă este sărită, pentru că nu dă nicio preferință. Perechile de validare vin din fișierul de validare, după primele două mii de documente, ca să nu folosim instrucțiunile pe care măsurăm recompensa."
+    },
+    {
+      "t": 295,
+      "text": "Rulăm preferences, iar înregistrarea trece repede peste cele unsprezece minute și jumătate în care modelul scrie peste două mii de povești. Pentru cele cinci sute de perechi de antrenare, o sută șapte instrucțiuni au fost sărite, ca egalități. Poveștile preferate folosesc, în medie, șaizeci și cinci la sută dintre cuvintele cerute, iar cele respinse, douăzeci și unu la sută. Perechile de validare arată asemănător, cu șaizeci și șapte și douăzeci și trei la sută."
+    },
+    {
+      "t": 325.2,
+      "text": "Pierderea DPO compară două modele pe aceleași perechi de povești. Pi theta este modelul pe care îl antrenăm, pornit din modelul ajustat. Pi ref este o copie înghețată a modelului ajustat, numită model de referință, în engleză reference model. Câștigul unei povești este logaritmul probabilității poveștii sub modelul antrenat, minus logaritmul sub referință, deci la început orice câștig este zero. Marja compară câștigul poveștii preferate, y w, cu cel al poveștii respinse, y l. Beta, aici zero virgulă unu, înmulțește diferența: cu un beta mare, o îndepărtare mică de referință dă deja o marjă mare, deci modelul rămâne mai aproape de referință. Pierderea este minus logaritmul din sigmoida marjei, adică logaritmul natural al lui doi la marja zero și aproape zero la o marjă mare. Autorii metodei DPO au arătat, în 2023, că această pierdere optimizează obiectivul învățării prin consolidare cu penalizare față de referință, fără un model de recompensă și fără povești generate în timpul antrenării."
+    },
+    {
+      "t": 395.2,
+      "text": "Antrenarea cu DPO o scriem în fișierul nou dpo. La început importăm modulul copy, pentru copia înghețată, și modulul functional din PyTorch, cu numele scurt F. Din fișierul checkpoint luăm funcțiile pentru modelele salvate, apoi load pairs din preferences, write, pentru povestea de test, și make batch din sft. Un pas folosește șaisprezece perechi, cu o rată de învățare de zece la minus cinci, de douăzeci de ori mai mică decât la ajustarea fină, și beta de zero virgulă unu. Povestea de test folosește instrucțiunea cu rain, cake și jump. Log probs calculează logaritmul probabilității unei povești sub un model dat. Log softmax dă logaritmii probabilităților pe tot vocabularul, iar gather păstrează valoarea tokenului țintă. Pozițiile cu ținta minus unu, adică promptul și completarea, sunt înmulțite cu zero, iar restul se adună pe fiecare rând. Dpo loss primește modelul antrenat, numit în cod policy, adică strategie, și modelul de referință. Poveștile preferate ocupă prima jumătate a lotului, iar cele respinse, a doua, fiecare cu promptul în față, iar make batch maschează promptul și completarea, ca la ajustarea fină. Modelul de referință rulează fără gradienți, pentru că nu se antrenează. Câștigul este diferența față de referință, iar marja compară câștigul poveștii preferate cu cel al poveștii respinse, pereche cu pereche. Funcția logsigmoid din PyTorch calculează logaritmul sigmoidei într-un mod stabil numeric. Held out calculează marjele perechilor de validare și întoarce proporția de perechi ordonate corect, adică cu marja pozitivă, și marja medie. Main fixează sămânța și încarcă modelul ajustat, salvat în directorul sft, ca punct de pornire, iar referința este o copie fără gradienți. Și modelul antrenat trece în modul de evaluare, ca dropout să fie oprit în ambele modele. Altfel, cele două modele ar da probabilități diferite chiar înainte de primul pas, iar câștigul ar fi zgomot. AdamW nu mai are descreșterea ponderilor, care ar trage ponderile spre zero, departe de modelul de la care pornim. Evaluate măsoară perechile de validare și scrie povestea de test, apoi afișează pasul, proporția de perechi ordonate corect, marja medie și povestea. Antrenarea are tot un buget de minute și începe cu o evaluare, la pasul zero. La fiecare pas alegem șaisprezece perechi la întâmplare și calculăm pierderea. Urmează pasul obișnuit: ștergem gradienții vechi, facem retropropagarea, limităm gradientul la norma unu și actualizăm ponderile. La fiecare douăzeci de pași afișăm pierderea și perechile din lot ordonate corect, iar la fiecare o sută de pași facem o evaluare. La final mai facem o evaluare, dacă este nevoie, apoi salvăm modelul în directorul dpo, pentru comparația cu reward, și afișăm numărul de pași și durata antrenării."
+    },
+    {
+      "t": 582.9,
+      "text": "Pornim DPO pentru două minute, pe cele cinci sute de perechi de antrenare. La pasul zero, toate marjele sunt zero, iar povestea de test nu folosește cuvântul cake. La ultima evaluare, marja medie pe perechile de validare a ajuns la unu virgulă zero șapte. Povestea de test folosește acum toate cele trei cuvinte, rain, cake și jump, dar repetă jump de mai multe ori la rând. În total, modelul a făcut trei sute patruzeci și trei de pași de optimizare."
+    },
+    {
+      "t": 613.7,
+      "text": "Pe loturile de antrenare, pierderea pornește de la logaritmul lui doi și coboară până la zero virgulă zero zero unu, iar de la pasul o sută toate perechile din lot sunt ordonate corect. Pe perechile de validare, proporția ordonată corect urcă la șaizeci și șase la sută după o sută de pași și la șaptezeci și doi la sută după două sute, apoi rămâne pe loc. Fiecare pereche de antrenare a fost văzută de aproximativ unsprezece ori, iar modelul a învățat perechile de antrenare aproape pe de rost."
+    },
+    {
+      "t": 643.3,
+      "text": "Măsurăm apoi modelul antrenat cu DPO alături de modelul ajustat, care are numerele de la început, pentru că sămânța și instrucțiunile sunt aceleași. Modelul antrenat cu DPO folosește șaptezeci și doi virgulă șapte la sută dintre cuvintele cerute, aproape dublu. În schimb, doar patruzeci și opt la sută dintre povești se mai termină înainte de două sute de tokenuri, față de șaptezeci la sută."
+    },
+    {
+      "t": 669.4,
+      "text": "Antrenarea a crescut recompensa, adică a optimizat ce am măsurat. Recompensa nu vede însă finalul, iar o poveste care nu se mai oprește are mai mult loc pentru cuvintele cerute. Nici repetițiile, ca jump în povestea de test, nu scad recompensa. Fenomenul se numește exploatarea recompensei, în engleză reward hacking: recompensa crește, fără ca poveștile să fie mai bune."
+    },
+    {
+      "t": 693.7,
+      "text": "Pe InteligentArtificiala.ro, pagina despre învățarea prin consolidare pentru modelele de limbaj mari descrie DPO în secțiunea despre alternativele fără consolidare. Tot acolo este rețeta obișnuită de după preantrenare: ajustarea fină supervizată, DPO, apoi învățarea prin consolidare. Mai sus, o casetă arată exploatarea recompensei la modelele mari, de exemplu prin răspunsuri lungi, și penalizarea pentru îndepărtarea de modelul de referință."
+    },
+    {
+      "t": 723.4,
+      "text": "Capitolele, transcrierea și codul episodului, cu câte o etichetă git pentru fiecare pas, sunt pe pagina episodului de pe InteligentArtificiala.ro, iar documentația explică pe larg alinierea modelelor de limbaj mari. Dacă aveți întrebări sau ați găsit o greșeală, scrieți-ne în comentarii. Iar dacă vreți să urmăriți laboratorul mai departe, abonați-vă la canal."
+    }
+  ],
+  "code": {
+    "repo": "https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero",
+    "end": "ep009/end",
+    "steps": [
+      {
+        "t": 82.7,
+        "from": "ep008/end",
+        "to": "ep009/step-1"
+      },
+      {
+        "t": 244.1,
+        "from": "ep009/step-1",
+        "to": "ep009/step-2"
+      },
+      {
+        "t": 394.7,
+        "from": "ep009/step-2",
+        "to": "ep009/step-3"
+      }
+    ]
+  }
+}

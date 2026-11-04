@@ -10,6 +10,7 @@ tags:
 
 import Python from '@components/Python.astro';
 import SourceFile from '@components/SourceFile.astro';
+import Video from '@components/Video.astro';
 
 export const sftSetup = String.raw`
 import os, re, sys
@@ -60,6 +61,8 @@ look at this cake!" Mia says. "This cake is not
 ```
 
 Textul începe la mijlocul unei povești, cu o replică, și folosește doar „cake”. Cuvintele „rain” și „jump” nu apar. **Ajustarea fină supervizată** (_supervised fine-tuning_, SFT) continuă antrenarea pe perechi formate dintr-o instrucțiune și răspunsul dorit, ca modelul să învețe să răspundă la instrucțiuni. Prin aceeași etapă trec și asistenții conversaționali, la care instrucțiunile sunt întrebări și cereri, iar răspunsurile sunt scrise sau verificate de oameni. Aici, instrucțiunile cer o poveste cu anumite cuvinte, trăsături sau un rezumat, iar răspunsurile sunt chiar poveștile.
+
+<Video id="ep008-ajustare-fina" capitol="Ce schimbă ajustarea fină" />
 
 ## Datele
 

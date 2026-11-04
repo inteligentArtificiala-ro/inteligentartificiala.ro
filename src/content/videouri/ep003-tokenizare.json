@@ -1,0 +1,155 @@
+{
+  "id": "ep003-tokenizare",
+  "number": 3,
+  "title": "Tokenizarea (tokenization) pentru un GPT de la zero",
+  "youtubeTitle": "Tokenizarea (tokenization) pentru un GPT de la zero | Inteligență Artificială #3",
+  "headline": "Tokenizarea\npentru un GPT\n(tokenization)",
+  "subtitle": "Începem un model de limbaj de tip GPT de la zero, cu poveștile TinyStories, un tokenizator la nivel de cuvânt scris în Python, un vocabular de 10.000 de tokenuri și fișierele cu tokenuri.",
+  "description": "Cu acest episod începem să construim de la zero, în Python și PyTorch, un model de limbaj de tip GPT: de la un director gol la un model care scrie povești scurte și urmează instrucțiuni, aliniat apoi cu DPO și cu învățare prin consolidare. Pornim de la ce face un model de limbaj, predicția următorului token, și de la setul de date TinyStories, povești scurte în engleză pentru copii. Scriem un tokenizator la nivel de cuvânt, cu pretokenizare prin expresii regulate, un vocabular ordonat după frecvență, tokenuri speciale, codificare și decodificare, apoi scriptul care descarcă datele, construiește vocabularul de 10.000 de tokenuri și salvează poveștile ca ID-uri pe 16 biți. Vedem ce parte din text acoperă vocabularul și de ce modelele mari folosesc tokenuri BPE. Episodul urmează laboratorul „Un model de limbaj de la zero” de pe InteligentArtificiala.ro.",
+  "tags": [
+    "tokenizare",
+    "tokenization",
+    "tokenizator",
+    "tokenizer",
+    "vocabular",
+    "vocabulary",
+    "token",
+    "TinyStories",
+    "model de limbaj",
+    "language model",
+    "GPT",
+    "LLM",
+    "predicția următorului token",
+    "next-token prediction",
+    "BPE",
+    "Python",
+    "PyTorch",
+    "de la zero",
+    "inteligență artificială",
+    "învățare automată"
+  ],
+  "duration": 665.9,
+  "youtube": {
+    "id": "FaqQWx7_ru0",
+    "published": "2026-11-04"
+  },
+  "chapters": [
+    {
+      "t": 0,
+      "title": "Introducere"
+    },
+    {
+      "t": 65,
+      "title": "Laboratorul"
+    },
+    {
+      "t": 89,
+      "title": "Ce face un model de limbaj"
+    },
+    {
+      "t": 124,
+      "title": "Setul de date TinyStories"
+    },
+    {
+      "t": 156,
+      "title": "Tokenizarea"
+    },
+    {
+      "t": 191,
+      "title": "Tokenizatorul la nivel de cuvânt"
+    },
+    {
+      "t": 372,
+      "title": "Descărcarea și fișierele cu tokenuri"
+    },
+    {
+      "t": 526,
+      "title": "Vocabularul și tokenurile"
+    },
+    {
+      "t": 570,
+      "title": "Cât din text acoperă vocabularul"
+    },
+    {
+      "t": 607,
+      "title": "Tokenizarea modelelor mari"
+    },
+    {
+      "t": 635,
+      "title": "Glosarul"
+    }
+  ],
+  "transcript": [
+    {
+      "t": 0.5,
+      "text": "Cu acest episod pornim un proiect nou: construim de la zero, în Python și PyTorch, un model de limbaj de tip GPT, în engleză language model. Mai întâi, o privire rapidă la ce obținem până la finalul episodului."
+    },
+    {
+      "t": 16,
+      "text": "La final, poveștile din partea de antrenare devin aproape douăzeci de milioane de numere, salvate într-un fișier binar. O propoziție ca aceasta devine unsprezece numere, câte unul pentru fiecare cuvânt sau grup de semne de punctuație."
+    },
+    {
+      "t": 31.2,
+      "text": "În episoadele acestea pornim de la un director gol și ajungem la un model care scrie povești scurte și urmează instrucțiuni. Spre final aliniem modelul, întâi cu DPO, care învață din perechi de răspunsuri, unul preferat și unul respins, apoi cu învățare prin consolidare, în engleză reinforcement learning. Modelul are paisprezece virgulă șase milioane de parametri, de peste opt ori mai puțini decât cel mai mic model GPT-2, așa că preantrenarea durează zece minute pe un calculator personal. Vocea pe care o auziți este generată cu AI, pornind de la vocea mea."
+    },
+    {
+      "t": 66.3,
+      "text": "Codul urmează laboratorul Un model de limbaj de la zero, de pe site, și merge pe alocuri mai departe, de exemplu cu atenția scrisă de mână și cu alinierea modelului. Repozitoriul de pe GitHub are câte o etichetă git pentru fiecare pas, ca să puteți urmări codul episod cu episod. Astăzi parcurgem prima etapă a laboratorului, datele și tokenizarea."
+    },
+    {
+      "t": 89.5,
+      "text": "Un model de limbaj primește un text, de exemplu Once upon a, începutul obișnuit al unei povești în engleză. Modelul citește tot contextul și calculează câte o probabilitate pentru fiecare token din vocabular, adică pentru fiecare bucată de text pe care o cunoaște. Sarcina se numește predicția următorului token, în engleză next-token prediction. Pe baza acestor probabilități alegem un token, aici time, care se adaugă la context, iar pasul se repetă. Așa scrie un model de limbaj o poveste întreagă, câte un token pe rând."
+    },
+    {
+      "t": 124.6,
+      "text": "Modelul nostru învață din TinyStories, un set de povești scurte în engleză, publicat în două mii douăzeci și trei. Poveștile au fost generate de modele GPT, cu cuvinte pe care le înțelege un copil de trei sau patru ani, iar noi folosim a doua versiune a setului, scrisă doar de GPT-4. Autorii setului de date au arătat că, pe povești atât de simple, modele cu mai puțin de zece milioane de parametri scriu texte coerente și corecte gramatical. Poveștile sunt în engleză, așa că și modelul nostru va scrie în engleză."
+    },
+    {
+      "t": 156.6,
+      "text": "Tokenizarea, în engleză tokenization, transformă textul în numere, în doi pași. Întâi, textul este tăiat în bucăți: cuvinte întregi și grupuri de semne de punctuație, iar spațiile dispar. Programul care face această transformare se numește tokenizator, în engleză tokenizer, iar al nostru taie textul la nivel de cuvânt. Apoi, vocabularul, în engleză vocabulary, dă fiecărei bucăți un număr, numit ID, iar modelul vede doar aceste ID-uri. Decodificarea face drumul invers, de la ID-uri înapoi la text."
+    },
+    {
+      "t": 191.6,
+      "text": "Începem cu un repozitoriu git nou, cu un README care spune ce construim și cum se rulează codul. Fișierul gitignore ține în afara repozitoriului mediul virtual, datele, modelele salvate și jurnalele antrenărilor. Codul are licența MIT, care permite oricui să folosească, să modifice și să distribuie codul. În requirements avem PyTorch, NumPy și TensorBoard, instrumentul care desenează graficele antrenării. Tokenizatorul este în fișierul tokenizer, care importă modulul re, pentru expresii regulate, și clasa Counter, care numără de câte ori apare fiecare element. Primele constante sunt cele trei tokenuri speciale: end of text marchează sfârșitul unei povești, PAD completează secvențele scurte dintr-un lot, la ajustarea fină, iar UNK ia locul oricărui cuvânt care lipsește din vocabular. Expresia regulată de pretokenizare păstrează două feluri de bucăți: șiruri de caractere de cuvânt, adică litere, cifre și liniuțe de subliniere, și șiruri de alte semne, în afară de spații, așa că spațiile nu devin tokenuri. A doua expresie regulată găsește tokenurile speciale în text, ca end of text să rămână un singur token, nu trei bucăți de semne și litere. Pretokenize întoarce toate bucățile găsite de prima expresie, în ordine. Build vocab primește căile fișierelor, mărimea vocabularului și numărul minim de apariții, implicit doi. Un obiect Counter, gol la început, ține numărătorile tuturor bucăților. Funcția citește fișierele rând cu rând, pune un spațiu în locul tokenului de sfârșit și numără bucățile fiecărui rând. Numărătorile cuprind toate bucățile, chiar și pe cele care apar o singură dată. Apoi ordonăm bucățile după frecvență, iar la frecvențe egale, alfabetic, ca aceleași date să dea mereu același vocabular și aceleași ID-uri. Bucățile care apar o singură dată rămân pe dinafară, pentru că sunt adesea greșeli de scriere sau nume inventate. Vocabularul începe cu tokenurile speciale, urmate de cele mai frecvente bucăți, până la mărimea cerută, iar funcția întoarce și numărătorile. Detokenize face drumul invers: unește tokenurile cu spații, apoi scoate, cu expresii regulate, spațiile dinaintea punctuației, din jurul apostrofului și de după ghilimelele de deschidere. Clasa WordTokenizer ține vocabularul în ambele sensuri: o listă, de la ID la token, și un dicționar, de la token la ID. Păstrăm și ID-urile celor trei tokenuri speciale, iar lungimea tokenizatorului este mărimea vocabularului. Encode separă întâi tokenurile speciale, apoi pretokenizează restul textului. Fiecare bucată primește ID-ul din vocabular, iar o bucată necunoscută primește ID-ul lui UNK. Rezultatul este lista ID-urilor, în ordinea din text. Decode transformă ID-urile înapoi în tokenuri, scoate implicit tokenurile speciale și reface textul cu detokenize."
+    },
+    {
+      "t": 372.9,
+      "text": "Fișierul data descarcă poveștile, construiește vocabularul și scrie fișierele cu tokenuri. Importăm modulele os și urllib, NumPy și, din tokenizer, constanta pentru sfârșitul de text, clasa tokenizatorului și build vocab. Datele stau în directorul data, lângă cod, iar vocabularul are zece mii de tokenuri. Descărcăm patru fișiere de pe Hugging Face: părțile de antrenare și de validare din TinyStories, în versiunea scrisă de GPT-4, și aceleași două părți din TinyStories-Instruct, poveștile cu instrucțiuni pentru ajustarea fină. Partea de validare nu este folosită la antrenare, ci doar ca să măsurăm modelul pe texte pe care nu le-a văzut. Din fiecare fișier citim doar primii optzeci de megaocteți, destul pentru un model atât de mic. Download citește răspunsul serverului până la această limită. La decodificare, octeții care nu formează caractere valide sunt ignorați, pentru că tăietura de la optzeci de megaocteți poate cădea în mijlocul unui caracter. Apoi tăiem textul după ultimul end of text, ca să nu rămână la final o poveste neterminată. Funcția scrie textul pe disc și afișează mărimea citită, în megaocteți, și numărul de povești, adică de tokenuri de sfârșit din text. Encode transformă tot textul unui fișier în ID-uri, într-un vector NumPy de numere întregi fără semn pe șaisprezece biți. Doi octeți pot ține numere până la șaizeci și cinci de mii cinci sute treizeci și cinci, deci orice ID din vocabularul nostru încape în doi octeți. Tofile scrie vectorul pe disc ca șir de octeți, iar la final afișăm numărul de tokenuri și proporția de tokenuri necunoscute, înlocuite cu UNK. Load tokenizer citește vocabularul salvat și construiește tokenizatorul, pentru scripturile care vin după. Main creează directorul data, dacă lipsește, și descarcă doar fișierele care nu există încă, așa că a doua rulare nu mai descarcă nimic. Lista train ține căile celor două părți de antrenare. Vocabularul se construiește din partea de antrenare a ambelor seturi, pentru că, după antrenarea modelului, vocabularul nu mai poate fi schimbat. Salvăm vocabularul cu un token pe rând și afișăm câte tokenuri am păstrat, din câte bucăți distincte. Apoi codificăm partea de antrenare și cea de validare a poveștilor. La final, încercăm tokenizatorul pe o propoziție: afișăm tokenurile, ID-urile și textul refăcut din ID-uri."
+    },
+    {
+      "t": 527,
+      "text": "Rulăm scriptul data, cu fișierele deja descărcate, așa că rămân de construit vocabularul și fișierele cu tokenuri. Vocabularul păstrează zece mii de tokenuri, din douăzeci și două de mii două sute patruzeci și cinci de bucăți distincte. Partea de antrenare are aproape douăzeci de milioane de tokenuri, iar tokenurile necunoscute sunt doar zero virgulă zero opt la sută. Propoziția de probă devine unsprezece tokenuri, iar semnul exclamării și ghilimelele de la final rămân împreună, ca un singur token. Once primește ID-ul șaizeci, upon, șaizeci și unu, iar a, un cuvânt foarte frecvent, are ID-ul șapte. Decodificarea reface propoziția de la care am pornit, cu spațiile la locul lor."
+    },
+    {
+      "t": 571.2,
+      "text": "Graficul arată ce parte din tokenurile de antrenare acoperă un vocabular cu cele mai frecvente tokenuri, în funcție de mărimea vocabularului. Un vocabular de doar o sută de tokenuri, printre care punctul, virgula, and și the, acoperă deja aproape șaizeci și cinci la sută din text. O mie de tokenuri acoperă aproape nouăzeci și trei la sută, iar cele zece mii ale noastre, nouăzeci și nouă virgulă nouăzeci și doi la sută. Fiecare token adăugat acoperă tot mai puțin text, dar are nevoie de propriul vector de parametri în model, așa că zece mii de tokenuri sunt suficiente pentru poveștile noastre."
+    },
+    {
+      "t": 607.9,
+      "text": "La modelele mari, tokenizatorul lucrează cu fragmente de cuvinte, obținute de obicei prin metoda BPE, în engleză byte pair encoding. Un cuvânt frecvent rămâne un singur token, iar unul rar se împarte în mai multe fragmente, la nevoie până la octeți, așa că orice text se poate codifica fără UNK. Pentru poveștile simple din TinyStories, cuvintele întregi sunt suficiente, iar codul este mult mai ușor de urmărit."
+    },
+    {
+      "t": 635.6,
+      "text": "Glosarul de pe site adună termenii episodului, în română și în engleză, printre care token, tokenizare și vocabular."
+    },
+    {
+      "t": 643.9,
+      "text": "Pe pagina episodului de pe InteligentArtificiala.ro găsiți capitolele, transcrierea și codul, cu câte o etichetă git pentru fiecare pas, iar pagina laboratorului explică aceleași idei, cu exemple care rulează în browser. Dacă aveți întrebări sau găsiți greșeli, scrieți-ne în comentarii. Ca să urmăriți modelul până la primele povești pe care le scrie, abonați-vă la canal."
+    }
+  ],
+  "code": {
+    "repo": "https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero",
+    "end": "ep003/end",
+    "steps": [
+      {
+        "t": 191.1,
+        "to": "ep003/step-1"
+      },
+      {
+        "t": 372.4,
+        "from": "ep003/step-1",
+        "to": "ep003/step-2"
+      }
+    ]
+  }
+}

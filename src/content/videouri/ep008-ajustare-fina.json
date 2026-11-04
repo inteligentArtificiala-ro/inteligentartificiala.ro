@@ -1,0 +1,152 @@
+{
+  "id": "ep008-ajustare-fina",
+  "number": 8,
+  "title": "Ajustarea fină supervizată (supervised fine-tuning) a unui GPT mic",
+  "youtubeTitle": "Ajustarea fină supervizată (supervised fine-tuning) a unui GPT mic | Inteligență Artificială #8",
+  "headline": "Ajustarea fină\nsupervizată\n(fine-tuning)",
+  "subtitle": "Modelul preantrenat învață în zece minute să scrie povestea cerută de o instrucțiune, cu pierderea calculată doar pe poveste.",
+  "description": "Modelul preantrenat continuă orice text ca pe o poveste. Prin ajustarea fină supervizată (SFT), îl antrenăm mai departe pe perechi formate dintr-o instrucțiune și povestea dorită, din setul TinyStories-Instruct. Desenăm câmpurile unui document (Features, Words, Summary, Story), scriem parse, instruction și build_examples, apoi make_batch, care completează loturile cu tokenul [PAD] și dă ținta -1 instrucțiunii și completării, ca pierderea să se calculeze doar pe poveste. Pornim de la modelul preantrenat, cu o rată de învățare constantă de 2·10⁻⁴, și urmărim timp de 10 minute pierderea și povestea scrisă pentru o instrucțiune de test. La final, comparăm modelul preantrenat cu cel ajustat pe instrucțiunea „Words: rain, cake, jump” și numărăm cuvintele cerute care apar în poveste. Episodul urmează pagina „Ajustarea fină supervizată” a laboratorului „Un model de limbaj de la zero” de pe InteligentArtificiala.ro.",
+  "tags": [
+    "ajustare fină supervizată",
+    "supervised fine-tuning",
+    "SFT",
+    "fine-tuning",
+    "instrucțiuni",
+    "instruction tuning",
+    "TinyStories-Instruct",
+    "completare",
+    "padding",
+    "model de limbaj",
+    "language model",
+    "GPT",
+    "PyTorch",
+    "de la zero",
+    "inteligență artificială",
+    "învățare automată"
+  ],
+  "duration": 724.8,
+  "youtube": {
+    "id": "sbpVjtUqtSQ",
+    "published": "2026-11-04"
+  },
+  "chapters": [
+    {
+      "t": 0,
+      "title": "Introducere"
+    },
+    {
+      "t": 50,
+      "title": "Ce schimbă ajustarea fină"
+    },
+    {
+      "t": 92,
+      "title": "Datele TinyStories-Instruct"
+    },
+    {
+      "t": 139,
+      "title": "Pierderea calculată doar pe poveste"
+    },
+    {
+      "t": 193,
+      "title": "Exemplele și loturile"
+    },
+    {
+      "t": 324,
+      "title": "Antrenarea"
+    },
+    {
+      "t": 507,
+      "title": "Rularea de zece minute"
+    },
+    {
+      "t": 544,
+      "title": "Povestea de test, pe parcursul antrenării"
+    },
+    {
+      "t": 579,
+      "title": "Pierderea la ajustarea fină"
+    },
+    {
+      "t": 613,
+      "title": "Modelul preantrenat și modelul ajustat"
+    },
+    {
+      "t": 674,
+      "title": "Laboratorul"
+    }
+  ],
+  "transcript": [
+    {
+      "t": 0.5,
+      "text": "Episodul opt adaugă o etapă de antrenare, ajustarea fină supervizată, în engleză supervised fine-tuning, pe scurt SFT, prin care modelul nostru învață să urmeze instrucțiuni. Mai întâi, să vedem cum arată rezultatul pe pagina laboratorului."
+    },
+    {
+      "t": 16.8,
+      "text": "Pe pagina laboratorului, modelul ajustat primește instrucțiunea Words: dog, ball, happy, Story, și scrie povești de la început, cu Once upon a time, în care apar toate cele trei cuvinte, chiar prea des."
+    },
+    {
+      "t": 32.2,
+      "text": "Data trecută, modelul preantrenat a scris povești token cu token, iar câteva capete de atenție s-au uitat la numele din propoziție. Pentru model, orice text este însă începutul unei povești, chiar și o cerere. Astăzi schimbăm acest lucru, cu încă zece minute de antrenare."
+    },
+    {
+      "t": 51.3,
+      "text": "Până acum, modelul a avut o singură etapă de antrenare, preantrenarea, care a pornit de la ponderi aleatoare și a învățat, pe povești întregi, să prezică următorul token. Ajustarea fină supervizată pornește de la modelul preantrenat și continuă antrenarea pe perechi formate dintr-o instrucțiune și răspunsul dorit, aici o poveste. Modelul, pierderea și codul de antrenare rămân aproape neschimbate. Se schimbă datele și pozițiile pe care se calculează pierderea: doar răspunsul, nu și instrucțiunea. Asistenții conversaționali trec prin aceeași etapă, cu întrebări și răspunsuri scrise sau verificate de oameni, la o scară mult mai mare."
+    },
+    {
+      "t": 92.6,
+      "text": "Datele vin din setul TinyStories-Instruct, publicat de aceiași autori, cu povești din prima versiune a TinyStories. Fiecare document are o poveste și câteva câmpuri care o descriu, ca acesta, primul din fișierul nostru. Features cere trăsături ale poveștii, aici un dialog, Words cere trei cuvinte, iar Summary dă un rezumat de o propoziție. Alte documente au și Random sentence, o propoziție care trebuie să apară în poveste. La final, după Story și două puncte, vine povestea propriu-zisă. Câmpurile apar în ordini diferite de la un document la altul, așa că le rescriem mereu în aceeași ordine, cu Story și două puncte la final, iar rezultatul este promptul. Povestea, urmată de tokenul de sfârșit, este răspunsul pe care modelul trebuie să îl învețe."
+    },
+    {
+      "t": 140,
+      "text": "Să luăm un exemplu scurt, scris de noi: instrucțiunea Words cake, Story, urmată de povestea Tom ate cake. Sub fiecare intrare este ținta poziției, adică tokenul care urmează. În dreptul instrucțiunii, țintele sunt minus unu, pentru că modelul primește instrucțiunea și nu trebuie să o învețe. Țintele reale încep la cele două puncte de după Story, care prezic primul cuvânt al poveștii, iar ultimul token al poveștii prezice tokenul de sfârșit. Exemplele dintr-un lot au lungimi diferite, așa că rândurile scurte se completează cu tokenul PAD, iar operația se numește completare, în engleză padding. Și pozițiile de completare au ținta minus unu. Entropia încrucișată din modelul nostru ignoră țintele egale cu minus unu, deci media se face doar pe pozițiile din poveste."
+    },
+    {
+      "t": 193.9,
+      "text": "Ajustarea fină o scriem în fișierul nou sft, care începe cu datele: instrucțiunile, exemplele și loturile. Importăm modulele os și re, pentru expresii regulate, apoi NumPy, PyTorch, directorul datelor și tokenul de sfârșit. Loturile au tot câte patruzeci și opt de exemple, ca la preantrenare. Lista FIELDS fixează ordinea în care câmpurile apar în instrucțiune, de la Features la Summary. Expresia regulată FIELD găsește începutul fiecărui câmp, adică un nume urmat de două puncte la început de rând, inclusiv Story. Parse taie documentul la numele câmpurilor, cu funcția split a expresiei. Expresia are un grup, așa că split păstrează și numele, iar lista rezultată alternează numele și textul. Zip face din listă perechi de nume și text, adunate într-un dicționar. Instruction scrie câmpurile prezente în ordinea din FIELDS, câte unul pe rând, și adaugă Story cu două puncte la final, de unde modelul trebuie să continue cu povestea. Build examples citește fișierul, îl împarte în documente la tokenul de sfârșit și păstrează primele limit documente, când limita este dată. Pentru fiecare document, parse dă câmpurile, iar documentele fără poveste sunt sărite. Promptul este instrucțiunea codificată, iar răspunsul este povestea, urmată de tokenul de sfârșit, ca modelul să învețe și unde se oprește o poveste. Exemplul se taie la două sute cincizeci și șapte de tokenuri: două sute cincizeci și șase de intrări și ținta ultimei poziții. Păstrăm exemplul, împreună cu lungimea promptului, dacă a rămas cel puțin un token din poveste. Make batch face un lot din exemple de lungimi diferite, iar lățimea lotului este lungimea celui mai lung exemplu, minus unu. Intrările pornesc pline cu tokenul de completare, iar țintele pornesc toate cu minus unu. Pe fiecare rând copiem intrările, adică exemplul fără ultimul token, iar țintele le copiem doar pentru poveste, începând cu ultima poziție a promptului, ca în desen. Random batch alege la întâmplare patruzeci și opt de exemple și construiește lotul pe dispozitivul primit."
+    },
+    {
+      "t": 325,
+      "text": "Al doilea pas adaugă antrenarea, foarte asemănătoare cu preantrenarea. Importăm sys, pentru argumentul cu minutele, textwrap și time, SummaryWriter pentru TensorBoard, funcțiile pentru modelele salvate, pick device și funcția write din sample, pentru povestea de test. Modelul ajustat se salvează în directorul sft, lângă cel preantrenat. Rata de învățare este doi ori zece la minus patru, o treime din valoarea maximă de la preantrenare. Modelul scrie deja povești, iar pașii mai mici îi schimbă comportamentul fără să șteargă ce a învățat. Evaluările vin tot la fiecare două sute cincizeci de pași, cu o instrucțiune de test fixă: un dialog, cuvintele dog, happy și park și rezumatul A dog makes a new friend at the park. Estimate loss rulează fără gradienți și trece modelul în modul de evaluare. Dispozitivul vine din primul parametru, ca loturile să fie create direct acolo. Apoi adunăm pierderile a douăzeci de loturi aleatoare, cu țintele mascate, și facem media, iar modelul revine în modul de antrenare. Main fixează sămânța, alege dispozitivul și pornește de la modelul preantrenat, nu de la ponderi aleatoare. Exemplele de antrenare vin din fișierul de antrenare cu instrucțiuni. Pentru validare luăm primele cinci mii de documente din fișierul de validare, iar scriptul afișează câte exemple are fiecare parte. Lista params adună toți parametrii modelului, împărțiți apoi în două grupuri. Optimizatorul este AdamW, cu aceleași setări ca la preantrenare: descreșterea ponderilor se aplică doar matricelor, iar coeficienții beta rămân zero virgulă nouă și zero virgulă nouăzeci și cinci. Rularea se înregistrează pentru TensorBoard, într-un director cu data și ora. Evaluate măsoară pierderea pe antrenare și pe validare, scrie o poveste de o sută douăzeci de tokenuri pentru instrucțiunea de test, fără promptul în față, și trimite pierderile și povestea în TensorBoard. Apoi afișează pasul, cele două pierderi și povestea, ca rularea să poată fi urmărită și în terminal. Antrenarea are un buget de minute, ca preantrenarea, și începe cu o evaluare a modelului preantrenat, la pasul zero. Fiecare pas este cel cunoscut: un lot aleator, pierderea, ștergerea gradienților vechi și retropropagarea. Gradientul este limitat la norma unu, apoi optimizatorul face pasul. Rata de învățare rămâne constantă, fără încălzire și nici scădere în cosinus, o simplificare potrivită pentru o ajustare scurtă. La fiecare cincizeci de pași afișăm pierderea lotului și minutele trecute, iar la fiecare două sute cincizeci de pași facem o evaluare. Dacă bugetul se termină între două evaluări, mai facem una la final. Apoi salvăm modelul ajustat în directorul sft și afișăm numărul de pași și durata totală, în minute. La rulare, singurul argument din linia de comandă este bugetul de timp, în minute, implicit zece, ca la preantrenare."
+    },
+    {
+      "t": 507.9,
+      "text": "Pornim ajustarea fină pentru zece minute, iar înregistrarea trece repede prin toată rularea. Fișierul de antrenare dă șaptezeci și șase de mii opt sute șaptezeci și cinci de exemple, iar pentru validare păstrăm patru mii nouă sute nouăzeci și nouă, pentru că un document nu are câmpul Story. După o mie trei sute patruzeci și unu de pași, puțin mai mulți decât la preantrenare, pierderea pe validare a ajuns la unu virgulă nouăzeci și trei. Ultima poveste de test repetă the dog și the new friend în aproape fiecare propoziție. Ajustarea a durat zece minute, iar modelul ajustat a fost salvat."
+    },
+    {
+      "t": 544.7,
+      "text": "Povestea scrisă pentru instrucțiunea de test arată ce s-a schimbat pe parcurs. La pasul zero, modelul preantrenat continuă instrucțiunea cu mijlocul unei povești, care începe cu o replică, Please teach us. După două sute cincizeci de pași, povestea începe de la capăt, cu Once upon a time, iar câinele ajunge în parc. La pasul șapte sute cincizeci, povestea are parcul, câinele și prietenul nou și se termină singură, cu The end. La final, povestea are câinele fericit și prietenul nou, dar nu și parcul sau dialogul cerut."
+    },
+    {
+      "t": 580.5,
+      "text": "Pierderea pe loturi oscilează, pentru că fiecare lot are alte povești, dar coboară de la aproximativ doi virgulă patru până la aproximativ unu virgulă nouăzeci și cinci. Pierderea pe validare scade de la doi virgulă patruzeci și patru la unu virgulă nouăzeci și trei, cel mai repede în primii cinci sute de pași. Antrenarea nu pornește de la logaritmul lui zece mii, ca preantrenarea, pentru că modelul știa deja să scrie povești. Valorile nu se compară direct cu cele de la preantrenare, pentru că aici pierderea se calculează pe alte povești și doar pe răspuns."
+    },
+    {
+      "t": 614.3,
+      "text": "La final, comparăm cele două modele pe o instrucțiune nouă: Words, rain, cake, jump, apoi Story. Tokenizatorul ignoră trecerile la rând nou, așa că instrucțiunea poate fi scrisă pe un singur rând. Modelul preantrenat continuă cu o replică, Wow, Mia! The cake is so yummy!, adică mijlocul unei povești despre Mia, Ben și un tort. Apoi dăm aceeași instrucțiune modelului ajustat, salvat de scriptul sft. Modelul ajustat începe o poveste de la capăt, cu o fetiță, Lily, care iese afară să se joace. Dintre cele trei cuvinte cerute, însă, ambele modele folosesc doar unul, cake, de multe ori, iar rain și jump lipsesc. Ajustarea fină a schimbat forma răspunsului, dar nu garantează că fiecare cerere este respectată. Câte dintre cuvintele cerute apar într-o poveste se poate număra automat, pe sute de instrucțiuni, iar numărul acesta poate deveni o recompensă."
+    },
+    {
+      "t": 675,
+      "text": "Pe pagina laboratorului, Ajustarea fină supervizată, o casetă explică de ce pierderea se calculează doar pe poveste, iar mai jos un program Python construiește în browser un lot de trei exemple, cu ținte mascate. Secțiunea despre antrenare arată diferențele față de preantrenare și rezultatul unei rulări de pe site. La modelele mari, după ajustarea fină urmează de obicei alinierea cu preferințele umane, în engleză alignment, cu metode ca DPO, PPO sau GRPO, descrise în documentație."
+    },
+    {
+      "t": 707.9,
+      "text": "Pe pagina episodului de pe InteligentArtificiala.ro găsiți codul, cu câte o etichetă git pentru fiecare pas, capitolele și transcrierea. Întrebările și greșelile găsite ni le puteți scrie în comentarii. Dacă vreți să urmăriți și restul seriei, abonați-vă la canal."
+    }
+  ],
+  "code": {
+    "repo": "https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero",
+    "end": "ep008/end",
+    "steps": [
+      {
+        "t": 193.4,
+        "from": "ep007/end",
+        "to": "ep008/step-1"
+      },
+      {
+        "t": 324.5,
+        "from": "ep008/step-1",
+        "to": "ep008/step-2"
+      }
+    ]
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "id": "ep005-modelul-gpt",
+  "number": 5,
+  "title": "Modelul GPT (Transformer) de la zero, în PyTorch",
+  "youtubeTitle": "Modelul GPT (Transformer) de la zero, în PyTorch | Inteligență Artificială #5",
+  "headline": "Modelul GPT\nde la zero\n(Transformer)",
+  "subtitle": "Asamblăm în PyTorch un Transformer doar cu decodor, cu GELU, blocuri cu pre-normalizare, ponderi legate și 14,6 milioane de parametri, apoi verificăm pierderea de la început.",
+  "description": "Din stratul de atenție scris în episodul 4 construim un model GPT complet, în PyTorch. Desenăm întâi tot modelul, de la ID-urile tokenurilor până la cele 10.000 de scoruri de la ieșire. Scriem funcția GELU și o comparăm cu ReLU, rețeaua feed-forward de 384 → 1.536 → 384 de valori și blocul cu pre-normalizare, cu cele două conexiuni reziduale care formează fluxul rezidual. Apoi scriem clasa GPT: reprezentările vectoriale ale tokenurilor și ale pozițiilor, dropout, cele șase blocuri, normalizarea finală, stratul de ieșire cu ponderi legate, inițializarea cu deviația standard 0,02 și propagarea directă, cu entropia încrucișată. Rulăm modelul, numărăm cei 14.585.856 de parametri și explicăm de ce pierderea unui model abia creat este aproape de ln 10.000. Episodul urmează laboratorul „Un model de limbaj de la zero” de pe InteligentArtificiala.ro.",
+  "tags": [
+    "GPT",
+    "Transformer",
+    "decoder-only Transformer",
+    "model de limbaj",
+    "language model",
+    "PyTorch",
+    "GELU",
+    "conexiune reziduală",
+    "residual connection",
+    "flux rezidual",
+    "residual stream",
+    "normalizare pe strat",
+    "layer normalization",
+    "pre-normalizare",
+    "ponderi legate",
+    "weight tying",
+    "reprezentare vectorială",
+    "embedding",
+    "entropie încrucișată",
+    "de la zero",
+    "inteligență artificială",
+    "învățare automată"
+  ],
+  "duration": 684.2,
+  "youtube": {
+    "id": "3e9aPzry-vA",
+    "published": "2026-11-04"
+  },
+  "chapters": [
+    {
+      "t": 0,
+      "title": "Introducere"
+    },
+    {
+      "t": 49,
+      "title": "Modelul, de la tokenuri la scoruri"
+    },
+    {
+      "t": 113,
+      "title": "GELU și rețeaua feed-forward"
+    },
+    {
+      "t": 153,
+      "title": "Blocul și fluxul rezidual"
+    },
+    {
+      "t": 304,
+      "title": "Ponderi legate și inițializare"
+    },
+    {
+      "t": 365,
+      "title": "Clasa GPT"
+    },
+    {
+      "t": 517,
+      "title": "Rularea modelului"
+    },
+    {
+      "t": 564,
+      "title": "Unde sunt parametrii"
+    },
+    {
+      "t": 595,
+      "title": "Pierderea de la început"
+    },
+    {
+      "t": 623,
+      "title": "Laboratorul"
+    },
+    {
+      "t": 640,
+      "title": "Arhitectura Transformer"
+    }
+  ],
+  "transcript": [
+    {
+      "t": 0.5,
+      "text": "Vă salut și bine ați venit la episodul cinci, în care asamblăm în PyTorch un model GPT complet. Începem cu modelul la care ajungem, descris într-un tabel pe pagina laboratorului."
+    },
+    {
+      "t": 14.6,
+      "text": "Modelul de la final are un vocabular de zece mii de tokenuri, o fereastră de context de două sute cincizeci și șase de tokenuri și șase blocuri. Cei paisprezece virgulă șase milioane de parametri ai modelului au deocamdată valori aleatoare."
+    },
+    {
+      "t": 30.1,
+      "text": "Data trecută am calculat de mână atenția pentru propoziția Lily has a red ball, de la interogări, chei și valori până la media ponderată, și am obținut același rezultat ca PyTorch. Apoi am scris stratul de atenție al modelului, cu șase capete. Astăzi stratul acesta devine o parte din fiecare bloc al modelului."
+    },
+    {
+      "t": 49.8,
+      "text": "Modelul primește un lot de secvențe de ID-uri, de exemplu patru secvențe de câte două sute cincizeci și șase de tokenuri. Fiecare ID este înlocuit cu un vector învățat de trei sute optzeci și patru de valori, reprezentarea vectorială a tokenului, în engleză embedding. Peste vectorul tokenului se adună vectorul poziției, tot învățat, ca modelul să știe pe ce loc se află fiecare token. Vectorii trec apoi prin șase blocuri, fiecare cu un strat de atenție și o rețea feed-forward. După ultimul bloc urmează o normalizare, iar stratul de ieșire transformă vectorul fiecărei poziții în zece mii de scoruri nenormalizate, câte unul pentru fiecare token din vocabular. Din scorurile unei poziții, softmax dă probabilitățile tokenului următor. Toate pozițiile trec prin model deodată, iar masca cauzală lasă fiecare poziție să vadă doar tokenurile de până la acea poziție. Arhitectura se numește Transformer doar cu decodor, în engleză decoder-only Transformer, și este forma modelelor GPT."
+    },
+    {
+      "t": 113.5,
+      "text": "Rețeaua feed-forward din fiecare bloc folosește funcția de activare GELU, al cărei nume vine de la distribuția normală, numită și distribuția lui Gauss. GELU înmulțește intrarea x cu probabilitatea ca o variabilă normală standard să fie cel mult x. Pentru valori pozitive mari, GELU se suprapune peste ReLU, iar pentru valori negative mari este aproape zero. Între cele două zone, curba este netedă și coboară puțin sub zero, până la aproximativ minus zero virgulă șaptesprezece. Spre deosebire de ReLU, GELU nu are un colț în zero și lasă să treacă puțin din valorile negative."
+    },
+    {
+      "t": 153.8,
+      "text": "Un bloc are două părți, atenția și rețeaua feed-forward, legate în același fel. Atenția nu primește direct vectorul x, ci o versiune normalizată. Normalizarea pe strat, în engleză layer normalization, aduce valorile fiecărui vector la media zero și varianța unu, apoi le înmulțește și le deplasează cu parametri învățați. Rezultatul atenției se adună la x, iar adunarea se numește conexiune reziduală, în engleză residual connection. Rețeaua feed-forward urmează aceeași schemă, cu a doua normalizare și a doua adunare. Normalizarea vine înaintea fiecărei părți, așa că schema se numește pre-normalizare, în engleză pre-norm. Calea directă de la intrare la ieșire rămâne astfel o simplă sumă, pe care gradienții ajung ușor la primele blocuri. După șase blocuri, vectorul unui token este vectorul de la intrare plus douăsprezece corecții, câte două pentru fiecare bloc. Vectorul acesta, citit și completat de fiecare bloc, se numește flux rezidual, în engleză residual stream."
+    },
+    {
+      "t": 218.5,
+      "text": "Continuăm în fișierul model, unde importăm modulul math, pentru rădăcina pătrată din formula GELU. Funcția gelu este formula de pe grafic, scrisă cu funcția eroare din PyTorch, erf. PyTorch are deja o funcție gelu, dar o scriem aici, ca formula să se vadă în cod. Rețeaua feed-forward este clasa MLP, cu două straturi liniare. Primul strat, up proj, mărește vectorul de patru ori, de la trei sute optzeci și patru la o mie cinci sute treizeci și șase de valori. Al doilea strat, down proj, aduce vectorul înapoi la trei sute optzeci și patru de valori, ca rezultatul să se poată aduna la flux. La ieșire punem dropout, cu aceeași probabilitate de zero virgulă unu ca la atenție. Propagarea directă trece vectorul prin primul strat, prin GELU și prin al doilea strat. Atenția amestecă informația dintre tokenuri, iar rețeaua feed-forward prelucrează fiecare token separat, cu aceleași ponderi. Blocul are patru componente: o normalizare pe strat, atenția din episodul trecut, a doua normalizare și rețeaua MLP. În propagarea directă, atenția primește vectorul normalizat, iar rezultatul atenției se adună la x. Apoi rețeaua MLP face același lucru, cu a doua normalizare. Cele două adunări sunt conexiunile reziduale din formule."
+    },
+    {
+      "t": 305.4,
+      "text": "Stratul de ieșire calculează scorul fiecărui token ca produsul scalar dintre vectorul final h și rândul tokenului din matricea E. Matricea E este chiar tabelul de la intrare, cu vectorii tokenurilor. Folosirea aceleiași matrice în ambele locuri se numește ponderi legate, în engleză weight tying. Un token are astfel un singur vector, folosit și la intrare, și la ieșire, iar modelul economisește trei virgulă optzeci și patru milioane de parametri. Matricele pornesc din valori aleatoare mici, dintr-o distribuție normală cu media zero și deviația standard zero virgulă zero doi, ca în GPT-2. Proiecțiile o proj și down proj, care adună valori în fluxul rezidual, pornesc și mai mici. În șase blocuri, fluxul primește douăsprezece astfel de adunări, așa că împărțim deviația standard la rădăcina pătrată din doisprezece. Astfel, la pornire, suma adunărilor nu crește odată cu numărul de blocuri."
+    },
+    {
+      "t": 366.1,
+      "text": "Clasa GPT pune totul cap la cap și păstrează configurația. Un strat Embedding din PyTorch este un tabel cu câte un rând învățat pentru fiecare ID. Tabelul tokenurilor are zece mii de rânduri de câte trei sute optzeci și patru de valori, iar cel al pozițiilor are două sute cincizeci și șase de rânduri. Dropout-ul se aplică sumei celor doi vectori, la intrarea în primul bloc. Cele șase blocuri stau într-un ModuleList, o listă pe care PyTorch o recunoaște, ca parametrii blocurilor să fie parametrii modelului. Urmează normalizarea finală și stratul de ieșire, lm head, de la trei sute optzeci și patru de valori la zece mii de scoruri, fără bias. Aici legăm ponderile: tabelul tokenurilor primește chiar matricea stratului de ieșire. Init weights parcurge toate modulele modelului, cu numele fiecăruia, și dă straturilor liniare și tabelelor ponderi normale cu deviația standard zero virgulă zero doi. Pentru o proj și down proj, recunoscute după nume, împărțim deviația standard la rădăcina pătrată din doi ori numărul de blocuri. Bias-urile straturilor liniare pornesc toate de la zero. Num params adună mărimile tuturor parametrilor, iar matricea legată apare o singură dată în parameters, deci este numărată o dată. Forward primește ID-urile, B secvențe de câte T tokenuri, și, opțional, țintele. Pozițiile sunt numerele de la zero la T minus unu, pe același dispozitiv ca ID-urile. Vectorul tokenului și vectorul poziției se adună, iar PyTorch repetă vectorii pozițiilor pentru fiecare secvență din lot. Fluxul trece prin cele șase blocuri, pe rând, apoi prin normalizarea finală și prin stratul de ieșire. Când primește și ținte, modelul calculează entropia încrucișată pe toate pozițiile din lot deodată. Țintele egale cu minus unu sunt ignorate, iar la ajustarea fină vom pune minus unu pe pozițiile pe care modelul nu trebuie să le învețe. La rulare, scriptul fixează sămânța generatorului și construiește modelul cu configurația implicită. Numără separat parametrii reprezentărilor și pe cei ai blocurilor, apoi afișează aceste numere și totalul. Intrările sunt patru secvențe de câte două sute cincizeci și șase de ID-uri aleatoare, iar țintele sunt alese tot la întâmplare. Le trecem prin model și afișăm forma scorurilor, pierderea și logaritmul natural al mărimii vocabularului."
+    },
+    {
+      "t": 518.3,
+      "text": "Rulăm fișierul model, care construiește modelul pe procesor, fără antrenare. Reprezentările vectoriale au aproape patru milioane de parametri, blocurile aproximativ zece virgulă șase milioane, iar modelul întreg are paisprezece virgulă șase milioane. Pentru comparație, cel mai mic GPT-2, publicat de OpenAI în 2019, are o sută douăzeci și patru de milioane de parametri, cu douăsprezece blocuri și vectori de șapte sute șaizeci și opt de valori. Pentru patru secvențe de câte două sute cincizeci și șase de tokenuri, modelul dă zece mii de scoruri la fiecare poziție. Pierderea pe țintele aleatoare este aproximativ nouă virgulă douăzeci și opt, foarte aproape de logaritmul natural al lui zece mii, nouă virgulă douăzeci și unu."
+    },
+    {
+      "t": 564.5,
+      "text": "Pe părți, cei mai mulți parametri sunt în rețelele feed-forward ale celor șase blocuri, aproximativ șapte virgulă unu milioane, aproape jumătate din model. Urmează tabelul tokenurilor, cu trei virgulă optzeci și patru milioane, folosit și de stratul de ieșire. Straturile de atenție au aproximativ trei virgulă cincizeci și cinci milioane, pentru cele patru proiecții din fiecare bloc. Pozițiile și normalizările au împreună puțin peste o sută de mii de parametri, o parte foarte mică din model."
+    },
+    {
+      "t": 595.8,
+      "text": "Cu ponderi mici și aleatoare, scorurile de la ieșire sunt mici și apropiate unele de altele, așa că softmax dă fiecăruia dintre cele zece mii de tokenuri aproape aceeași probabilitate, unu la zece mii. Entropia încrucișată este minus logaritmul probabilității tokenului corect, deci un model care nu știe nimic pornește de la logaritmul natural al lui zece mii. Pierderea noastră este puțin peste această valoare, pentru că scorurile nu sunt perfect egale."
+    },
+    {
+      "t": 624.1,
+      "text": "Pe pagina laboratorului, Modelul GPT, aceleași piese sunt explicate în scris, cu ponderile legate și inițializarea scalată. Numărul de parametri este calculat acolo direct din configurație, cu un program Python care rulează în browser."
+    },
+    {
+      "t": 640.5,
+      "text": "Pagina Arhitectura Transformer, din documentație, descrie fluxul rezidual și variantele mai noi ale pieselor noastre, folosite de modelele actuale: o normalizare mai simplă, codificarea pozițională rotativă și o rețea feed-forward cu poartă. Componentele noastre sunt cele clasice, din GPT-2, mai ușor de urmărit pentru un model scris de la zero."
+    },
+    {
+      "t": 663.5,
+      "text": "Pagina episodului de pe InteligentArtificiala.ro are capitolele, transcrierea și codul modelului, cu câte o etichetă git pentru fiecare pas. Dacă aveți întrebări sau ați găsit o greșeală, ne puteți scrie în comentarii. Iar dacă vreți să vedeți cum învață acest model să scrie povești, abonați-vă la canal."
+    }
+  ],
+  "code": {
+    "repo": "https://github.com/inteligentArtificiala-ro/laborator-lm-de-la-zero",
+    "end": "ep005/end",
+    "steps": [
+      {
+        "t": 218,
+        "from": "ep004/end",
+        "to": "ep005/step-1"
+      },
+      {
+        "t": 365.6,
+        "from": "ep005/step-1",
+        "to": "ep005/step-2"
+      }
+    ]
+  }
+}

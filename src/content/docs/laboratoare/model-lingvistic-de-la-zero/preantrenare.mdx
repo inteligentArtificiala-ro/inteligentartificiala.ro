@@ -12,6 +12,7 @@ import DeepDive from '@components/DeepDive.astro';
 import Python from '@components/Python.astro';
 import SourceFile from '@components/SourceFile.astro';
 import { Steps } from '@astrojs/starlight/components';
+import Video from '@components/Video.astro';
 
 export const labSetup = String.raw`
 import os, sys
@@ -32,6 +33,8 @@ sys.path.insert(0, ".")
 Un model abia creat are ponderi aleatoare și scrie cuvinte fără legătură. În **preantrenare** (_pretraining_), modelul citește povești și învață un singur lucru: să prezică următorul token. Nimeni nu îi spune ce este o propoziție sau un personaj. Gramatica, numele personajelor și firul unei povești le învață pe drum, doar pentru că îl ajută să prezică următorul cuvânt.
 
 Codul antrenării se află în fișierul `pretrain.py`.
+
+<Video id="ep006-preantrenare" capitol="Predicția următorului token" />
 
 ## Obiectivul
 
