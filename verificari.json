@@ -1,8 +1,13 @@
 {
-  "actualizat": "2026-11-03T00:37:34Z",
+  "actualizat": "2026-11-09T13:00:27Z",
   "laboratoare": {
     "control-continuu-ppo-halfcheetah": {
       "istoric": [
+        {
+          "data": "2026-11-09T09:44:17Z",
+          "durata": 596,
+          "stare": "reusita"
+        },
         {
           "data": "2026-11-02T22:19:24Z",
           "durata": 615,
@@ -11,15 +16,15 @@
       ],
       "ultimaRulare": {
         "celule": 7,
-        "data": "2026-11-02T22:19:24Z",
-        "durata": 615,
-        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/41536047146",
+        "data": "2026-11-09T09:44:17Z",
+        "durata": 596,
+        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/42595535947",
         "laborator": "control-continuu-ppo-halfcheetah",
         "mediu": {
           "memorie": 16,
           "pachete": {
             "gymnasium": "1.4.0",
-            "mujoco": "3.17.0",
+            "mujoco": "4.0.0",
             "numpy": "2.5.4",
             "torch": "2.15.0+cpu"
           },
@@ -33,15 +38,15 @@
       },
       "ultimaRulareReusita": {
         "celule": 7,
-        "data": "2026-11-02T22:19:24Z",
-        "durata": 615,
-        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/41536047146",
+        "data": "2026-11-09T09:44:17Z",
+        "durata": 596,
+        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/42595535947",
         "laborator": "control-continuu-ppo-halfcheetah",
         "mediu": {
           "memorie": 16,
           "pachete": {
             "gymnasium": "1.4.0",
-            "mujoco": "3.17.0",
+            "mujoco": "4.0.0",
             "numpy": "2.5.4",
             "torch": "2.15.0+cpu"
           },
@@ -57,6 +62,11 @@
     "difuzie-imagini-si-sunete": {
       "istoric": [
         {
+          "data": "2026-11-09T09:44:28Z",
+          "durata": 8236,
+          "stare": "esuata"
+        },
+        {
           "data": "2026-11-02T22:19:18Z",
           "durata": 8280,
           "stare": "esuata"
@@ -64,14 +74,14 @@
       ],
       "ultimaRulare": {
         "celule": 24,
-        "data": "2026-11-02T22:19:18Z",
-        "durata": 8280,
+        "data": "2026-11-09T09:44:28Z",
+        "durata": 8236,
         "eroare": {
           "celula": 35,
           "mesaj": "AttributeError: 'GPT2Model' object has no attribute '_update_model_kwargs_for_generation'",
           "sursa": "import scipy.io.wavfile"
         },
-        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/41536047146",
+        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/42595535947",
         "laborator": "difuzie-imagini-si-sunete",
         "mediu": {
           "memorie": 16,
@@ -80,7 +90,7 @@
             "diffusers": "0.42.1",
             "numpy": "2.5.4",
             "torch": "2.15.0+cpu",
-            "transformers": "5.22.1"
+            "transformers": "5.22.2"
           },
           "placaGrafica": null,
           "procesoare": 4,
@@ -94,16 +104,21 @@
     "model-lingvistic-de-la-zero": {
       "istoric": [
         {
+          "data": "2026-11-09T09:44:16Z",
+          "durata": 11753,
+          "stare": "reusita"
+        },
+        {
           "data": "2026-11-02T22:19:16Z",
           "durata": 1452,
           "stare": "reusita"
         }
       ],
       "ultimaRulare": {
-        "celule": 8,
-        "data": "2026-11-02T22:19:16Z",
-        "durata": 1452,
-        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/41536047146",
+        "celule": 17,
+        "data": "2026-11-09T09:44:16Z",
+        "durata": 11753,
+        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/42595535947",
         "laborator": "model-lingvistic-de-la-zero",
         "mediu": {
           "memorie": 16,
@@ -120,10 +135,10 @@
         "stare": "reusita"
       },
       "ultimaRulareReusita": {
-        "celule": 8,
-        "data": "2026-11-02T22:19:16Z",
-        "durata": 1452,
-        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/41536047146",
+        "celule": 17,
+        "data": "2026-11-09T09:44:16Z",
+        "durata": 11753,
+        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/42595535947",
         "laborator": "model-lingvistic-de-la-zero",
         "mediu": {
           "memorie": 16,
@@ -143,6 +158,11 @@
     "model-local-transformers": {
       "istoric": [
         {
+          "data": "2026-11-09T09:44:27Z",
+          "durata": 5091,
+          "stare": "reusita"
+        },
+        {
           "data": "2026-11-02T22:19:19Z",
           "durata": 5194,
           "stare": "reusita"
@@ -150,9 +170,9 @@
       ],
       "ultimaRulare": {
         "celule": 13,
-        "data": "2026-11-02T22:19:19Z",
-        "durata": 5194,
-        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/41536047146",
+        "data": "2026-11-09T09:44:27Z",
+        "durata": 5091,
+        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/42595535947",
         "laborator": "model-local-transformers",
         "mediu": {
           "memorie": 16,
@@ -160,7 +180,7 @@
             "accelerate": "1.15.0",
             "numpy": "2.5.4",
             "torch": "2.15.0+cpu",
-            "transformers": "5.22.1"
+            "transformers": "5.22.2"
           },
           "placaGrafica": null,
           "procesoare": 4,
@@ -172,9 +192,9 @@
       },
       "ultimaRulareReusita": {
         "celule": 13,
-        "data": "2026-11-02T22:19:19Z",
-        "durata": 5194,
-        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/41536047146",
+        "data": "2026-11-09T09:44:27Z",
+        "durata": 5091,
+        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/42595535947",
         "laborator": "model-local-transformers",
         "mediu": {
           "memorie": 16,
@@ -182,7 +202,7 @@
             "accelerate": "1.15.0",
             "numpy": "2.5.4",
             "torch": "2.15.0+cpu",
-            "transformers": "5.22.1"
+            "transformers": "5.22.2"
           },
           "placaGrafica": null,
           "procesoare": 4,
@@ -196,6 +216,11 @@
     "retele-neuronale-de-la-zero": {
       "istoric": [
         {
+          "data": "2026-11-09T09:44:16Z",
+          "durata": 62,
+          "stare": "reusita"
+        },
+        {
           "data": "2026-11-02T22:19:22Z",
           "durata": 66,
           "stare": "reusita"
@@ -203,9 +228,9 @@
       ],
       "ultimaRulare": {
         "celule": 13,
-        "data": "2026-11-02T22:19:22Z",
-        "durata": 66,
-        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/41536047146",
+        "data": "2026-11-09T09:44:16Z",
+        "durata": 62,
+        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/42595535947",
         "laborator": "retele-neuronale-de-la-zero",
         "mediu": {
           "memorie": 16,
@@ -223,9 +248,9 @@
       },
       "ultimaRulareReusita": {
         "celule": 13,
-        "data": "2026-11-02T22:19:22Z",
-        "durata": 66,
-        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/41536047146",
+        "data": "2026-11-09T09:44:16Z",
+        "durata": 62,
+        "jurnal": "https://github.com/inteligentArtificiala-ro/inteligentartificiala.ro/actions/runs/42595535947",
         "laborator": "retele-neuronale-de-la-zero",
         "mediu": {
           "memorie": 16,
